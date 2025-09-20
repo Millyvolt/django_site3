@@ -321,6 +321,19 @@
     </div>
     
     <script>
+        // Check if we have daily question data from sessionStorage
+        let dailyQuestionData = null;
+        try {
+            const stored = sessionStorage.getItem('dailyQuestionData');
+            if (stored) {
+                dailyQuestionData = JSON.parse(stored);
+                // Clear the stored data after reading
+                sessionStorage.removeItem('dailyQuestionData');
+            }
+        } catch (e) {
+            console.log('No daily question data found');
+        }
+        
         // Problem data
         const problems = {
             '1': {
@@ -418,7 +431,13 @@ print(lengthOfLongestSubstring("bbbbb"))     # Expected: 1`
         
         // Initialize with current question
         document.addEventListener('DOMContentLoaded', function() {
-            loadQuestion(currentQuestionId);
+            // If we have daily question data, load it instead
+            if (dailyQuestionData) {
+                currentQuestionId = '1'; // Load as question 1
+                loadQuestion('1');
+            } else {
+                loadQuestion(currentQuestionId);
+            }
         });
         
         function switchQuestion(questionId) {
@@ -433,17 +452,42 @@ print(lengthOfLongestSubstring("bbbbb"))     # Expected: 1`
         }
         
         function loadQuestion(questionId) {
-            const problem = problems[questionId];
+            let problem;
+            
+            // Check if we have daily question data
+            if (dailyQuestionData && questionId === '1') {
+                problem = {
+                    title: dailyQuestionData.title,
+                    difficulty: dailyQuestionData.difficulty,
+                    description: dailyQuestionData.description,
+                    examples: dailyQuestionData.examples,
+                    constraints: dailyQuestionData.constraints,
+                    template: dailyQuestionData.template
+                };
+                
+                // Update header to show it's a daily question
+                document.getElementById('problem-title').textContent = dailyQuestionData.title + ' (Daily Challenge)';
+            } else {
+                problem = problems[questionId];
+            }
+            
             if (!problem) return;
             
-            // Update header
-            document.getElementById('problem-title').textContent = problem.title;
+            // Update header (title already set for daily questions)
+            if (!dailyQuestionData || questionId !== '1') {
+                document.getElementById('problem-title').textContent = problem.title;
+            }
             const difficultyBadge = document.getElementById('difficulty-badge');
             difficultyBadge.textContent = problem.difficulty;
             difficultyBadge.className = `difficulty-badge difficulty-${problem.difficulty.toLowerCase()}`;
             
-            // Update problem description
-            document.getElementById('problem-description').textContent = problem.description;
+            // Update problem description (handle HTML content)
+            const descriptionElement = document.getElementById('problem-description');
+            if (problem.description.includes('<')) {
+                descriptionElement.innerHTML = problem.description;
+            } else {
+                descriptionElement.textContent = problem.description;
+            }
             
             // Update examples
             const examplesHtml = problem.examples.map((example, index) => `

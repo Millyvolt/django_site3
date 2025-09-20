@@ -335,11 +335,11 @@
                 </div>
                 {% endif %}
                 
-                <div class="section" style="text-align: center;">
-                    <a href="/editor/" class="editor-btn">
-                        💻 Open Code Editor
-                    </a>
-                </div>
+            <div class="section" style="text-align: center;">
+                <a href="/editor/?daily=true" class="editor-btn" onclick="openDailyEditor()">
+                    💻 Open Code Editor
+                </a>
+            </div>
             </div>
         </div>
         
@@ -382,6 +382,27 @@
         </div>
         {% endif %}
     </div>
+    
+    <script>
+        function openDailyEditor() {
+            // Store daily question data in sessionStorage to pass to editor
+            const dailyQuestionData = {
+                title: "{{ daily_question.title|escapejs }}",
+                difficulty: "{{ daily_question.difficulty|escapejs }}",
+                description: `{{ daily_question.description|escapejs }}`,
+                examples: {{ daily_question.examples|safe }},
+                constraints: {{ daily_question.constraints|safe }},
+                template: `{{ daily_question.template|escapejs }}`,
+                isDaily: true,
+                date: "{{ daily_question.date|escapejs }}",
+                ac_rate: "{{ daily_question.ac_rate|escapejs }}",
+                frontend_id: "{{ daily_question.frontend_id|escapejs }}",
+                link: "{{ daily_question.link|escapejs }}"
+            };
+            
+            sessionStorage.setItem('dailyQuestionData', JSON.stringify(dailyQuestionData));
+        }
+    </script>
     
 </body>
 </html>

@@ -451,6 +451,9 @@ def leetcode(request):
 
 def question_editor(request, question_id=None):
     """Question editor page for coding problems"""
+    # Check if this is a daily question request
+    is_daily = request.GET.get('daily') == 'true'
+    
     # Get question_id from URL parameter if not in path
     if not question_id:
         question_id = request.GET.get('q', '1')
@@ -552,6 +555,7 @@ print(lengthOfLongestSubstring("bbbbb"))     # Expected: 1'''
     context = {
         'problems': problems,
         'current_problem': problem,
-        'current_question_id': question_id
+        'current_question_id': question_id,
+        'is_daily': is_daily
     }
     return render(request, 'question_editor.html', context)
