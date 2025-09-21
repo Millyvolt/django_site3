@@ -454,6 +454,313 @@ def leetcode(request):
     """LeetCode problems page view"""
     return render(request, 'leetcode.html')
 
+def question_selection(request):
+    """Question selection page with LeetCode problems from API"""
+    try:
+        # Get pagination parameters
+        page = int(request.GET.get('page', 1))
+        limit = int(request.GET.get('limit', 50))  # Show 50 questions per page
+        skip = (page - 1) * limit
+        
+        # Get filter parameters
+        difficulty = request.GET.get('difficulty', '')
+        search_term = request.GET.get('search', '')
+        
+        # Fetch questions from LeetCode GraphQL API
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problemset/all/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Build the GraphQL query to fetch problems (with required parameters)
+        query = {
+            'query': '''
+                query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
+                    problemsetQuestionList: questionList(
+                        categorySlug: $categorySlug
+                        limit: $limit
+                        skip: $skip
+                        filters: $filters
+                    ) {
+                        total: totalNum
+                        questions: data {
+                            acRate
+                            difficulty
+                            frontendQuestionId: questionFrontendId
+                            paidOnly: isPaidOnly
+                            title
+                            titleSlug
+                            topicTags {
+                                name
+                            }
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'categorySlug': '',  # Empty string for all problems
+                'skip': skip,
+                'limit': min(limit, 50),  # Start with smaller limit
+                'filters': {}  # Empty filters object
+            }
+        }
+        
+        response = requests.post(url, json=query, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"API Response data: {data}")  # Debug log
+            
+            # Add comprehensive null checks
+            if data and isinstance(data, dict) and 'data' in data:
+                data_content = data.get('data')
+                if data_content and 'problemsetQuestionList' in data_content:
+                    problemset_data = data_content.get('problemsetQuestionList')
+                    if problemset_data:
+                        total_questions = problemset_data.get('total', 0) if isinstance(problemset_data, dict) else 0
+                        questions_data = problemset_data.get('questions', []) if isinstance(problemset_data, dict) else []
+                        
+                        # Format the questions data with null checks
+                        questions = []
+                        if isinstance(questions_data, list):
+                            for q in questions_data:
+                                if q and isinstance(q, dict) and not q.get('paidOnly', False):  # Only include free questions
+                                    # Safe extraction with defaults
+                                    question_id = q.get('frontendQuestionId', '')
+                                    title = q.get('title', '')
+                                    difficulty = q.get('difficulty', '')
+                                    ac_rate = q.get('acRate', 0)
+                                    title_slug = q.get('titleSlug', '')
+                                    topic_tags = q.get('topicTags', [])
+                                    
+                                    # Process tags safely
+                                    tags = []
+                                    if isinstance(topic_tags, list):
+                                        tags = [tag.get('name', '') for tag in topic_tags if tag and isinstance(tag, dict)]
+                                    
+                                    # Only add if we have essential data
+                                    if question_id and title:
+                                        questions.append({
+                                            'id': question_id,
+                                            'title': title,
+                                            'difficulty': difficulty,
+                                            'acceptance_rate': round(float(ac_rate) if ac_rate else 0, 1),
+                                            'title_slug': title_slug,
+                                            'tags': tags,
+                                            'leetcode_url': f"https://leetcode.com/problems/{title_slug}" if title_slug else ''
+                                        })
+                        
+                        # Calculate pagination info
+                        total_pages = (total_questions + limit - 1) // limit if total_questions > 0 else 1
+                        has_previous = page > 1
+                        has_next = page < total_pages
+                        
+                        context = {
+                            'questions': questions,
+                            'current_page': page,
+                            'total_pages': total_pages,
+                            'total_questions': total_questions,
+                            'has_previous': has_previous,
+                            'has_next': has_next,
+                            'previous_page': page - 1 if has_previous else None,
+                            'next_page': page + 1 if has_next else None,
+                            'current_difficulty': difficulty,
+                            'current_search': search_term,
+                            'limit': limit
+                        }
+                    else:
+                        raise Exception("problemsetQuestionList is None or empty")
+                else:
+                    raise Exception(f"Missing problemsetQuestionList in data: {data_content}")
+            else:
+                raise Exception(f"Invalid response structure - missing data field: {data}")
+        else:
+            # Debug: Print the error response
+            error_text = response.text
+            print(f"API Error {response.status_code}: {error_text}")
+            raise Exception(f"API request failed with status {response.status_code}: {error_text}")
+            
+    except Exception as e:
+        # Try alternative approach - fetch from problems page
+        try:
+            print(f"Primary API failed: {str(e)}. Trying alternative approach...")
+            questions = fetch_questions_alternative(page, limit, difficulty, search_term)
+            
+            if questions:  # Only use alternative if we got questions
+                context = {
+                    'questions': questions,
+                    'current_page': page,
+                    'total_pages': 1,  # Simplified for alternative approach
+                    'total_questions': len(questions),
+                    'has_previous': False,
+                    'has_next': False,
+                    'previous_page': None,
+                    'next_page': None,
+                    'current_difficulty': difficulty,
+                    'current_search': search_term,
+                    'limit': limit,
+                    'api_error': f"Primary API failed: {str(e)}. Using alternative method."
+                }
+            else:
+                raise Exception("Alternative method returned no questions")
+        except Exception as e2:
+            print(f"Alternative approach also failed: {str(e2)}")
+            # Final fallback to sample questions
+            questions = fetch_questions_scraping()  # Use the expanded sample questions
+            
+            context = {
+                'questions': questions,
+                'current_page': 1,
+                'total_pages': 1,
+                'total_questions': len(questions),
+                'has_previous': False,
+                'has_next': False,
+                'previous_page': None,
+                'next_page': None,
+                'current_difficulty': difficulty,
+                'current_search': search_term,
+                'limit': limit,
+                'api_error': f"API methods failed. Primary: {str(e)[:100]}..., Alternative: {str(e2)[:100]}..."
+            }
+    
+    return render(request, 'question_selection.html', context)
+
+def fetch_questions_alternative(page, limit, difficulty, search_term):
+    """Alternative method to fetch questions when GraphQL API fails"""
+    try:
+        # Try a different GraphQL endpoint or query
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problemset/all/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin'
+        }
+        
+        # Try with required parameters
+        query = {
+            'query': '''
+                query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
+                    problemsetQuestionList: questionList(
+                        categorySlug: $categorySlug
+                        limit: $limit
+                        skip: $skip
+                        filters: $filters
+                    ) {
+                        total: totalNum
+                        questions: data {
+                            frontendQuestionId: questionFrontendId
+                            title
+                            difficulty
+                            acRate
+                            paidOnly: isPaidOnly
+                            titleSlug
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'categorySlug': '',
+                'limit': 10,
+                'skip': 0,
+                'filters': {}
+            }
+        }
+        
+        response = requests.post(url, json=query, headers=headers, timeout=15)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"Alternative API Response: {data}")  # Debug log
+            
+            # Add comprehensive null checks for alternative API
+            if data and isinstance(data, dict) and 'data' in data:
+                data_content = data.get('data')
+                if data_content and 'problemsetQuestionList' in data_content:
+                    problemset_data = data_content.get('problemsetQuestionList')
+                    if problemset_data and isinstance(problemset_data, dict):
+                        questions_data = problemset_data.get('questions', [])
+                        
+                        questions = []
+                        if isinstance(questions_data, list):
+                            for q in questions_data:
+                                if q and isinstance(q, dict) and not q.get('paidOnly', False):
+                                    # Safe extraction with null checks
+                                    question_id = q.get('frontendQuestionId', '')
+                                    title = q.get('title', '')
+                                    difficulty = q.get('difficulty', '')
+                                    ac_rate = q.get('acRate', 0)
+                                    title_slug = q.get('titleSlug', '')
+                                    topic_tags = q.get('topicTags', [])
+                                    
+                                    # Process tags safely
+                                    tags = []
+                                    if isinstance(topic_tags, list):
+                                        tags = [tag.get('name', '') for tag in topic_tags if tag and isinstance(tag, dict)]
+                                    
+                                    # Only add if we have essential data
+                                    if question_id and title:
+                                        questions.append({
+                                            'id': question_id,
+                                            'title': title,
+                                            'difficulty': difficulty,
+                                            'acceptance_rate': round(float(ac_rate) if ac_rate else 0, 1),
+                                            'title_slug': title_slug,
+                                            'tags': tags,
+                                            'leetcode_url': f"https://leetcode.com/problems/{title_slug}" if title_slug else ''
+                                        })
+                        
+                        if questions:  # Only return if we got valid questions
+                            return questions
+        
+        # If that fails, try scraping the problems page
+        print("Alternative API failed, falling back to sample questions")
+        return fetch_questions_scraping()
+        
+    except Exception as e:
+        print(f"Alternative fetch failed: {str(e)}")
+        return fetch_questions_scraping()
+
+def fetch_questions_scraping():
+    """Fallback method using web scraping"""
+    try:
+        # This is a simplified scraping approach - in production you'd want more robust scraping
+        # For now, return an expanded list of sample questions
+        questions = [
+            {'id': '1', 'title': 'Two Sum', 'difficulty': 'Easy', 'acceptance_rate': 46.8, 'title_slug': 'two-sum', 'tags': ['Array', 'Hash Table'], 'leetcode_url': 'https://leetcode.com/problems/two-sum'},
+            {'id': '2', 'title': 'Add Two Numbers', 'difficulty': 'Medium', 'acceptance_rate': 37.4, 'title_slug': 'add-two-numbers', 'tags': ['Linked List', 'Math', 'Recursion'], 'leetcode_url': 'https://leetcode.com/problems/add-two-numbers'},
+            {'id': '3', 'title': 'Longest Substring Without Repeating Characters', 'difficulty': 'Medium', 'acceptance_rate': 33.8, 'title_slug': 'longest-substring-without-repeating-characters', 'tags': ['Hash Table', 'String', 'Sliding Window'], 'leetcode_url': 'https://leetcode.com/problems/longest-substring-without-repeating-characters'},
+            {'id': '4', 'title': 'Median of Two Sorted Arrays', 'difficulty': 'Hard', 'acceptance_rate': 33.1, 'title_slug': 'median-of-two-sorted-arrays', 'tags': ['Array', 'Binary Search', 'Divide and Conquer'], 'leetcode_url': 'https://leetcode.com/problems/median-of-two-sorted-arrays'},
+            {'id': '5', 'title': 'Longest Palindromic Substring', 'difficulty': 'Medium', 'acceptance_rate': 31.9, 'title_slug': 'longest-palindromic-substring', 'tags': ['String', 'Dynamic Programming'], 'leetcode_url': 'https://leetcode.com/problems/longest-palindromic-substring'},
+            {'id': '6', 'title': 'Zigzag Conversion', 'difficulty': 'Medium', 'acceptance_rate': 40.4, 'title_slug': 'zigzag-conversion', 'tags': ['String'], 'leetcode_url': 'https://leetcode.com/problems/zigzag-conversion'},
+            {'id': '7', 'title': 'Reverse Integer', 'difficulty': 'Medium', 'acceptance_rate': 26.0, 'title_slug': 'reverse-integer', 'tags': ['Math'], 'leetcode_url': 'https://leetcode.com/problems/reverse-integer'},
+            {'id': '8', 'title': 'String to Integer (atoi)', 'difficulty': 'Medium', 'acceptance_rate': 16.4, 'title_slug': 'string-to-integer-atoi', 'tags': ['String'], 'leetcode_url': 'https://leetcode.com/problems/string-to-integer-atoi'},
+            {'id': '9', 'title': 'Palindrome Number', 'difficulty': 'Easy', 'acceptance_rate': 52.4, 'title_slug': 'palindrome-number', 'tags': ['Math'], 'leetcode_url': 'https://leetcode.com/problems/palindrome-number'},
+            {'id': '10', 'title': 'Regular Expression Matching', 'difficulty': 'Hard', 'acceptance_rate': 28.1, 'title_slug': 'regular-expression-matching', 'tags': ['String', 'Dynamic Programming', 'Recursion'], 'leetcode_url': 'https://leetcode.com/problems/regular-expression-matching'},
+            {'id': '11', 'title': 'Container With Most Water', 'difficulty': 'Medium', 'acceptance_rate': 54.5, 'title_slug': 'container-with-most-water', 'tags': ['Array', 'Two Pointers', 'Greedy'], 'leetcode_url': 'https://leetcode.com/problems/container-with-most-water'},
+            {'id': '12', 'title': 'Integer to Roman', 'difficulty': 'Medium', 'acceptance_rate': 59.7, 'title_slug': 'integer-to-roman', 'tags': ['Hash Table', 'Math', 'String'], 'leetcode_url': 'https://leetcode.com/problems/integer-to-roman'},
+            {'id': '13', 'title': 'Roman to Integer', 'difficulty': 'Easy', 'acceptance_rate': 58.9, 'title_slug': 'roman-to-integer', 'tags': ['Hash Table', 'Math', 'String'], 'leetcode_url': 'https://leetcode.com/problems/roman-to-integer'},
+            {'id': '14', 'title': 'Longest Common Prefix', 'difficulty': 'Easy', 'acceptance_rate': 38.1, 'title_slug': 'longest-common-prefix', 'tags': ['String', 'Trie'], 'leetcode_url': 'https://leetcode.com/problems/longest-common-prefix'},
+            {'id': '15', 'title': '3Sum', 'difficulty': 'Medium', 'acceptance_rate': 30.8, 'title_slug': '3sum', 'tags': ['Array', 'Two Pointers', 'Sorting'], 'leetcode_url': 'https://leetcode.com/problems/3sum'},
+            {'id': '20', 'title': 'Valid Parentheses', 'difficulty': 'Easy', 'acceptance_rate': 40.2, 'title_slug': 'valid-parentheses', 'tags': ['String', 'Stack'], 'leetcode_url': 'https://leetcode.com/problems/valid-parentheses'},
+            {'id': '21', 'title': 'Merge Two Sorted Lists', 'difficulty': 'Easy', 'acceptance_rate': 60.3, 'title_slug': 'merge-two-sorted-lists', 'tags': ['Linked List', 'Recursion'], 'leetcode_url': 'https://leetcode.com/problems/merge-two-sorted-lists'},
+            {'id': '26', 'title': 'Remove Duplicates from Sorted Array', 'difficulty': 'Easy', 'acceptance_rate': 52.1, 'title_slug': 'remove-duplicates-from-sorted-array', 'tags': ['Array', 'Two Pointers'], 'leetcode_url': 'https://leetcode.com/problems/remove-duplicates-from-sorted-array'},
+            {'id': '27', 'title': 'Remove Element', 'difficulty': 'Easy', 'acceptance_rate': 55.8, 'title_slug': 'remove-element', 'tags': ['Array', 'Two Pointers'], 'leetcode_url': 'https://leetcode.com/problems/remove-element'},
+            {'id': '28', 'title': 'Find the Index of the First Occurrence in a String', 'difficulty': 'Easy', 'acceptance_rate': 41.7, 'title_slug': 'find-the-index-of-the-first-occurrence-in-a-string', 'tags': ['Two Pointers', 'String', 'String Matching'], 'leetcode_url': 'https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string'}
+        ]
+        return questions
+    except Exception as e:
+        print(f"Scraping fallback failed: {str(e)}")
+        return []
+
 def question_editor(request, question_id=None):
     """Question editor page for coding problems"""
     # Check if this is a daily question request
@@ -616,6 +923,337 @@ int main() {
     Solution solution;
     cout << "Test 1: " << solution.lengthOfLongestSubstring("abcabcbb") << endl;  // Expected: 3
     cout << "Test 2: " << solution.lengthOfLongestSubstring("bbbbb") << endl;     // Expected: 1
+    return 0;
+}'''
+        },
+        '4': {
+            'title': 'Median of Two Sorted Arrays',
+            'difficulty': 'Hard',
+            'description': 'Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.',
+            'examples': [
+                {
+                    'input': 'nums1 = [1,3], nums2 = [2]',
+                    'output': '2.0',
+                    'explanation': 'merged array = [1,2,3] and median is 2.'
+                }
+            ],
+            'constraints': [
+                'nums1.length == m',
+                'nums2.length == n',
+                '0 ≤ m ≤ 1000',
+                '0 ≤ n ≤ 1000',
+                '1 ≤ m + n ≤ 2000'
+            ],
+            'template': '''def findMedianSortedArrays(nums1, nums2):
+    # Your code here
+    pass
+
+# Test cases
+print(findMedianSortedArrays([1,3], [2]))  # Expected: 2.0''',
+            'cppTemplate': '''#include <iostream>
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    vector<int> nums1 = {1, 3};
+    vector<int> nums2 = {2};
+    cout << "Test 1: " << solution.findMedianSortedArrays(nums1, nums2) << endl;  // Expected: 2.0
+    return 0;
+}'''
+        },
+        '5': {
+            'title': 'Longest Palindromic Substring',
+            'difficulty': 'Medium',
+            'description': 'Given a string s, return the longest palindromic substring in s.',
+            'examples': [
+                {
+                    'input': 's = "babad"',
+                    'output': '"bab"',
+                    'explanation': '"aba" is also a valid answer.'
+                }
+            ],
+            'constraints': [
+                '1 ≤ s.length ≤ 1000',
+                's consist of only digits and English letters.'
+            ],
+            'template': '''def longestPalindrome(s):
+    # Your code here
+    pass
+
+# Test cases
+print(longestPalindrome("babad"))  # Expected: "bab" or "aba"''',
+            'cppTemplate': '''#include <iostream>
+#include <string>
+using namespace std;
+
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    cout << "Test 1: " << solution.longestPalindrome("babad") << endl;  // Expected: "bab" or "aba"
+    return 0;
+}'''
+        },
+        '9': {
+            'title': 'Palindrome Number',
+            'difficulty': 'Easy',
+            'description': 'Given an integer x, return true if x is a palindrome integer.',
+            'examples': [
+                {
+                    'input': 'x = 121',
+                    'output': 'true',
+                    'explanation': '121 reads as 121 from left to right and from right to left.'
+                }
+            ],
+            'constraints': [
+                '-2³¹ ≤ x ≤ 2³¹ - 1'
+            ],
+            'template': '''def isPalindrome(x):
+    # Your code here
+    pass
+
+# Test cases
+print(isPalindrome(121))  # Expected: True''',
+            'cppTemplate': '''#include <iostream>
+using namespace std;
+
+class Solution {
+public:
+    bool isPalindrome(int x) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    cout << "Test 1: " << (solution.isPalindrome(121) ? "true" : "false") << endl;  // Expected: true
+    return 0;
+}'''
+        },
+        '20': {
+            'title': 'Valid Parentheses',
+            'difficulty': 'Easy',
+            'description': 'Given a string s containing just the characters \'(\', \')\', \'{\', \'}\', \'[\' and \']\', determine if the input string is valid.',
+            'examples': [
+                {
+                    'input': 's = "()"',
+                    'output': 'true',
+                    'explanation': ''
+                }
+            ],
+            'constraints': [
+                '1 ≤ s.length ≤ 10⁴',
+                's consists of parentheses only \'()[]{}.\''
+            ],
+            'template': '''def isValid(s):
+    # Your code here
+    pass
+
+# Test cases
+print(isValid("()"))  # Expected: True''',
+            'cppTemplate': '''#include <iostream>
+#include <string>
+#include <stack>
+using namespace std;
+
+class Solution {
+public:
+    bool isValid(string s) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    cout << "Test 1: " << (solution.isValid("()") ? "true" : "false") << endl;  // Expected: true
+    return 0;
+}'''
+        },
+        '21': {
+            'title': 'Merge Two Sorted Lists',
+            'difficulty': 'Easy',
+            'description': 'You are given the heads of two sorted linked lists list1 and list2. Merge the two lists in a one sorted list.',
+            'examples': [
+                {
+                    'input': 'list1 = [1,2,4], list2 = [1,3,4]',
+                    'output': '[1,1,2,3,4,4]',
+                    'explanation': ''
+                }
+            ],
+            'constraints': [
+                'The number of nodes in both lists is in the range [0, 50].',
+                '-100 ≤ Node.val ≤ 100',
+                'Both list1 and list2 are sorted in non-decreasing order.'
+            ],
+            'template': '''class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def mergeTwoLists(list1, list2):
+    # Your code here
+    pass
+
+# Test cases would go here''',
+            'cppTemplate': '''#include <iostream>
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};
+
+class Solution {
+public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    // Test cases would go here
+    return 0;
+}'''
+        },
+        '26': {
+            'title': 'Remove Duplicates from Sorted Array',
+            'difficulty': 'Easy',
+            'description': 'Given an integer array nums sorted in non-decreasing order, remove the duplicates in-place such that each unique element appears only once.',
+            'examples': [
+                {
+                    'input': 'nums = [1,1,2]',
+                    'output': '2, nums = [1,2,_]',
+                    'explanation': 'Your function should return k = 2, with the first two elements of nums being 1 and 2 respectively.'
+                }
+            ],
+            'constraints': [
+                '1 ≤ nums.length ≤ 3 * 10⁴',
+                '-100 ≤ nums[i] ≤ 100',
+                'nums is sorted in non-decreasing order.'
+            ],
+            'template': '''def removeDuplicates(nums):
+    # Your code here
+    pass
+
+# Test cases
+print(removeDuplicates([1,1,2]))  # Expected: 2''',
+            'cppTemplate': '''#include <iostream>
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    vector<int> nums = {1,1,2};
+    cout << "Test 1: " << solution.removeDuplicates(nums) << endl;  // Expected: 2
+    return 0;
+}'''
+        },
+        '27': {
+            'title': 'Remove Element',
+            'difficulty': 'Easy',
+            'description': 'Given an integer array nums and an integer val, remove all occurrences of val in-place.',
+            'examples': [
+                {
+                    'input': 'nums = [3,2,2,3], val = 3',
+                    'output': '2, nums = [2,2,_,_]',
+                    'explanation': 'Your function should return k = 2, with the first two elements of nums being 2.'
+                }
+            ],
+            'constraints': [
+                '0 ≤ nums.length ≤ 100',
+                '0 ≤ nums[i] ≤ 50',
+                '0 ≤ val ≤ 100'
+            ],
+            'template': '''def removeElement(nums, val):
+    # Your code here
+    pass
+
+# Test cases
+print(removeElement([3,2,2,3], 3))  # Expected: 2''',
+            'cppTemplate': '''#include <iostream>
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    vector<int> nums = {3,2,2,3};
+    cout << "Test 1: " << solution.removeElement(nums, 3) << endl;  // Expected: 2
+    return 0;
+}'''
+        },
+        '28': {
+            'title': 'Find the Index of the First Occurrence in a String',
+            'difficulty': 'Easy',
+            'description': 'Given two strings needle and haystack, return the index of the first occurrence of needle in haystack, or -1 if needle is not part of haystack.',
+            'examples': [
+                {
+                    'input': 'haystack = "sadbutsad", needle = "sad"',
+                    'output': '0',
+                    'explanation': '"sad" occurs at index 0 and 6. The first occurrence is at index 0.'
+                }
+            ],
+            'constraints': [
+                '1 ≤ haystack.length, needle.length ≤ 10⁴',
+                'haystack and needle consist of only lowercase English characters.'
+            ],
+            'template': '''def strStr(haystack, needle):
+    # Your code here
+    pass
+
+# Test cases
+print(strStr("sadbutsad", "sad"))  # Expected: 0''',
+            'cppTemplate': '''#include <iostream>
+#include <string>
+using namespace std;
+
+class Solution {
+public:
+    int strStr(string haystack, string needle) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    cout << "Test 1: " << solution.strStr("sadbutsad", "sad") << endl;  // Expected: 0
     return 0;
 }'''
         }

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode Question Selection - Django Site</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            margin: 20px 0;
+            opacity: 0.9;
+        }
+        
+        .back-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .back-link:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .search-filter-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-bar {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 15px 25px;
+            color: #333;
+            font-size: 1.1em;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            display: block;
+        }
+        
+        .search-bar::placeholder {
+            color: #666;
+        }
+        
+        .search-bar:focus {
+            outline: none;
+            border-color: #ff6b35;
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .filter-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .questions-list {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .question-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .question-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+        
+        .question-item:last-child {
+            border-bottom: none;
+        }
+        
+        .question-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+        }
+        
+        .question-number {
+            font-weight: bold;
+            color: #495057;
+            min-width: 40px;
+        }
+        
+        .question-title {
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+        }
+        
+        .difficulty {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        .difficulty.Easy {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .difficulty.Medium {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .difficulty.Hard {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .acceptance-rate {
+            color: #666;
+            font-size: 0.9em;
+            min-width: 80px;
+            text-align: right;
+        }
+        
+        .solve-btn {
+            padding: 8px 16px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 15px;
+        }
+        
+        .solve-btn:hover {
+            background: linear-gradient(45deg, #f7931e, #ff6b35);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .pagination a, .pagination span {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .pagination a:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .pagination .current {
+            background: rgba(255, 255, 255, 0.4);
+            font-weight: bold;
+        }
+        
+        .pagination .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .stats {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        
+        .no-results {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            margin-top: 50px;
+        }
+        
+        .api-error {
+            background: rgba(248, 215, 218, 0.9);
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5em;
+            }
+            
+            .question-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .question-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .filter-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/leetcode/" class="back-link">← Back to LeetCode</a>
+        
+        <div class="header">
+            <h1>🎯 Pick a Question</h1>
+            <p>Choose from over 3,000 LeetCode problems</p>
+        </div>
+        
+        {% if api_error %}
+        <div class="api-error">
+            <strong>Note:</strong> Unable to fetch questions from LeetCode API. Showing sample questions instead. Error: {{ api_error }}
+        </div>
+        {% endif %}
+        
+        <div class="search-filter-container">
+            <form method="get" id="searchForm">
+                <input type="text" name="search" value="{{ current_search }}" class="search-bar" placeholder="Search questions by title...">
+                
+                <div class="filter-buttons">
+                    <button type="submit" name="difficulty" value="" class="filter-btn {% if not current_difficulty %}active{% endif %}">All</button>
+                    <button type="submit" name="difficulty" value="EASY" class="filter-btn {% if current_difficulty == 'EASY' %}active{% endif %}">Easy</button>
+                    <button type="submit" name="difficulty" value="MEDIUM" class="filter-btn {% if current_difficulty == 'MEDIUM' %}active{% endif %}">Medium</button>
+                    <button type="submit" name="difficulty" value="HARD" class="filter-btn {% if current_difficulty == 'HARD' %}active{% endif %}">Hard</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="stats">
+            Showing {{ questions|length }} of {{ total_questions }} questions
+            {% if current_search %}for "{{ current_search }}"{% endif %}
+            {% if current_difficulty %}with difficulty "{{ current_difficulty }}"{% endif %}
+        </div>
+        
+        <div class="questions-list">
+            <div class="list-header">
+                <div style="flex: 1;">Question</div>
+                <div style="min-width: 80px;">Difficulty</div>
+                <div style="min-width: 80px;">Acceptance</div>
+                <div style="min-width: 100px;">Action</div>
+            </div>
+            
+            {% for question in questions %}
+            <div class="question-item">
+                <div class="question-info">
+                    <div class="question-number">{{ question.id }}</div>
+                    <div class="question-title">{{ question.title }}</div>
+                </div>
+                <div class="difficulty {{ question.difficulty }}">{{ question.difficulty }}</div>
+                <div class="acceptance-rate">{{ question.acceptance_rate }}%</div>
+                <button class="solve-btn" onclick="solveQuestion('{{ question.id }}')">
+                    Solve
+                </button>
+            </div>
+            {% empty %}
+            <div class="no-results">
+                <p>No questions found matching your criteria.</p>
+                <p>Try adjusting your search or filter.</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if has_previous %}
+                <a href="?page={{ previous_page }}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}">« Previous</a>
+            {% else %}
+                <span class="disabled">« Previous</span>
+            {% endif %}
+            
+            {% for page_num in "12345"|make_list %}
+                {% if page_num|add:current_page|add:"-3"|floatformat:0|add:"0"|floatformat:0 > 0 %}
+                    <a href="?page={{ current_page|add:page_num|add:"-3" }}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}">{{ current_page|add:page_num|add:"-3" }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            <span class="current">{{ current_page }}</span>
+            
+            {% if has_next %}
+                <a href="?page={{ next_page }}{% if current_difficulty %}&difficulty={{ current_difficulty }}{% endif %}{% if current_search %}&search={{ current_search }}{% endif %}">Next »</a>
+            {% else %}
+                <span class="disabled">Next »</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function solveQuestion(questionId) {
+            // Redirect to the question editor with the selected question
+            window.location.href = `/editor/?q=${questionId}`;
+        }
+        
+        // Auto-submit form on search input change
+        document.querySelector('input[name="search"]').addEventListener('input', function() {
+            setTimeout(() => {
+                document.getElementById('searchForm').submit();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
