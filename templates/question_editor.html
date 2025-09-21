@@ -186,6 +186,49 @@
             align-items: center;
         }
         
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .language-selector label {
+            font-weight: 500;
+            color: #ecf0f1;
+        }
+        
+        .language-selector select {
+            padding: 4px 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+        
+        .input-section {
+            padding: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .input-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .input-field {
+            width: 100%;
+            height: 60px;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        
         .editor-buttons {
             display: flex;
             gap: 10px;
@@ -251,6 +294,18 @@
             font-size: 0.9em;
         }
         
+        .status.running {
+            color: #f39c12;
+        }
+        
+        .status.success {
+            color: #27ae60;
+        }
+        
+        .status.error {
+            color: #e74c3c;
+        }
+        
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
@@ -301,7 +356,17 @@
         </div>
         
         <div class="editor-panel">
+            {% csrf_token %}
             <div class="editor-toolbar">
+                <div class="language-selector">
+                    <label for="languageSelect">Language:</label>
+                    <select id="languageSelect" onchange="changeLanguage()">
+                        <option value="cpp">C++</option>
+                        <option value="python3">Python 3</option>
+                        <option value="java">Java</option>
+                        <option value="javascript">JavaScript</option>
+                    </select>
+                </div>
                 <div class="editor-buttons">
                     <button class="btn btn-warning" onclick="resetCode()">Reset</button>
                     <button class="btn btn-primary" onclick="runCode()">Run Code</button>
@@ -312,7 +377,12 @@
                 </div>
             </div>
             
-            <textarea id="codeEditor" class="code-editor" placeholder="Write your solution here...">{{ problem.template }}</textarea>
+            <textarea id="codeEditor" class="code-editor" placeholder="Write your solution here...">{{ current_problem.template }}</textarea>
+            
+            <div class="input-section">
+                <label for="inputField">Input (optional):</label>
+                <textarea id="inputField" class="input-field" placeholder="Enter test input here..."></textarea>
+            </div>
             
             <div id="outputPanel" class="output-panel">
                 <div>Output will appear here...</div>
@@ -334,94 +404,11 @@
             console.log('No daily question data found');
         }
         
-        // Problem data
-        const problems = {
-            '1': {
-                title: 'Two Sum',
-                difficulty: 'Easy',
-                description: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
-                examples: [
-                    {
-                        input: 'nums = [2,7,11,15], target = 9',
-                        output: '[0,1]',
-                        explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].'
-                    },
-                    {
-                        input: 'nums = [3,2,4], target = 6',
-                        output: '[1,2]',
-                        explanation: ''
-                    }
-                ],
-                constraints: [
-                    '2 ≤ nums.length ≤ 10⁴',
-                    '-10⁹ ≤ nums[i] ≤ 10⁹',
-                    '-10⁹ ≤ target ≤ 10⁹',
-                    'Only one valid answer exists.'
-                ],
-                template: `def twoSum(nums, target):
-    # Your code here
-    pass
-
-# Test cases
-print(twoSum([2,7,11,15], 9))  # Expected: [0,1]
-print(twoSum([3,2,4], 6))      # Expected: [1,2]`
-            },
-            '2': {
-                title: 'Add Two Numbers',
-                difficulty: 'Medium',
-                description: 'You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.',
-                examples: [
-                    {
-                        input: 'l1 = [2,4,3], l2 = [5,6,4]',
-                        output: '[7,0,8]',
-                        explanation: '342 + 465 = 807.'
-                    }
-                ],
-                constraints: [
-                    'The number of nodes in each linked list is in the range [1, 100].',
-                    '0 ≤ Node.val ≤ 9',
-                    'It is guaranteed that the list represents a number that does not have leading zeros.'
-                ],
-                template: `class ListNode:
-    def __init__(self, val=0, next=None):
-        self.val = val
-        self.next = next
-
-def addTwoNumbers(l1, l2):
-    # Your code here
-    pass
-
-# Test cases would go here`
-            },
-            '3': {
-                title: 'Longest Substring Without Repeating Characters',
-                difficulty: 'Medium',
-                description: 'Given a string s, find the length of the longest substring without repeating characters.',
-                examples: [
-                    {
-                        input: 's = "abcabcbb"',
-                        output: '3',
-                        explanation: 'The answer is "abc", with the length of 3.'
-                    },
-                    {
-                        input: 's = "bbbbb"',
-                        output: '1',
-                        explanation: 'The answer is "b", with the length of 1.'
-                    }
-                ],
-                constraints: [
-                    '0 ≤ s.length ≤ 5 * 10⁴',
-                    's consists of English letters, digits, symbols and spaces.'
-                ],
-                template: `def lengthOfLongestSubstring(s):
-    # Your code here
-    pass
-
-# Test cases
-print(lengthOfLongestSubstring("abcabcbb"))  # Expected: 3
-print(lengthOfLongestSubstring("bbbbb"))     # Expected: 1`
-            }
-        };
+        // Current language and question tracking
+        let currentLanguage = 'cpp';
+        
+        // Problem data from Django
+        const problems = {{ problems|safe }};
         
         let currentQuestionId = '{{ current_question_id }}';
         
@@ -462,7 +449,8 @@ print(lengthOfLongestSubstring("bbbbb"))     # Expected: 1`
                     description: dailyQuestionData.description,
                     examples: dailyQuestionData.examples,
                     constraints: dailyQuestionData.constraints,
-                    template: dailyQuestionData.template
+                    template: dailyQuestionData.template,
+                    cppTemplate: dailyQuestionData.cppTemplate || dailyQuestionData.template
                 };
                 
                 // Update header to show it's a daily question
@@ -536,7 +524,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
         
         function resetCode() {
             const problem = problems[currentQuestionId];
-            codeEditor.value = problem.template;
+            updateCodeTemplate(problem);
             outputPanel.innerHTML = '<div>Output will appear here...</div>';
             outputPanel.className = 'output-panel';
             statusIndicator.textContent = 'Code reset';
@@ -545,24 +533,100 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             }, 2000);
         }
         
+        function changeLanguage() {
+            const languageSelect = document.getElementById('languageSelect');
+            currentLanguage = languageSelect.value;
+            console.log('Language changed to:', currentLanguage);
+            
+            // Check if we have daily question data
+            let problem;
+            if (dailyQuestionData && currentQuestionId === '1') {
+                problem = {
+                    title: dailyQuestionData.title,
+                    difficulty: dailyQuestionData.difficulty,
+                    description: dailyQuestionData.description,
+                    examples: dailyQuestionData.examples,
+                    constraints: dailyQuestionData.constraints,
+                    template: dailyQuestionData.template,
+                    cppTemplate: dailyQuestionData.cppTemplate || dailyQuestionData.template
+                };
+            } else {
+                problem = problems[currentQuestionId];
+            }
+            
+            if (problem) {
+                updateCodeTemplate(problem);
+            }
+        }
+        
+        function updateCodeTemplate(problem) {
+            if (currentLanguage === 'cpp' && problem.cppTemplate) {
+                codeEditor.value = problem.cppTemplate;
+            } else {
+                codeEditor.value = problem.template;
+            }
+        }
+        
         function runCode() {
             const code = codeEditor.value;
-            statusIndicator.textContent = 'Running...';
+            const language = document.getElementById('languageSelect').value;
+            console.log('Running code with language:', language);
+            console.log('Code preview:', code.substring(0, 200) + '...');
+            const input = document.getElementById('inputField').value;
             
-            // Simulate code execution
-            setTimeout(() => {
-                try {
-                    // This is a simplified simulation - in a real app, you'd send to a backend
-                    const output = simulateCodeExecution(code);
-                    outputPanel.innerHTML = `<div>${output}</div>`;
-                    outputPanel.className = 'output-panel success';
-                    statusIndicator.textContent = 'Code executed successfully';
-                } catch (error) {
-                    outputPanel.innerHTML = `<div>Error: ${error.message}</div>`;
-                    outputPanel.className = 'output-panel error';
-                    statusIndicator.textContent = 'Execution failed';
+            if (!code.trim()) {
+                outputPanel.innerHTML = '<div style="color: #e74c3c;">Please enter some code to run</div>';
+                return;
+            }
+            
+            statusIndicator.textContent = 'Running...';
+            statusIndicator.className = 'status running';
+            
+            // Make AJAX request to compile endpoint
+            fetch('/compile/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    code: code,
+                    language: language,
+                    input: input
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    let output = '';
+                    if (result.output) {
+                        output += `<div style="color: #27ae60;"><strong>Output:</strong><br><pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; white-space: pre-wrap;">${result.output}</pre></div>`;
+                    }
+                    if (result.memory || result.cpuTime) {
+                        output += `<div style="color: #7f8c8d; font-size: 0.9em;"><strong>Stats:</strong> Memory: ${result.memory || 'N/A'}, CPU Time: ${result.cpuTime || 'N/A'}</div>`;
+                    }
+                    outputPanel.innerHTML = output || '<div>Code executed successfully (no output)</div>';
+                    statusIndicator.textContent = 'Success';
+                    statusIndicator.className = 'status success';
+                } else {
+                    let errorMessage = result.error;
+                    if (result.error_type === 'compilation_error') {
+                        errorMessage = `<strong>Compilation Error:</strong><br>${result.error}`;
+                    } else if (result.error_type === 'runtime_error') {
+                        errorMessage = `<strong>Runtime Error:</strong><br>${result.error}`;
+                    } else if (result.error_type === 'api_error') {
+                        errorMessage = `<strong>API Error:</strong><br>${result.error}`;
+                    }
+                    outputPanel.innerHTML = `<div style="color: #e74c3c;">${errorMessage}</div>`;
+                    statusIndicator.textContent = 'Error';
+                    statusIndicator.className = 'status error';
                 }
-            }, 1000);
+            })
+            .catch(error => {
+                outputPanel.innerHTML = `<div style="color: #e74c3c;"><strong>Network Error:</strong> ${error.message}</div>`;
+                statusIndicator.textContent = 'Error';
+                statusIndicator.className = 'status error';
+            });
         }
         
         function submitCode() {
@@ -619,7 +683,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                 }
             };
             
-            return testCases['{{ question_id }}'] || { passed: false, error: 'Unknown problem' };
+            return testCases['{{ current_question_id }}'] || { passed: false, error: 'Unknown problem' };
         }
     </script>
 </body>

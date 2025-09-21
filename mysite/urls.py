@@ -30,6 +30,7 @@ urlpatterns = [
     path("leetcode/", views.leetcode, name="leetcode"),
     path("editor/", views.question_editor, name="question_editor"),
     path("editor/<str:question_id>/", views.question_editor, name="question_editor_with_id"),
+    path("compile/", views.compile_code, name="compile_code"),
     path("polls/", include("polls.urls")),
     path("admin/", admin.site.urls),
 ] + debug_toolbar_urls()
