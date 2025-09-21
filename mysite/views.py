@@ -10,6 +10,9 @@ import tempfile
 import os
 import time
 
+# Simple in-memory cache for fetched problems
+_problem_cache = {}
+
 def home(request):
     """Home page view with links to polls and LeetCode"""
     return render(request, 'home.html')
@@ -761,6 +764,261 @@ def fetch_questions_scraping():
         print(f"Scraping fallback failed: {str(e)}")
         return []
 
+def fetch_problem_from_leetcode_api(question_id):
+    """Fetch problem data from LeetCode API dynamically"""
+    # Check cache first
+    if question_id in _problem_cache:
+        print(f"Using cached problem {question_id}")
+        return _problem_cache[question_id]
+    
+    try:
+        # Try a more direct approach - use common title slug patterns
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problems/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Skip direct approach and go straight to search approach for better reliability
+        print(f"Using search approach for problem {question_id}...")
+        result = fetch_problem_by_search(question_id)
+        if result:
+            print(f"Search approach succeeded for problem {question_id}")
+        else:
+            print(f"Search approach failed for problem {question_id}")
+        return result
+        
+    except Exception as e:
+        print(f"Error fetching problem {question_id} from API: {str(e)}")
+        return None
+
+def fetch_problem_by_search(question_id):
+    """Fallback method to search for problem by ID"""
+    try:
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problemset/all/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Search in smaller batches for efficiency
+        print(f"Searching for problem {question_id} in LeetCode problemset...")
+        for skip in range(0, 1000, 50):  # Check first 1000 problems
+            find_query = {
+                'query': '''
+                    query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
+                        problemsetQuestionList: questionList(
+                            categorySlug: $categorySlug
+                            limit: $limit
+                            skip: $skip
+                            filters: $filters
+                        ) {
+                            questions: data {
+                                frontendQuestionId: questionFrontendId
+                                title
+                                titleSlug
+                                difficulty
+                                acRate
+                            }
+                        }
+                    }
+                ''',
+                'variables': {
+                    'categorySlug': '',
+                    'skip': skip,
+                    'limit': 50,
+                    'filters': {}
+                }
+            }
+            
+            response = requests.post(url, json=find_query, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'data' in data and 'problemsetQuestionList' in data['data']:
+                    questions = data['data']['problemsetQuestionList'].get('questions', [])
+                    
+                    # Look for our target question ID
+                    for q in questions:
+                        if q.get('frontendQuestionId') == question_id:
+                            # Try to fetch full problem content
+                            title_slug = q.get('titleSlug')
+                            if title_slug:
+                                full_problem = fetch_full_problem_content(title_slug, q, question_id)
+                                if full_problem:
+                                    # Cache the result
+                                    _problem_cache[question_id] = full_problem
+                                    return full_problem
+                            
+                            # Fallback to basic info if full content fetch fails
+                            problem = create_problem_from_basic_info(q, question_id)
+                            # Cache the result
+                            _problem_cache[question_id] = problem
+                            return problem
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error in search fallback for problem {question_id}: {str(e)}")
+        return None
+
+def fetch_full_problem_content(title_slug, question_info, question_id):
+    """Fetch full problem content using the title slug"""
+    try:
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problems/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Query to get full problem content
+        detail_query = {
+            'query': '''
+                query questionContent($titleSlug: String!) {
+                    question(titleSlug: $titleSlug) {
+                        content
+                        title
+                        difficulty
+                        exampleTestcases
+                        codeSnippets {
+                            lang
+                            code
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'titleSlug': title_slug
+            }
+        }
+        
+        response = requests.post(url, json=detail_query, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data and 'question' in data['data'] and data['data']['question']:
+                question_data = data['data']['question']
+                
+                # Parse the content
+                content = question_data.get('content', '')
+                print(f"Raw content length for problem {question_id}: {len(content)}")
+                parsed_content = parse_leetcode_content(content)
+                print(f"Parsed description length: {len(parsed_content.get('description', ''))}")
+                print(f"Parsed examples count: {len(parsed_content.get('examples', []))}")
+                print(f"Parsed constraints count: {len(parsed_content.get('constraints', []))}")
+                
+                # Get code snippets
+                code_snippets = question_data.get('codeSnippets', [])
+                python_code = ''
+                cpp_code = ''
+                
+                for snippet in code_snippets:
+                    if snippet.get('lang') == 'python3':
+                        python_code = snippet.get('code', '')
+                    elif snippet.get('lang') == 'cpp':
+                        cpp_code = snippet.get('code', '')
+                
+                # Create full problem data structure
+                problem = {
+                    'title': question_data.get('title', question_info.get('title', f'Problem {question_id}')),
+                    'difficulty': question_data.get('difficulty', question_info.get('difficulty', 'Medium')),
+                    'description': parsed_content['description'] if parsed_content['description'] else f"Problem {question_id}: {question_data.get('title', 'Unknown')}",
+                    'examples': parsed_content['examples'] if parsed_content['examples'] else [
+                        {
+                            'input': 'See LeetCode for examples',
+                            'output': 'See LeetCode for expected output',
+                            'explanation': 'Visit the LeetCode link for detailed examples.'
+                        }
+                    ],
+                    'constraints': parsed_content['constraints'] if parsed_content['constraints'] else [
+                        'Visit LeetCode for full constraints'
+                    ],
+                    'template': python_code if python_code else f'''def solution_{question_id}():
+    # Problem {question_id}: {question_data.get('title', 'Unknown')}
+    # Your code here
+    pass
+
+# Test your solution!''',
+                    'cppTemplate': cpp_code if cpp_code else f'''#include <iostream>
+using namespace std;
+
+class Solution {{
+public:
+    // Problem {question_id}: {question_data.get('title', 'Unknown')}
+    // Your code here
+    
+}};
+
+int main() {{
+    Solution solution;
+    // Test your solution here
+    return 0;
+}}'''
+                }
+                
+                print(f"Successfully fetched full content for problem {question_id} ({title_slug})")
+                return problem
+        
+        print(f"Failed to fetch full content for problem {question_id} ({title_slug}): {response.status_code}")
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching full content for problem {question_id} ({title_slug}): {str(e)}")
+        return None
+
+def create_problem_from_basic_info(question_info, question_id):
+    """Create a basic problem structure from limited info"""
+    title = question_info.get('title', f'Problem {question_id}')
+    difficulty = question_info.get('difficulty', 'Medium')
+    ac_rate = question_info.get('acRate', 0)
+    
+    return {
+        'title': title,
+        'difficulty': difficulty,
+        'description': f"<p>This is <strong>{title}</strong> from LeetCode.</p><p>Difficulty: {difficulty}</p><p>Acceptance Rate: {ac_rate}%</p><p>Visit <a href='https://leetcode.com/problems/{question_info.get('titleSlug', '')}' target='_blank'>LeetCode</a> for the full problem description, examples, and constraints.</p>",
+        'examples': [
+            {
+                'input': 'See LeetCode for examples',
+                'output': 'See LeetCode for expected output',
+                'explanation': 'Visit the LeetCode link for detailed examples and explanations.'
+            }
+        ],
+        'constraints': [
+            'Visit LeetCode for full constraints',
+            f'This is problem {question_id} from LeetCode'
+        ],
+        'template': f'''def solution_{question_id}():
+    # Problem {question_id}: {title}
+    # Difficulty: {difficulty}
+    # Acceptance Rate: {ac_rate}%
+    # Visit: https://leetcode.com/problems/{question_info.get('titleSlug', '')}
+    # Your code here
+    pass
+
+# Test your solution!''',
+        'cppTemplate': f'''#include <iostream>
+using namespace std;
+
+class Solution {{
+public:
+    // Problem {question_id}: {title}
+    // Difficulty: {difficulty}
+    // Acceptance Rate: {ac_rate}%
+    // Visit: https://leetcode.com/problems/{question_info.get('titleSlug', '')}
+    // Your code here
+    
+}};
+
+int main() {{
+    Solution solution;
+    // Test your solution here
+    return 0;
+}}'''
+    }
+
 def question_editor(request, question_id=None):
     """Question editor page for coding problems"""
     # Check if this is a daily question request
@@ -1256,16 +1514,142 @@ int main() {
     cout << "Test 1: " << solution.strStr("sadbutsad", "sad") << endl;  // Expected: 0
     return 0;
 }'''
+        },
+        '6': {
+            'title': 'Zigzag Conversion',
+            'difficulty': 'Medium',
+            'description': 'The string "PAYPALISHIRING" is written in a zigzag pattern on a given number of rows like this: (you may want to display this pattern in a fixed font for better legibility)',
+            'examples': [
+                {
+                    'input': 's = "PAYPALISHIRING", numRows = 3',
+                    'output': '"PAHNAPLSIIGYIR"',
+                    'explanation': 'P   A   H   N\nA P L S I I G\nY   I   R'
+                }
+            ],
+            'constraints': [
+                '1 ≤ s.length ≤ 1000',
+                's consists of English letters (lower-case and upper-case), \',\' and \'.\'.',
+                '1 ≤ numRows ≤ 1000'
+            ],
+            'template': '''def convert(s, numRows):
+    # Your code here
+    pass
+
+# Test cases
+print(convert("PAYPALISHIRING", 3))  # Expected: "PAHNAPLSIIGYIR"''',
+            'cppTemplate': '''#include <iostream>
+#include <string>
+using namespace std;
+
+class Solution {
+public:
+    string convert(string s, int numRows) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    cout << "Test 1: " << solution.convert("PAYPALISHIRING", 3) << endl;  // Expected: "PAHNAPLSIIGYIR"
+    return 0;
+}'''
+        },
+        '8': {
+            'title': 'String to Integer (atoi)',
+            'difficulty': 'Medium',
+            'description': 'Implement the myAtoi(string s) function, which converts a string to a 32-bit signed integer (similar to C/C++\'s atoi function).',
+            'examples': [
+                {
+                    'input': 's = "42"',
+                    'output': '42',
+                    'explanation': 'The underlined characters are what is read in, the caret is the current reader position.'
+                }
+            ],
+            'constraints': [
+                '0 ≤ s.length ≤ 200',
+                's consists of English letters (lower-case and upper-case), digits (0-9), \' \', \'+\', \'-\', and \'.\'.'
+            ],
+            'template': '''def myAtoi(s):
+    # Your code here
+    pass
+
+# Test cases
+print(myAtoi("42"))      # Expected: 42
+print(myAtoi("   -42"))  # Expected: -42''',
+            'cppTemplate': '''#include <iostream>
+#include <string>
+using namespace std;
+
+class Solution {
+public:
+    int myAtoi(string s) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    cout << "Test 1: " << solution.myAtoi("42") << endl;      // Expected: 42
+    cout << "Test 2: " << solution.myAtoi("   -42") << endl;  // Expected: -42
+    return 0;
+}'''
         }
     }
     
     
     problem = problems.get(question_id)
     if not problem:
-        return HttpResponse("Problem not found", status=404)
+        # Try to fetch the problem dynamically from LeetCode API
+        print(f"Problem {question_id} not found in hardcoded list, fetching from LeetCode API...")
+        problem = fetch_problem_from_leetcode_api(question_id)
+        if not problem:
+            print(f"Failed to fetch problem {question_id} from API, creating fallback...")
+            # Create a basic fallback problem
+            problem = {
+                'title': f'Problem {question_id}',
+                'difficulty': 'Medium',
+                'description': f'<p>This is LeetCode problem {question_id}. The full problem details could not be loaded from the API.</p><p>Please visit <a href="https://leetcode.com/problemset/all/" target="_blank">LeetCode</a> to see the complete problem description.</p>',
+                'examples': [
+                    {
+                        'input': 'See LeetCode for examples',
+                        'output': 'See LeetCode for expected output',
+                        'explanation': 'Visit LeetCode for detailed examples and explanations.'
+                    }
+                ],
+                'constraints': [
+                    'Visit LeetCode for full constraints',
+                    f'This is problem {question_id} from LeetCode'
+                ],
+                'template': f'''def solution_{question_id}():
+    # Problem {question_id} from LeetCode
+    # Your code here
+    pass
+
+# Test your solution!''',
+                'cppTemplate': f'''#include <iostream>
+using namespace std;
+
+class Solution {{
+public:
+    // Problem {question_id} from LeetCode
+    // Your code here
+    
+}};
+
+int main() {{
+    Solution solution;
+    // Test your solution here
+    return 0;
+}}'''
+            }
+        
+        # Add the fetched/created problem to the problems dictionary so JavaScript can find it
+        problems[question_id] = problem
     
     context = {
-        'problems': problems,
+        'problems': json.dumps(problems),
         'current_problem': problem,
         'current_question_id': question_id,
         'is_daily': is_daily
