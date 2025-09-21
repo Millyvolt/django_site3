@@ -204,31 +204,7 @@
             background: white;
             font-size: 14px;
         }
-        
-        .input-section {
-            padding: 10px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .input-section label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #495057;
-        }
-        
-        .input-field {
-            width: 100%;
-            height: 60px;
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-        }
-        
+     
         .editor-buttons {
             display: flex;
             gap: 10px;
@@ -363,8 +339,8 @@
                     <select id="languageSelect" onchange="changeLanguage()">
                         <option value="cpp">C++</option>
                         <option value="python3">Python 3</option>
-                        <option value="java">Java</option>
-                        <option value="javascript">JavaScript</option>
+<!--                        <option value="java">Java</option>
+                        <option value="javascript">JavaScript</option> -->
                     </select>
                 </div>
                 <div class="editor-buttons">
@@ -378,12 +354,12 @@
             </div>
             
             <textarea id="codeEditor" class="code-editor" placeholder="Write your solution here...">{{ current_problem.template }}</textarea>
-            
+<!--           
             <div class="input-section">
                 <label for="inputField">Input (optional):</label>
                 <textarea id="inputField" class="input-field" placeholder="Enter test input here..."></textarea>
             </div>
-            
+-->            
             <div id="outputPanel" class="output-panel">
                 <div>Output will appear here...</div>
             </div>
@@ -572,7 +548,8 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             const language = document.getElementById('languageSelect').value;
             console.log('Running code with language:', language);
             console.log('Code preview:', code.substring(0, 200) + '...');
-            const input = document.getElementById('inputField').value;
+//            const input = document.getElementById('inputField').value;
+            const input = '';
             
             if (!code.trim()) {
                 outputPanel.innerHTML = '<div style="color: #e74c3c;">Please enter some code to run</div>';
