@@ -398,6 +398,138 @@
             color: #e74c3c;
         }
         
+        /* Mobile view styles */
+        .mobile-mode {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background-color: #2c3e50 !important;
+        }
+        
+        .mobile-mode .main-container {
+            flex-direction: column !important;
+            height: 100vh !important;
+        }
+        
+        .mobile-mode .problem-panel {
+            width: 100% !important;
+            height: 35% !important;
+            max-height: 35vh !important;
+            overflow-y: auto !important;
+            border-right: none !important;
+            border-bottom: 1px solid #ddd !important;
+        }
+        
+        .mobile-mode .editor-panel {
+            width: 100% !important;
+            height: 65% !important;
+            flex: 1 !important;
+        }
+        
+        .mobile-mode .editor-toolbar {
+            padding: 8px 15px !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+        }
+        
+        .mobile-mode .editor-buttons {
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+        }
+        
+        .mobile-mode .btn {
+            padding: 6px 10px !important;
+            font-size: 0.8em !important;
+        }
+        
+        .mobile-mode .language-selector {
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+        }
+        
+        .mobile-mode .language-selector select {
+            font-size: 12px !important;
+            padding: 3px 6px !important;
+        }
+        
+        .mobile-mode .language-selector label {
+            font-size: 0.8em !important;
+        }
+        
+        .mobile-mode .code-editor {
+            height: calc(100% - 80px) !important;
+            font-size: 12px !important;
+        }
+        
+        .mobile-mode .CodeMirror {
+            font-size: 12px !important;
+        }
+        
+        .mobile-mode .output-panel {
+            max-height: 150px !important;
+            font-size: 11px !important;
+            padding: 10px !important;
+        }
+        
+        .mobile-mode .header {
+            padding: 10px 15px !important;
+        }
+        
+        .mobile-mode .header h1 {
+            font-size: 1.2em !important;
+        }
+        
+        .mobile-mode .question-selector {
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+        }
+        
+        .mobile-mode .question-btn {
+            padding: 5px 8px !important;
+            font-size: 0.7em !important;
+        }
+        
+        .mobile-mode .difficulty-badge {
+            font-size: 0.7em !important;
+            padding: 3px 8px !important;
+        }
+        
+        .mobile-mode .back-link {
+            font-size: 0.8em !important;
+            padding: 5px 10px !important;
+        }
+        
+        .mobile-mode .problem-section {
+            margin-bottom: 15px !important;
+        }
+        
+        .mobile-mode .problem-section h3 {
+            font-size: 1em !important;
+            margin-bottom: 8px !important;
+        }
+        
+        .mobile-mode .example {
+            padding: 10px !important;
+            margin: 8px 0 !important;
+        }
+        
+        .mobile-mode .example pre {
+            font-size: 0.8em !important;
+            padding: 8px !important;
+        }
+        
+        .mobile-mode .constraints ul {
+            padding-left: 15px !important;
+        }
+        
+        .mobile-mode .constraints li {
+            font-size: 0.9em !important;
+            margin-bottom: 3px !important;
+        }
+        
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
@@ -471,6 +603,7 @@
                     <button class="btn btn-warning" onclick="resetCode()">Reset</button>
                     <button class="btn btn-primary" onclick="runCode()">Run Code</button>
                     <button class="btn btn-success" onclick="submitCode()">Submit</button>
+                    <button class="btn btn-info" onclick="toggleMobileView()" id="mobileBtn">📱 Mobile</button>
                     <button class="btn btn-info" onclick="toggleFullscreen()" id="fullscreenBtn">⛶ Full Screen</button>
                 </div>
                 <div class="status-indicator">
@@ -1036,6 +1169,24 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             };
             
             return testCases['{{ current_question_id }}'] || { passed: false, error: 'Unknown problem' };
+        }
+        
+        function toggleMobileView() {
+            const body = document.body;
+            const mobileBtn = document.getElementById('mobileBtn');
+            const isMobileMode = body.classList.contains('mobile-mode');
+            
+            if (isMobileMode) {
+                // Exit mobile mode
+                body.classList.remove('mobile-mode');
+                mobileBtn.innerHTML = '📱 Mobile';
+                mobileBtn.title = 'Switch to Mobile View';
+            } else {
+                // Enter mobile mode
+                body.classList.add('mobile-mode');
+                mobileBtn.innerHTML = '💻 Desktop';
+                mobileBtn.title = 'Switch to Desktop View';
+            }
         }
         
         function toggleFullscreen() {
