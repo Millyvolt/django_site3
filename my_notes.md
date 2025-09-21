@@ -2,13 +2,29 @@
 ****Virtual environment****
 
         To create a virtual environment, decide upon a directory where you want to place it, and run the venv module as a script with the directory path:
-*python -m venv tutorial-env*
+python -m venv tutorial-env
 
     То асtivate on Windows, run:
-*tutorial-env\Scripts\activate*
+tutorial-env\Scripts\activate
 
     To deactivate a virtual environment, type in terminal:
 
-*deactivate*
+deactivate
 
 
+****Requirements****
+
+    Creating requirements.txt
+
+pip freeze > requirements.txt
+
+    Installing dependensies
+
+pip install -r requirements.txt
+
+
+****To Do:****
+
+- newer C++ version
+- editor syntax highlighting
+- editor base shortcuts(comment etc.)

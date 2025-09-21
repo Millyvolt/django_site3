@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code Editor - LeetCode Problems</title>
+    
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    
+    <!-- CodeMirror JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -178,6 +191,51 @@
             overflow: auto;
         }
         
+        /* CodeMirror specific styles */
+        .CodeMirror {
+            height: 100% !important;
+            font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+        }
+        
+        .CodeMirror-gutters {
+            background-color: #2c3e50 !important;
+            border-right: 1px solid #7f8c8d !important;
+        }
+        
+        .CodeMirror-linenumber {
+            color: #95a5a6 !important;
+        }
+        
+        .CodeMirror-cursor {
+            border-left: 2px solid #3498db !important;
+        }
+        
+        .CodeMirror-selected {
+            background-color: #3498db33 !important;
+        }
+        
+        .CodeMirror-focused .CodeMirror-selected {
+            background-color: #3498db44 !important;
+        }
+        
+        /* Syntax highlighting themes */
+        .cm-s-monokai .CodeMirror {
+            background-color: #272822 !important;
+            color: #f8f8f2 !important;
+        }
+        
+        .cm-s-material .CodeMirror {
+            background-color: #263238 !important;
+            color: #eceff1 !important;
+        }
+        
+        .cm-s-dracula .CodeMirror {
+            background-color: #282a36 !important;
+            color: #f8f8f2 !important;
+        }
+        
         .editor-toolbar {
             background-color: #34495e;
             padding: 10px 20px;
@@ -246,6 +304,45 @@
             background-color: #e67e22;
         }
         
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        
+        /* Full-screen mode styles */
+        .fullscreen-mode {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background-color: #2c3e50 !important;
+        }
+        
+        .fullscreen-mode .problem-panel {
+            display: none !important;
+        }
+        
+        .fullscreen-mode .editor-panel {
+            width: 100% !important;
+            height: 100vh !important;
+        }
+        
+        .fullscreen-mode .editor-toolbar {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10000 !important;
+        }
+        
+        .fullscreen-mode .code-editor {
+            height: calc(100vh - 120px) !important;
+        }
+        
         .output-panel {
             background-color: #2c3e50;
             color: #ecf0f1;
@@ -268,6 +365,25 @@
         .status-indicator {
             color: #95a5a6;
             font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .shortcut-hint {
+            font-size: 11px;
+            color: #7f8c8d;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: help;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            white-space: nowrap;
+        }
+        
+        .shortcut-hint:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #95a5a6;
         }
         
         .status.running {
@@ -342,18 +458,28 @@
 <!--                        <option value="java">Java</option>
                         <option value="javascript">JavaScript</option> -->
                     </select>
+                    
+                    <label for="themeSelect">Theme:</label>
+                    <select id="themeSelect" onchange="changeTheme()">
+                        <option value="default">Default</option>
+                        <option value="monokai">Monokai</option>
+                        <option value="material">Material</option>
+                        <option value="dracula">Dracula</option>
+                    </select>
                 </div>
                 <div class="editor-buttons">
                     <button class="btn btn-warning" onclick="resetCode()">Reset</button>
                     <button class="btn btn-primary" onclick="runCode()">Run Code</button>
                     <button class="btn btn-success" onclick="submitCode()">Submit</button>
+                    <button class="btn btn-info" onclick="toggleFullscreen()" id="fullscreenBtn">⛶ Full Screen</button>
                 </div>
                 <div class="status-indicator">
                     <span id="status">Ready to code</span>
+                    <span class="shortcut-hint" title="Keyboard shortcuts: Ctrl+/ to comment, Ctrl+Enter for new line">⌨️ Ctrl+/</span>
                 </div>
             </div>
             
-            <textarea id="codeEditor" class="code-editor" placeholder="Write your solution here...">{{ current_problem.template }}</textarea>
+            <div id="codeEditor" class="code-editor">{{ current_problem.template }}</div>
 <!--           
             <div class="input-section">
                 <label for="inputField">Input (optional):</label>
@@ -382,18 +508,279 @@
         
         // Current language and question tracking
         let currentLanguage = 'cpp';
+        let currentTheme = 'default';
         
         // Problem data from Django
         const problems = {{ problems|safe }};
         
         let currentQuestionId = '{{ current_question_id }}';
         
-        const codeEditor = document.getElementById('codeEditor');
+        // Initialize CodeMirror
+        let codeEditor = null;
         const outputPanel = document.getElementById('outputPanel');
         const statusIndicator = document.getElementById('status');
         
+        // Initialize CodeMirror
+        function initializeCodeMirror() {
+            const editorElement = document.getElementById('codeEditor');
+            const initialContent = editorElement.textContent;
+            
+            // Clear the div content
+            editorElement.innerHTML = '';
+            
+            // Initialize CodeMirror
+            codeEditor = CodeMirror(editorElement, {
+                value: initialContent,
+                mode: getCodeMirrorMode(currentLanguage),
+                theme: getCodeMirrorTheme(currentTheme),
+                lineNumbers: true,
+                indentUnit: 4,
+                tabSize: 4,
+                indentWithTabs: false,
+                lineWrapping: true,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    "Ctrl-/": "toggleComment",
+                    "Ctrl-Enter": function(cm) {
+                        // Add a new line and indent
+                        cm.replaceSelection("\n");
+                        cm.execCommand("indentAuto");
+                    },
+                    "Tab": function(cm) {
+                        if (cm.getMode().name === "null") {
+                            cm.execCommand("insertTab");
+                        } else {
+                            if (cm.somethingSelected()) {
+                                cm.execCommand("indentMore");
+                            } else {
+                                cm.execCommand("insertSoftTab");
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Register custom commands
+            codeEditor.setOption("extraKeys", {
+                ...codeEditor.getOption("extraKeys"),
+                "Ctrl-/": function(cm) {
+                    toggleComment(cm);
+                }
+            });
+        }
+        
+        // Get CodeMirror mode for language
+        function getCodeMirrorMode(language) {
+            const modeMap = {
+                'cpp': 'text/x-c++src',
+                'python3': 'python',
+                'python': 'python',
+                'java': 'text/x-java',
+                'javascript': 'javascript'
+            };
+            return modeMap[language] || 'text/plain';
+        }
+        
+        // Get CodeMirror theme
+        function getCodeMirrorTheme(theme) {
+            const themeMap = {
+                'default': 'default',
+                'monokai': 'monokai',
+                'material': 'material',
+                'dracula': 'dracula'
+            };
+            return themeMap[theme] || 'default';
+        }
+        
+        // Change theme function
+        function changeTheme() {
+            const themeSelect = document.getElementById('themeSelect');
+            currentTheme = themeSelect.value;
+            
+            if (codeEditor) {
+                codeEditor.setOption('theme', getCodeMirrorTheme(currentTheme));
+            }
+        }
+        
+        // Custom comment toggle function
+        function toggleComment(cm) {
+            const ranges = cm.listSelections();
+            const commentTokens = getCommentTokens(cm.getMode().name);
+            
+            // If no selection, toggle comment on current line
+            if (ranges.length === 1 && ranges[0].empty()) {
+                const line = cm.getCursor().line;
+                const lineText = cm.getLine(line);
+                const startOfLine = { line: line, ch: 0 };
+                const endOfLine = { line: line, ch: lineText.length };
+                
+                if (isLineCommented(lineText, commentTokens)) {
+                    // Uncomment the line
+                    uncommentLine(cm, startOfLine, endOfLine, commentTokens);
+                } else {
+                    // Comment the line
+                    commentLine(cm, startOfLine, endOfLine, commentTokens);
+                }
+            } else {
+                // Handle multiple selections or multiline selection
+                for (let i = ranges.length - 1; i >= 0; i--) {
+                    const range = ranges[i];
+                    const start = range.from();
+                    const end = range.to();
+                    
+                    if (range.empty()) {
+                        // Single cursor - toggle current line
+                        const line = start.line;
+                        const lineText = cm.getLine(line);
+                        const lineStart = { line: line, ch: 0 };
+                        const lineEnd = { line: line, ch: lineText.length };
+                        
+                        if (isLineCommented(lineText, commentTokens)) {
+                            uncommentLine(cm, lineStart, lineEnd, commentTokens);
+                        } else {
+                            commentLine(cm, lineStart, lineEnd, commentTokens);
+                        }
+                    } else {
+                        // Selection - check if all lines are commented
+                        const allCommented = areAllLinesCommented(cm, start, end, commentTokens);
+                        
+                        if (allCommented) {
+                            // Uncomment all lines in selection
+                            uncommentLines(cm, start, end, commentTokens);
+                        } else {
+                            // Comment all lines in selection
+                            commentLines(cm, start, end, commentTokens);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Get comment tokens for different languages
+        function getCommentTokens(modeName) {
+            const tokens = {
+                'clike': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'cpp': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'java': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'javascript': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'python': { single: '#', multiStart: null, multiEnd: null },
+                'default': { single: '//', multiStart: '/*', multiEnd: '*/' }
+            };
+            
+            return tokens[modeName] || tokens['default'];
+        }
+        
+        // Check if a line is commented
+        function isLineCommented(lineText, tokens) {
+            const trimmed = lineText.trim();
+            return trimmed.startsWith(tokens.single) || 
+                   (tokens.multiStart && trimmed.startsWith(tokens.multiStart));
+        }
+        
+        // Check if all lines in selection are commented
+        function areAllLinesCommented(cm, start, end, tokens) {
+            const startLine = Math.min(start.line, end.line);
+            const endLine = Math.max(start.line, end.line);
+            
+            for (let line = startLine; line <= endLine; line++) {
+                const lineText = cm.getLine(line);
+                if (lineText.trim() && !isLineCommented(lineText, tokens)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Comment a single line
+        function commentLine(cm, start, end, tokens) {
+            const lineText = cm.getLine(start.line);
+            const indent = lineText.match(/^\s*/)[0];
+            const content = lineText.substring(indent.length);
+            
+            cm.replaceRange(
+                indent + tokens.single + ' ' + content,
+                start,
+                end
+            );
+        }
+        
+        // Uncomment a single line
+        function uncommentLine(cm, start, end, tokens) {
+            const lineText = cm.getLine(start.line);
+            const trimmed = lineText.trim();
+            
+            if (trimmed.startsWith(tokens.single)) {
+                // Remove single line comment
+                const commentIndex = lineText.indexOf(tokens.single);
+                const beforeComment = lineText.substring(0, commentIndex);
+                const afterComment = lineText.substring(commentIndex + tokens.single.length);
+                
+                // Remove extra space after comment token if present
+                const cleanedAfter = afterComment.startsWith(' ') ? afterComment.substring(1) : afterComment;
+                
+                cm.replaceRange(
+                    beforeComment + cleanedAfter,
+                    start,
+                    end
+                );
+            } else if (tokens.multiStart && trimmed.startsWith(tokens.multiStart)) {
+                // Remove multi-line comment start
+                const startIndex = lineText.indexOf(tokens.multiStart);
+                const endIndex = lineText.indexOf(tokens.multiEnd);
+                
+                if (endIndex !== -1) {
+                    // Single line multi-line comment
+                    const beforeStart = lineText.substring(0, startIndex);
+                    const afterEnd = lineText.substring(endIndex + tokens.multiEnd.length);
+                    cm.replaceRange(beforeStart + afterEnd, start, end);
+                }
+            }
+        }
+        
+        // Comment multiple lines
+        function commentLines(cm, start, end, tokens) {
+            const startLine = Math.min(start.line, end.line);
+            const endLine = Math.max(start.line, end.line);
+            
+            for (let line = startLine; line <= endLine; line++) {
+                const lineText = cm.getLine(line);
+                if (lineText.trim()) {
+                    const indent = lineText.match(/^\s*/)[0];
+                    const content = lineText.substring(indent.length);
+                    
+                    cm.replaceRange(
+                        indent + tokens.single + ' ' + content,
+                        { line: line, ch: 0 },
+                        { line: line, ch: lineText.length }
+                    );
+                }
+            }
+        }
+        
+        // Uncomment multiple lines
+        function uncommentLines(cm, start, end, tokens) {
+            const startLine = Math.min(start.line, end.line);
+            const endLine = Math.max(start.line, end.line);
+            
+            for (let line = startLine; line <= endLine; line++) {
+                const lineText = cm.getLine(line);
+                if (lineText.trim()) {
+                    uncommentLine(cm, 
+                        { line: line, ch: 0 }, 
+                        { line: line, ch: lineText.length }, 
+                        tokens
+                    );
+                }
+            }
+        }
+        
         // Initialize with current question
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize CodeMirror first
+            initializeCodeMirror();
+            
             // If we have daily question data, load it instead
             if (dailyQuestionData) {
                 currentQuestionId = '1'; // Load as question 1
@@ -469,34 +856,15 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             document.getElementById('problem-constraints').innerHTML = constraintsHtml;
             
             // Update code editor
-            codeEditor.value = problem.template;
-            autoResize();
+            if (codeEditor) {
+                codeEditor.setValue(problem.template);
+            }
             
             // Reset output
             outputPanel.innerHTML = '<div>Output will appear here...</div>';
             outputPanel.className = 'output-panel';
             statusIndicator.textContent = 'Ready to code';
         }
-        
-        // Auto-resize textarea
-        function autoResize() {
-            codeEditor.style.height = 'auto';
-            codeEditor.style.height = codeEditor.scrollHeight + 'px';
-        }
-        
-        codeEditor.addEventListener('input', autoResize);
-        
-        // Tab support
-        codeEditor.addEventListener('keydown', function(e) {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const start = this.selectionStart;
-                const end = this.selectionEnd;
-                
-                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-                this.selectionStart = this.selectionEnd = start + 4;
-            }
-        });
         
         function resetCode() {
             const problem = problems[currentQuestionId];
@@ -513,6 +881,11 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             const languageSelect = document.getElementById('languageSelect');
             currentLanguage = languageSelect.value;
             console.log('Language changed to:', currentLanguage);
+            
+            // Update CodeMirror mode
+            if (codeEditor) {
+                codeEditor.setOption('mode', getCodeMirrorMode(currentLanguage));
+            }
             
             // Check if we have daily question data
             let problem;
@@ -536,15 +909,17 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
         }
         
         function updateCodeTemplate(problem) {
-            if (currentLanguage === 'cpp' && problem.cppTemplate) {
-                codeEditor.value = problem.cppTemplate;
-            } else {
-                codeEditor.value = problem.template;
+            if (codeEditor) {
+                if (currentLanguage === 'cpp' && problem.cppTemplate) {
+                    codeEditor.setValue(problem.cppTemplate);
+                } else {
+                    codeEditor.setValue(problem.template);
+                }
             }
         }
         
         function runCode() {
-            const code = codeEditor.value;
+            const code = codeEditor ? codeEditor.getValue() : '';
             const language = document.getElementById('languageSelect').value;
             console.log('Running code with language:', language);
             console.log('Code preview:', code.substring(0, 200) + '...');
@@ -607,7 +982,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
         }
         
         function submitCode() {
-            const code = codeEditor.value;
+            const code = codeEditor ? codeEditor.getValue() : '';
             statusIndicator.textContent = 'Submitting...';
             
             // Simulate submission
@@ -661,6 +1036,24 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             };
             
             return testCases['{{ current_question_id }}'] || { passed: false, error: 'Unknown problem' };
+        }
+        
+        function toggleFullscreen() {
+            const mainContainer = document.querySelector('.main-container');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const isFullscreen = mainContainer.classList.contains('fullscreen-mode');
+            
+            if (isFullscreen) {
+                // Exit fullscreen
+                mainContainer.classList.remove('fullscreen-mode');
+                fullscreenBtn.innerHTML = '⛶ Full Screen';
+                fullscreenBtn.title = 'Enter Full Screen';
+            } else {
+                // Enter fullscreen
+                mainContainer.classList.add('fullscreen-mode');
+                fullscreenBtn.innerHTML = '⛷ Exit Full Screen';
+                fullscreenBtn.title = 'Exit Full Screen';
+            }
         }
     </script>
 </body>
