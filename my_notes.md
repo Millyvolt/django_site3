@@ -28,3 +28,11 @@ pip install -r requirements.txt
 - newer C++ version
 - editor syntax highlighting
 - editor base shortcuts(comment etc.)
+
+Uvicorn
+Option 1: Using the Python script
+python run_uvicorn.py
+Option 2: Using the batch file (Windows)
+start_uvicorn.bat
+Option 3: Direct Uvicorn command
+uvicorn mysite.asgi:application --host 127.0.0.1 --port 8000 --reload
