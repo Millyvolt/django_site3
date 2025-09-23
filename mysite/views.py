@@ -992,7 +992,8 @@ def create_generic_cpp_template(title, difficulty, question_id, title_slug):
     selected_includes = sorted(list(set(selected_includes)))
     
     # Create the template
-    template = f"""{"\\n".join(selected_includes)}
+    includes_str = "\\n".join(selected_includes)
+    template = f"""{includes_str}
 using namespace std;
 
 /**
