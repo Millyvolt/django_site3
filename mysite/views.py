@@ -864,6 +864,219 @@ def fetch_problem_by_search(question_id):
         print(f"Error in search fallback for problem {question_id}: {str(e)}")
         return None
 
+def fetch_cpp_template_from_leetcode(question_id, title_slug=None):
+    """Fetch C++ code template specifically from LeetCode API"""
+    try:
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problems/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # If we don't have title_slug, try to find it first
+        if not title_slug:
+            title_slug = find_title_slug_by_id(question_id)
+            if not title_slug:
+                print(f"Could not find title_slug for question {question_id}")
+                return None
+        
+        # Query to get C++ code snippet specifically
+        detail_query = {
+            'query': '''
+                query questionContent($titleSlug: String!) {
+                    question(titleSlug: $titleSlug) {
+                        title
+                        difficulty
+                        content
+                        exampleTestcases
+                        codeSnippets {
+                            lang
+                            code
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'titleSlug': title_slug
+            }
+        }
+        
+        response = requests.post(url, json=detail_query, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data and 'question' in data['data'] and data['data']['question']:
+                question_data = data['data']['question']
+                
+                # Get code snippets and find C++ template
+                code_snippets = question_data.get('codeSnippets', [])
+                cpp_code = ''
+                
+                # Try different C++ language identifiers
+                cpp_languages = ['cpp', 'c++', 'cxx', 'cc']
+                
+                for snippet in code_snippets:
+                    lang = snippet.get('lang', '').lower()
+                    if lang in cpp_languages:
+                        cpp_code = snippet.get('code', '')
+                        break
+                
+                if cpp_code:
+                    print(f"Successfully fetched C++ template for problem {question_id} ({title_slug})")
+                    return {
+                        'cpp_template': cpp_code,
+                        'title': question_data.get('title', f'Problem {question_id}'),
+                        'difficulty': question_data.get('difficulty', 'Medium'),
+                        'title_slug': title_slug
+                    }
+                else:
+                    # If no C++ template found, create a generic one based on the problem
+                    print(f"No C++ code snippet found for problem {question_id} ({title_slug}), creating generic template")
+                    title = question_data.get('title', f'Problem {question_id}')
+                    difficulty = question_data.get('difficulty', 'Medium')
+                    
+                    # Create a generic C++ template
+                    generic_template = create_generic_cpp_template(title, difficulty, question_id, title_slug)
+                    
+                    return {
+                        'cpp_template': generic_template,
+                        'title': title,
+                        'difficulty': difficulty,
+                        'title_slug': title_slug,
+                        'is_generic': True
+                    }
+        
+        print(f"Failed to fetch C++ template for problem {question_id} ({title_slug}): {response.status_code}")
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching C++ template for problem {question_id} ({title_slug}): {str(e)}")
+        return None
+
+def create_generic_cpp_template(title, difficulty, question_id, title_slug):
+    """Create a generic C++ template when LeetCode doesn't provide one"""
+    
+    # Common includes based on problem type
+    includes = [
+        "#include <iostream>",
+        "#include <vector>",
+        "#include <string>",
+        "#include <algorithm>",
+        "#include <unordered_map>",
+        "#include <unordered_set>",
+        "#include <queue>",
+        "#include <stack>",
+        "#include <climits>"
+    ]
+    
+    # Determine likely includes based on title keywords
+    title_lower = title.lower()
+    selected_includes = ["#include <iostream>"]
+    
+    if any(keyword in title_lower for keyword in ['tree', 'binary', 'node']):
+        selected_includes.extend(["#include <vector>", "#include <queue>"])
+    elif any(keyword in title_lower for keyword in ['array', 'list', 'vector']):
+        selected_includes.extend(["#include <vector>", "#include <algorithm>"])
+    elif any(keyword in title_lower for keyword in ['string', 'char']):
+        selected_includes.extend(["#include <string>", "#include <algorithm>"])
+    elif any(keyword in title_lower for keyword in ['hash', 'map', 'set']):
+        selected_includes.extend(["#include <unordered_map>", "#include <unordered_set>"])
+    elif any(keyword in title_lower for keyword in ['stack', 'queue']):
+        selected_includes.extend(["#include <stack>", "#include <queue>"])
+    else:
+        # Default includes for general problems
+        selected_includes.extend(["#include <vector>", "#include <string>", "#include <algorithm>"])
+    
+    # Remove duplicates and sort
+    selected_includes = sorted(list(set(selected_includes)))
+    
+    # Create the template
+    template = f"""{"\\n".join(selected_includes)}
+using namespace std;
+
+/**
+ * Problem {question_id}: {title}
+ * Difficulty: {difficulty}
+ * LeetCode URL: https://leetcode.com/problems/{title_slug}/
+ */
+
+class Solution {{
+public:
+    // TODO: Implement your solution here
+    // Add your method signature and implementation
+    
+}};
+
+int main() {{
+    Solution solution;
+    
+    // TODO: Add test cases here
+    // Example test cases for {title}:
+    
+    cout << "Testing {title}..." << endl;
+    
+    return 0;
+}}"""
+    
+    return template
+
+def find_title_slug_by_id(question_id):
+    """Find title_slug for a given question ID by searching through LeetCode problems"""
+    try:
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problemset/all/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Search in batches to find the question
+        for skip in range(0, 1000, 50):  # Check first 1000 problems
+            find_query = {
+                'query': '''
+                    query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
+                        problemsetQuestionList: questionList(
+                            categorySlug: $categorySlug
+                            limit: $limit
+                            skip: $skip
+                            filters: $filters
+                        ) {
+                            questions: data {
+                                frontendQuestionId: questionFrontendId
+                                title
+                                titleSlug
+                                difficulty
+                            }
+                        }
+                    }
+                ''',
+                'variables': {
+                    'categorySlug': '',
+                    'skip': skip,
+                    'limit': 50,
+                    'filters': {}
+                }
+            }
+            
+            response = requests.post(url, json=find_query, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'data' in data and 'problemsetQuestionList' in data['data']:
+                    questions = data['data']['problemsetQuestionList'].get('questions', [])
+                    
+                    # Look for our target question ID
+                    for q in questions:
+                        if q.get('frontendQuestionId') == question_id:
+                            return q.get('titleSlug')
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error finding title_slug for question {question_id}: {str(e)}")
+        return None
+
 def fetch_full_problem_content(title_slug, question_info, question_id):
     """Fetch full problem content using the title slug"""
     try:
@@ -1027,6 +1240,9 @@ def question_editor(request, question_id=None):
     # Get question_id from URL parameter if not in path
     if not question_id:
         question_id = request.GET.get('q', '1')
+    
+    # Get title_slug from URL parameter if available
+    title_slug = request.GET.get('slug', None)
     
     # Define problem data
     problems = {
@@ -1652,9 +1868,53 @@ int main() {{
         'problems': json.dumps(problems),
         'current_problem': problem,
         'current_question_id': question_id,
+        'current_title_slug': title_slug,
         'is_daily': is_daily
     }
     return render(request, 'question_editor.html', context)
+
+@csrf_exempt
+def fetch_cpp_template(request):
+    """API endpoint to fetch C++ template for a specific LeetCode question"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        question_id = data.get('question_id', '')
+        title_slug = data.get('title_slug', None)
+        
+        if not question_id:
+            return JsonResponse({'error': 'No question_id provided'}, status=400)
+        
+        # Fetch C++ template from LeetCode
+        result = fetch_cpp_template_from_leetcode(question_id, title_slug)
+        
+        if result:
+            response_data = {
+                'success': True,
+                'cpp_template': result['cpp_template'],
+                'title': result['title'],
+                'difficulty': result['difficulty'],
+                'title_slug': result['title_slug']
+            }
+            
+            # Add information about whether this is a generic template
+            if result.get('is_generic'):
+                response_data['is_generic'] = True
+                response_data['message'] = 'LeetCode did not provide a C++ template, so a generic template was created'
+            
+            return JsonResponse(response_data)
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': f'Could not fetch C++ template for question {question_id}'
+            }, status=404)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 @csrf_exempt
 def compile_code(request):

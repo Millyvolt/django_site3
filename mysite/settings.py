@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-0%i=@rjnt%x2ry9cm#n17k+1&ss9i+yj!^70!st(7^7l&9@cbp'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']  # Allow access from any host (for local network access)
 
@@ -126,6 +126,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 INTERNAL_IPS = [
     "127.0.0.1",
+    "localhost",
+    "0.0.0.0",
 ]
 
 TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ

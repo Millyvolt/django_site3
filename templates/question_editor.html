@@ -603,6 +603,7 @@
                     <button class="btn btn-warning" onclick="resetCode()">Reset</button>
                     <button class="btn btn-primary" onclick="runCode()">Run Code</button>
                     <button class="btn btn-success" onclick="submitCode()">Submit</button>
+                    <button class="btn btn-info" onclick="fetchCppTemplateFromLeetCode(currentQuestionId)" id="fetchCppBtn" title="Fetch C++ template from LeetCode">🔧 Get C++ Template</button>
                     <button class="btn btn-info" onclick="toggleMobileView()" id="mobileBtn">📱 Mobile</button>
                     <button class="btn btn-info" onclick="toggleFullscreen()" id="fullscreenBtn">⛶ Full Screen</button>
                 </div>
@@ -647,6 +648,7 @@
         const problems = {{ problems|safe }};
         
         let currentQuestionId = '{{ current_question_id }}';
+        let currentTitleSlug = '{{ current_title_slug|default_if_none:"" }}';
         
         // Initialize CodeMirror
         let codeEditor = null;
@@ -993,6 +995,11 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                 codeEditor.setValue(problem.template);
             }
             
+            // If current language is C++ and we don't have a proper C++ template, fetch it from LeetCode
+            if (currentLanguage === 'cpp' && (!problem.cppTemplate || problem.cppTemplate.includes('// Your code here'))) {
+                fetchCppTemplateFromLeetCode(questionId);
+            }
+            
             // Reset output
             outputPanel.innerHTML = '<div>Output will appear here...</div>';
             outputPanel.className = 'output-panel';
@@ -1039,6 +1046,87 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             if (problem) {
                 updateCodeTemplate(problem);
             }
+            
+            // If switching to C++ and we don't have a C++ template, try to fetch it from LeetCode
+            if (currentLanguage === 'cpp' && problem && (!problem.cppTemplate || problem.cppTemplate.includes('// Your code here'))) {
+                fetchCppTemplateFromLeetCode(currentQuestionId);
+            }
+        }
+        
+        function fetchCppTemplateFromLeetCode(questionId, titleSlug = null) {
+            console.log(`Fetching C++ template for question ${questionId} from LeetCode...`);
+            statusIndicator.textContent = 'Fetching C++ template from LeetCode...';
+            statusIndicator.className = 'status running';
+            
+            const requestData = {
+                question_id: questionId
+            };
+            
+            // Use title_slug if available for more efficient fetching
+            if (titleSlug || currentTitleSlug) {
+                requestData.title_slug = titleSlug || currentTitleSlug;
+            }
+            
+            fetch('/fetch-cpp-template/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    console.log('Successfully fetched C++ template from LeetCode');
+                    
+                    // Update the problem data with the fetched C++ template
+                    if (problems[questionId]) {
+                        problems[questionId].cppTemplate = result.cpp_template;
+                    }
+                    
+                    // If current language is C++, update the editor
+                    if (currentLanguage === 'cpp' && codeEditor) {
+                        codeEditor.setValue(result.cpp_template);
+                    }
+                    
+                    // Show appropriate success message
+                    if (result.is_generic) {
+                        statusIndicator.textContent = 'Generic C++ template created (LeetCode template not available)';
+                        console.log('Generic template created:', result.message);
+                    } else {
+                        statusIndicator.textContent = 'C++ template loaded from LeetCode';
+                    }
+                    statusIndicator.className = 'status success';
+                    
+                    // Reset status after 4 seconds (longer for generic template message)
+                    setTimeout(() => {
+                        statusIndicator.textContent = 'Ready to code';
+                        statusIndicator.className = '';
+                    }, 4000);
+                } else {
+                    console.log('Failed to fetch C++ template:', result.error);
+                    statusIndicator.textContent = 'Could not fetch C++ template from LeetCode';
+                    statusIndicator.className = 'status error';
+                    
+                    // Reset status after 3 seconds
+                    setTimeout(() => {
+                        statusIndicator.textContent = 'Ready to code';
+                        statusIndicator.className = '';
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching C++ template:', error);
+                statusIndicator.textContent = 'Error fetching C++ template';
+                statusIndicator.className = 'status error';
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                    statusIndicator.textContent = 'Ready to code';
+                    statusIndicator.className = '';
+                }, 3000);
+            });
         }
         
         function updateCodeTemplate(problem) {

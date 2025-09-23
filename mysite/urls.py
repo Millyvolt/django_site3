@@ -31,6 +31,7 @@ urlpatterns = [
     path("editor/", views.question_editor, name="question_editor"),
     path("editor/<str:question_id>/", views.question_editor, name="question_editor_with_id"),
     path("compile/", views.compile_code, name="compile_code"),
+    path("fetch-cpp-template/", views.fetch_cpp_template, name="fetch_cpp_template"),
     path("polls/", include("polls.urls")),
     path("admin/", admin.site.urls),
 ]

@@ -344,7 +344,7 @@
                 </div>
                 <div class="difficulty {{ question.difficulty }}">{{ question.difficulty }}</div>
                 <div class="acceptance-rate">{{ question.acceptance_rate }}%</div>
-                <button class="solve-btn" onclick="solveQuestion('{{ question.id }}')">
+                <button class="solve-btn" onclick="solveQuestion('{{ question.id }}', '{{ question.title_slug }}')">
                     Solve
                 </button>
             </div>
@@ -382,9 +382,13 @@
     </div>
 
     <script>
-        function solveQuestion(questionId) {
+        function solveQuestion(questionId, titleSlug = null) {
             // Redirect to the question editor with the selected question
-            window.location.href = `/editor/?q=${questionId}`;
+            let url = `/editor/?q=${questionId}`;
+            if (titleSlug) {
+                url += `&slug=${titleSlug}`;
+            }
+            window.location.href = url;
         }
         
         // Auto-submit form on search input change

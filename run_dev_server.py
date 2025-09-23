@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Script to run Django with Uvicorn ASGI server
+Script to run Django development server with debug toolbar support
 """
 import os
 import sys
@@ -18,13 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
 django.setup()
 
 if __name__ == "__main__":
-    import uvicorn
+    from django.core.management import execute_from_command_line
     
-    # Run the server
-    uvicorn.run(
-        "mysite.asgi:application",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,  # Enable auto-reload for development
-        log_level="info"
-    )
+    # Run Django development server
+    execute_from_command_line(['manage.py', 'runserver', '0.0.0.0:8000'])
