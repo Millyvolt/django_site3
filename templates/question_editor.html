@@ -31,6 +31,32 @@
             overflow: hidden;
         }
         
+        /* Allow scrolling in mobile mode */
+        .mobile-mode {
+            overflow: auto !important;
+        }
+        
+        /* Mobile device specific styles */
+        .mobile-device .output-panel {
+            display: block !important;
+            visibility: visible !important;
+            min-height: 120px !important;
+            max-height: 200px !important;
+        }
+        
+        .mobile-device .output-panel::before {
+            content: "📋 Output" !important;
+            position: absolute !important;
+            top: -25px !important;
+            left: 10px !important;
+            background-color: #34495e !important;
+            color: #ecf0f1 !important;
+            padding: 2px 8px !important;
+            font-size: 10px !important;
+            border-radius: 3px 3px 0 0 !important;
+            z-index: 11 !important;
+        }
+        
         .header {
             background-color: #2c3e50;
             color: white;
@@ -407,6 +433,7 @@
             height: 100vh !important;
             z-index: 9999 !important;
             background-color: #2c3e50 !important;
+            overflow: auto !important;
         }
         
         .mobile-mode .main-container {
@@ -427,6 +454,14 @@
             width: 100% !important;
             height: 65% !important;
             flex: 1 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        .mobile-mode .code-editor {
+            flex: 1 !important;
+            min-height: 0 !important;
         }
         
         .mobile-mode .editor-toolbar {
@@ -460,18 +495,53 @@
         }
         
         .mobile-mode .code-editor {
-            height: calc(100% - 80px) !important;
             font-size: 12px !important;
+            overflow: auto !important;
         }
         
         .mobile-mode .CodeMirror {
             font-size: 12px !important;
+            height: 100% !important;
+            overflow: auto !important;
+        }
+        
+        .mobile-mode .CodeMirror-scroll {
+            overflow: auto !important;
+            height: 100% !important;
         }
         
         .mobile-mode .output-panel {
-            max-height: 150px !important;
+            max-height: 200px !important;
+            min-height: 120px !important;
             font-size: 11px !important;
             padding: 10px !important;
+            overflow-y: auto !important;
+            border-top: 2px solid #34495e !important;
+            background-color: #2c3e50 !important;
+            color: #ecf0f1 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .output-panel.hidden {
+            display: none !important;
+        }
+        
+        .output-panel.collapsed {
+            max-height: 40px !important;
+            min-height: 40px !important;
+            overflow: hidden !important;
+        }
+        
+        .output-panel.has-content {
+            border-left: 4px solid #3498db !important;
+        }
+        
+        .output-panel.success {
+            border-left: 4px solid #27ae60 !important;
+        }
+        
+        .output-panel.error {
+            border-left: 4px solid #e74c3c !important;
         }
         
         .mobile-mode .header {
@@ -531,18 +601,121 @@
         }
         
         @media (max-width: 768px) {
+            body {
+                overflow: auto;
+                height: auto;
+                min-height: 100vh;
+            }
+            
             .main-container {
                 flex-direction: column;
+                height: auto;
+                min-height: calc(100vh - 70px);
             }
             
             .problem-panel {
                 width: 100%;
                 height: 40%;
+                max-height: 40vh;
+                overflow-y: auto;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
             }
             
             .editor-panel {
                 width: 100%;
                 height: 60%;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            
+            .code-editor {
+                flex: 1;
+                min-height: 0;
+                font-size: 12px;
+                overflow: auto;
+            }
+            
+            .CodeMirror {
+                font-size: 12px;
+                height: 100%;
+                overflow: auto;
+            }
+            
+            .CodeMirror-scroll {
+                overflow: auto;
+                height: 100%;
+            }
+            
+            .output-panel {
+                max-height: 200px;
+                min-height: 120px;
+                font-size: 11px;
+                padding: 10px;
+                overflow-y: auto;
+                border-top: 2px solid #34495e;
+                background-color: #2c3e50;
+                color: #ecf0f1;
+                transition: all 0.3s ease;
+                position: relative;
+                z-index: 10;
+            }
+            
+            /* Ensure output panel is always visible on mobile */
+            .output-panel::before {
+                content: "📋 Output";
+                position: absolute;
+                top: -25px;
+                left: 10px;
+                background-color: #34495e;
+                color: #ecf0f1;
+                padding: 2px 8px;
+                font-size: 10px;
+                border-radius: 3px 3px 0 0;
+                z-index: 11;
+            }
+            
+            .output-panel.has-content {
+                border-left: 4px solid #3498db;
+            }
+            
+            .output-panel.success {
+                border-left: 4px solid #27ae60;
+            }
+            
+            .output-panel.error {
+                border-left: 4px solid #e74c3c;
+            }
+            
+            .editor-toolbar {
+                padding: 8px 15px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .editor-buttons {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+            
+            .language-selector {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .language-selector select {
+                font-size: 12px;
+                padding: 3px 6px;
+            }
+            
+            .language-selector label {
+                font-size: 0.8em;
             }
         }
     </style>
@@ -606,6 +779,7 @@
                     <button class="btn btn-info" onclick="fetchCppTemplateFromLeetCode(currentQuestionId)" id="fetchCppBtn" title="Fetch C++ template from LeetCode">🔧 Get C++ Template</button>
                     <button class="btn btn-info" onclick="toggleMobileView()" id="mobileBtn">📱 Mobile</button>
                     <button class="btn btn-info" onclick="toggleFullscreen()" id="fullscreenBtn">⛶ Full Screen</button>
+                    <button class="btn btn-info" onclick="toggleOutputPanel()" id="outputToggleBtn" title="Toggle Output Panel">📋 Output</button>
                 </div>
                 <div class="status-indicator">
                     <span id="status">Ready to code</span>
@@ -675,6 +849,7 @@
                 lineWrapping: true,
                 matchBrackets: true,
                 autoCloseBrackets: true,
+                scrollbarStyle: "native",
                 extraKeys: {
                     "Ctrl-Space": "autocomplete",
                     "Ctrl-/": "toggleComment",
@@ -911,8 +1086,29 @@
             }
         }
         
+        // Check if device is mobile
+        function isMobileDevice() {
+            return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        // Auto-apply mobile styles on mobile devices
+        function applyMobileStyles() {
+            if (isMobileDevice()) {
+                document.body.classList.add('mobile-device');
+                // Ensure output panel is visible
+                const outputPanel = document.getElementById('outputPanel');
+                if (outputPanel) {
+                    outputPanel.style.display = 'block';
+                    outputPanel.style.visibility = 'visible';
+                }
+            }
+        }
+        
         // Initialize with current question
         document.addEventListener('DOMContentLoaded', function() {
+            // Apply mobile styles if needed
+            applyMobileStyles();
+            
             // Initialize CodeMirror first
             initializeCodeMirror();
             
@@ -922,6 +1118,16 @@
                 loadQuestion('1');
             } else {
                 loadQuestion(currentQuestionId);
+            }
+        });
+        
+        // Handle window resize (orientation changes on mobile)
+        window.addEventListener('resize', function() {
+            applyMobileStyles();
+            if (codeEditor) {
+                setTimeout(() => {
+                    codeEditor.refresh();
+                }, 100);
             }
         });
         
@@ -1149,6 +1355,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             
             if (!code.trim()) {
                 outputPanel.innerHTML = '<div style="color: #e74c3c;">Please enter some code to run</div>';
+                outputPanel.className = 'output-panel error has-content';
                 return;
             }
             
@@ -1179,6 +1386,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                         output += `<div style="color: #7f8c8d; font-size: 0.9em;"><strong>Stats:</strong> Memory: ${result.memory || 'N/A'}, CPU Time: ${result.cpuTime || 'N/A'}</div>`;
                     }
                     outputPanel.innerHTML = output || '<div>Code executed successfully (no output)</div>';
+                    outputPanel.className = 'output-panel success has-content';
                     statusIndicator.textContent = 'Success';
                     statusIndicator.className = 'status success';
                 } else {
@@ -1191,12 +1399,14 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                         errorMessage = `<strong>API Error:</strong><br>${result.error}`;
                     }
                     outputPanel.innerHTML = `<div style="color: #e74c3c;">${errorMessage}</div>`;
+                    outputPanel.className = 'output-panel error has-content';
                     statusIndicator.textContent = 'Error';
                     statusIndicator.className = 'status error';
                 }
             })
             .catch(error => {
                 outputPanel.innerHTML = `<div style="color: #e74c3c;"><strong>Network Error:</strong> ${error.message}</div>`;
+                outputPanel.className = 'output-panel error has-content';
                 statusIndicator.textContent = 'Error';
                 statusIndicator.className = 'status error';
             });
@@ -1275,6 +1485,14 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                 mobileBtn.innerHTML = '💻 Desktop';
                 mobileBtn.title = 'Switch to Desktop View';
             }
+            
+            // Refresh CodeMirror to ensure proper scrolling in mobile mode
+            if (codeEditor) {
+                setTimeout(() => {
+                    codeEditor.refresh();
+                    codeEditor.focus();
+                }, 100);
+            }
         }
         
         function toggleFullscreen() {
@@ -1292,6 +1510,30 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                 mainContainer.classList.add('fullscreen-mode');
                 fullscreenBtn.innerHTML = '⛷ Exit Full Screen';
                 fullscreenBtn.title = 'Exit Full Screen';
+            }
+        }
+        
+        function toggleOutputPanel() {
+            const outputPanel = document.getElementById('outputPanel');
+            const outputBtn = document.getElementById('outputToggleBtn');
+            const isHidden = outputPanel.classList.contains('hidden');
+            const isCollapsed = outputPanel.classList.contains('collapsed');
+            
+            if (isHidden) {
+                // Show output panel
+                outputPanel.classList.remove('hidden');
+                outputBtn.innerHTML = '📋 Hide Output';
+                outputBtn.title = 'Hide Output Panel';
+            } else if (isCollapsed) {
+                // Expand output panel
+                outputPanel.classList.remove('collapsed');
+                outputBtn.innerHTML = '📋 Hide Output';
+                outputBtn.title = 'Hide Output Panel';
+            } else {
+                // Collapse output panel
+                outputPanel.classList.add('collapsed');
+                outputBtn.innerHTML = '📋 Show Output';
+                outputBtn.title = 'Show Output Panel';
             }
         }
     </script>
