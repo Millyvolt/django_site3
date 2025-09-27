@@ -344,6 +344,10 @@ def daily_question(request):
                             titleSlug
                             content
                             exampleTestcases
+                            codeSnippets {
+                                lang
+                                code
+                            }
                         }
                     }
                 }
@@ -364,6 +368,30 @@ def daily_question(request):
                 
                 # Get example test cases from the API
                 example_testcases = question.get('exampleTestcases', '')
+                
+                # Extract code snippets
+                code_snippets = question.get('codeSnippets', [])
+                python_template = ''
+                cpp_template = ''
+                
+                print(f"Daily question code snippets count: {len(code_snippets)}")
+                for snippet in code_snippets:
+                    lang = snippet.get('lang', '')
+                    print(f"Found code snippet in language: {lang}")
+                
+                # Find Python and C++ templates from LeetCode
+                for snippet in code_snippets:
+                    lang = snippet.get('lang', '').lower()
+                    code = snippet.get('code', '')
+                    if lang == 'python3' or lang == 'python':
+                        python_template = code
+                        print(f"Found Python template with {len(code)} characters")
+                    elif lang in ['cpp', 'c++', 'cxx', 'cc']:
+                        cpp_template = code
+                        print(f"Found C++ template with {len(code)} characters")
+                
+                if not cpp_template:
+                    print("No C++ template found in daily question, will create generic one")
                 
                 # Create a structured daily question data
                 daily_question_data = {
@@ -387,7 +415,7 @@ def daily_question(request):
                         'This is the official daily challenge'
                     ],
                     'example_testcases': example_testcases,
-                    'template': f'''def {question.get('titleSlug', 'solution').replace('-', '_')}():
+                    'template': python_template if python_template else f'''def {question.get('titleSlug', 'solution').replace('-', '_')}():
     # Today's LeetCode Daily Challenge: {question.get('title', 'Daily Question')}
     # Difficulty: {question.get('difficulty', 'Medium')}
     # Acceptance Rate: {question.get('acRate', 0)}%
@@ -396,7 +424,14 @@ def daily_question(request):
     # Your code here
     pass
 
-# Test your solution on LeetCode!'''
+# Test your solution on LeetCode!''',
+                    'cppTemplate': cpp_template if cpp_template else create_generic_cpp_template(
+                        question.get('title', 'Daily Question'),
+                        question.get('difficulty', 'Medium'),
+                        question.get('frontendQuestionId', '1'),
+                        question.get('titleSlug', 'daily-question')
+                    ),
+                    'hasRealCppTemplate': bool(cpp_template)
                 }
                 
                 context = {
@@ -441,8 +476,35 @@ def daily_question(request):
         # Your code here
         pass
 
-# Test cases
-print(twoSum([2,7,11,15], 9))  # Expected: [0,1]'''
+    # Test cases
+    print(twoSum([2,7,11,15], 9))  # Expected: [0,1]''',
+            'cppTemplate': '''#include <iostream>
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        // Your code here
+        
+    }
+};
+
+int main() {
+    Solution solution;
+    vector<int> nums = {2,7,11,15};
+    int target = 9;
+    vector<int> result = solution.twoSum(nums, target);
+    
+    cout << "Result: [";
+    for(int i = 0; i < result.size(); i++) {
+        cout << result[i];
+        if(i < result.size() - 1) cout << ",";
+    }
+    cout << "]" << endl;  // Expected: [0,1]
+    
+    return 0;
+}'''
         }
         
         context = {

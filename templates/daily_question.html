@@ -393,10 +393,13 @@
                 examples: {{ daily_question.examples|safe }},
                 constraints: {{ daily_question.constraints|safe }},
                 template: `{{ daily_question.template|escapejs }}`,
+                cppTemplate: `{{ daily_question.cppTemplate|escapejs }}`,
+                hasRealCppTemplate: {{ daily_question.hasRealCppTemplate|yesno:"true,false" }},
                 isDaily: true,
                 date: "{{ daily_question.date|escapejs }}",
                 ac_rate: "{{ daily_question.ac_rate|escapejs }}",
                 frontend_id: "{{ daily_question.frontend_id|escapejs }}",
+                title_slug: "{{ daily_question.title_slug|escapejs }}",
                 link: "{{ daily_question.link|escapejs }}"
             };
             
