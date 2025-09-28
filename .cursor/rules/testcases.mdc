@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Always try to get question specific test case using Leetcode API instead of hardcode question test case.

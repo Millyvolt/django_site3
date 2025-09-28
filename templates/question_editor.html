@@ -13,6 +13,8 @@
     
     <!-- CodeMirror JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
@@ -244,6 +246,44 @@
         
         .CodeMirror-focused .CodeMirror-selected {
             background-color: #3498db44 !important;
+        }
+        
+        /* Bracket matching styles */
+        .CodeMirror-matchingbracket {
+            background-color: #d1d1d1 !important;
+            color: #000000 !important;
+            font-weight: bold !important;
+            border-radius: 2px !important;
+            padding: 1px 2px !important;
+        }
+        
+        .CodeMirror-nonmatchingbracket {
+            background-color: #e74c3c !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border-radius: 2px !important;
+            padding: 1px 2px !important;
+        }
+        
+        /* Make all brackets more prominent */
+        .CodeMirror .cm-bracket {
+            font-weight: bold !important;
+        }
+        
+        /* Theme-specific bracket highlighting */
+        .cm-s-monokai .CodeMirror-matchingbracket {
+            background-color: #f92672 !important;
+            color: #272822 !important;
+        }
+        
+        .cm-s-material .CodeMirror-matchingbracket {
+            background-color: #ff5722 !important;
+            color: #ffffff !important;
+        }
+        
+        .cm-s-dracula .CodeMirror-matchingbracket {
+            background-color: #ff79c6 !important;
+            color: #282a36 !important;
         }
         
         /* Syntax highlighting themes */
@@ -850,6 +890,7 @@
                 lineWrapping: true,
                 matchBrackets: true,
                 autoCloseBrackets: true,
+                highlightSelectionMatches: {showToken: /\w/},
                 scrollbarStyle: "native",
                 extraKeys: {
                     "Ctrl-Space": "autocomplete",
@@ -880,6 +921,28 @@
                     toggleComment(cm);
                 }
             });
+            /*
+            // Ensure bracket matching is properly initialized
+            setTimeout(function() {
+                if (codeEditor) {
+                    codeEditor.refresh();
+                    // Force bracket matching to initialize
+                    codeEditor.execCommand("goToNextBracket");
+                    codeEditor.execCommand("goToPrevBracket");
+                }
+            }, 100);
+            
+            // Add cursor activity listener to trigger bracket matching
+            codeEditor.on('cursorActivity', function(cm) {
+                // Trigger bracket matching update
+                setTimeout(function() {
+                    cm.operation(function() {
+                        cm.execCommand('goToNextBracket');
+                        cm.execCommand('goToPrevBracket');
+                    });
+                }, 10);
+            });
+            */
         }
         
         // Get CodeMirror mode for language
@@ -1373,7 +1436,8 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                 body: JSON.stringify({
                     code: code,
                     language: language,
-                    input: input
+                    input: input,
+                    question_id: currentQuestionId
                 })
             })
             .then(response => response.json())

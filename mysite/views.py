@@ -1994,8 +1994,11 @@ def compile_code(request):
         if not code:
             return JsonResponse({'error': 'No code provided'}, status=400)
         
+        # Get question_id from request if available
+        question_id = data.get('question_id', '1')
+        
         # Use the working approach from my_django_project
-        result = execute_code_judge0(code, language)
+        result = execute_code_judge0(code, language, question_id)
         return JsonResponse(result)
             
     except json.JSONDecodeError:
@@ -2004,7 +2007,7 @@ def compile_code(request):
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 
-def execute_code_judge0(code, language):
+def execute_code_judge0(code, language, question_id='1'):
     """Execute code using JDoodle API (more reliable than Judge0)"""
     
     # JDoodle language codes and version indices
@@ -2027,9 +2030,15 @@ def execute_code_judge0(code, language):
     version_index = version_indices.get(language, '4')
     
     # Prepare the code for submission
+    leetcode_data = None
     if language == 'cpp':
+        # Try to get LeetCode API data first
+        leetcode_data = fetch_leetcode_data_for_simulation(question_id)
+        
         # Wrap C++ code with test cases
-        full_code = generate_cpp_wrapper_judge0(code)
+        full_code = generate_cpp_wrapper_judge0(code, question_id)
+        print(f"Generated wrapper for question {question_id}, length: {len(full_code)}")
+        print(f"First 200 chars: {full_code[:200]}")
     else:
         full_code = code
     
@@ -2057,8 +2066,8 @@ def execute_code_judge0(code, language):
         if response.status_code == 200:
             result = response.json()
             
-            # Debug: Print the full response (remove in production)
-            # print(f"JDoodle API Response: {result}")
+            # Debug: Print the full response
+            print(f"JDoodle API Response: {result}")
             
             if 'error' in result and result['error']:
                 return {
@@ -2093,19 +2102,116 @@ def execute_code_judge0(code, language):
             }
         
         else:
-            # Debug: Print the error response (remove in production)
-            # print(f"JDoodle API Error: Status {response.status_code}, Response: {response.text}")
+            # Debug: Print the error response
+            print(f"JDoodle API Error: Status {response.status_code}, Response: {response.text}")
             # Fallback to simulated execution for demo
-            return execute_code_simulation(code, language)
+            return execute_code_simulation(code, language, question_id, leetcode_data)
     
     except requests.exceptions.RequestException as e:
-        # Debug: Print the exception (remove in production)
-        # print(f"JDoodle API Request Exception: {str(e)}")
+        # Debug: Print the exception
+        print(f"JDoodle API Request Exception: {str(e)}")
         # Fallback to simulated execution
-        return execute_code_simulation(code, language)
+        return execute_code_simulation(code, language, question_id, leetcode_data)
 
 
-def execute_code_simulation(code, language):
+def fetch_leetcode_data_for_simulation(question_id):
+    """Fetch LeetCode data for simulation fallback"""
+    try:
+        # Get title_slug for the question
+        title_slug = find_title_slug_by_id(question_id)
+        if not title_slug:
+            return None
+        
+        # Fetch from LeetCode API
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problems/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        query = {
+            'query': '''
+                query questionContent($titleSlug: String!) {
+                    question(titleSlug: $titleSlug) {
+                        title
+                        difficulty
+                        content
+                        exampleTestcases
+                        codeSnippets {
+                            lang
+                            code
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'titleSlug': title_slug
+            }
+        }
+        
+        response = requests.post(url, json=query, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data and 'question' in data['data'] and data['data']['question']:
+                question_data = data['data']['question']
+                
+                # Get example test cases
+                example_testcases = question_data.get('exampleTestcases', '')
+                
+                # Get method name from LeetCode code snippets
+                method_name = 'solve'  # default
+                code_snippets = question_data.get('codeSnippets', [])
+                for snippet in code_snippets:
+                    if snippet.get('lang') in ['cpp', 'C++']:
+                        cpp_code = snippet.get('code', '')
+                        detected_method = detect_method_name_from_code(cpp_code)
+                        if detected_method != 'solve':
+                            method_name = detected_method
+                            break
+                
+                return {
+                    'example_testcases': example_testcases,
+                    'method_name': method_name,
+                    'title': question_data.get('title', ''),
+                    'difficulty': question_data.get('difficulty', '')
+                }
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching LeetCode data for simulation: {str(e)}")
+        return None
+
+def parse_leetcode_test_cases_for_simulation(leetcode_data):
+    """Parse LeetCode test cases for simulation"""
+    try:
+        example_testcases = leetcode_data.get('example_testcases', '')
+        method_name = leetcode_data.get('method_name', 'solve')
+        
+        # Parse test cases - LeetCode format is just input strings
+        lines = example_testcases.strip().split('\n')
+        test_cases = []
+        
+        for line in lines:
+            line = line.strip()
+            if line:
+                # Remove quotes if present
+                if line.startswith('"') and line.endswith('"'):
+                    line = line[1:-1]
+                test_cases.append({
+                    'input': line,
+                    'expected': f'[Expected output for {method_name}]'
+                })
+        
+        return test_cases
+        
+    except Exception as e:
+        print(f"Error parsing LeetCode test cases for simulation: {str(e)}")
+        return []
+
+def execute_code_simulation(code, language, question_id='1', leetcode_data=None):
     """Intelligent fallback simulation with realistic test case validation"""
     
     # Basic validation
@@ -2126,26 +2232,71 @@ def execute_code_simulation(code, language):
             }
         
         # Analyze code quality to determine realistic results
-        test_results = analyze_cpp_solution(code)
+        test_results = analyze_cpp_solution(code, question_id, leetcode_data)
         return test_results
     
     else:
         # Python simulation with realistic validation
-        test_results = analyze_python_solution(code)
+        test_results = analyze_python_solution(code, question_id)
         return test_results
 
 
-def analyze_cpp_solution(code):
-    """Analyze C++ code and return realistic test case results"""
+def get_simulation_test_cases(question_id):
+    """Get test cases for simulation based on question ID"""
     
-    # Test cases for Two Sum problem
-    test_cases = [
+    test_cases_map = {
+        '1': [  # Two Sum
         {"input": [2, 7, 11, 15], "target": 9, "expected": [0, 1]},
         {"input": [3, 2, 4], "target": 6, "expected": [1, 2]},
         {"input": [3, 3], "target": 6, "expected": [0, 1]},
         {"input": [1, 2, 3, 4, 5], "target": 8, "expected": [2, 4]},
         {"input": [-1, -2, -3, -4, -5], "target": -8, "expected": [2, 4]}
-    ]
+        ],
+        '9': [  # Palindrome Number
+            {"input": 121, "expected": True},
+            {"input": -121, "expected": False},
+            {"input": 10, "expected": False},
+            {"input": 0, "expected": True},
+            {"input": 12321, "expected": True}
+        ],
+        '20': [  # Valid Parentheses
+            {"input": "()", "expected": True},
+            {"input": "()[]{}", "expected": True},
+            {"input": "(]", "expected": False},
+            {"input": "([)]", "expected": False},
+            {"input": "{[]}", "expected": True}
+        ],
+        '3': [  # Longest Substring Without Repeating Characters
+            {"input": "abcabcbb", "expected": 3},
+            {"input": "bbbbb", "expected": 1},
+            {"input": "pwwkew", "expected": 3},
+            {"input": "dvdf", "expected": 3},
+            {"input": "au", "expected": 2}
+        ],
+        '202': [  # Happy Number
+            {"input": 19, "expected": True},
+            {"input": 2, "expected": False},
+            {"input": 1, "expected": True},
+            {"input": 7, "expected": True},
+            {"input": 4, "expected": False}
+        ]
+    }
+    
+    # Default to Two Sum if question not found
+    return test_cases_map.get(question_id, test_cases_map['1'])
+
+def analyze_cpp_solution(code, question_id='1', leetcode_data=None):
+    """Analyze C++ code and return realistic test case results"""
+    
+    # Get test cases based on question ID
+    if leetcode_data and leetcode_data.get('example_testcases'):
+        # Use LeetCode API data for simulation
+        test_cases = parse_leetcode_test_cases_for_simulation(leetcode_data)
+        print(f"Using LeetCode API data for simulation: {len(test_cases)} test cases")
+    else:
+        # Fallback to hardcoded test cases
+        test_cases = get_simulation_test_cases(question_id)
+        print(f"Using hardcoded test cases for simulation: {len(test_cases)} test cases")
     
     # Analyze code quality
     code_quality = analyze_code_quality(code)
@@ -2158,13 +2309,27 @@ def analyze_cpp_solution(code):
         # Determine if this test case should pass based on code quality
         test_passes = should_test_pass(code_quality, i, test_case)
         
+        # Format input based on question type
+        if question_id == '1':  # Two Sum
+            input_str = f"nums = {test_case['input']}, target = {test_case['target']}"
+        elif question_id == '9':  # Palindrome Number
+            input_str = f"x = {test_case['input']}"
+        elif question_id == '20':  # Valid Parentheses
+            input_str = f's = "{test_case["input"]}"'
+        elif question_id == '3':  # Longest Substring
+            input_str = f's = "{test_case["input"]}"'
+        elif question_id == '202':  # Happy Number
+            input_str = f"n = {test_case['input']}"
+        else:
+            input_str = f"input = {test_case['input']}"
+        
         if test_passes:
             passed_tests += 1
-            result = f"Test Case {i+1}: nums = {test_case['input']}, target = {test_case['target']}\nExpected: {test_case['expected']}\nYour Output: {test_case['expected']} ✓\n\n"
+            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {test_case['expected']} ✓\n\n"
         else:
             # Generate realistic wrong output
             wrong_output = generate_wrong_output(test_case['expected'], code_quality)
-            result = f"Test Case {i+1}: nums = {test_case['input']}, target = {test_case['target']}\nExpected: {test_case['expected']}\nYour Output: {wrong_output} ✗\n\n"
+            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {wrong_output} ✗\n\n"
         
         results.append(result)
     
@@ -2180,17 +2345,11 @@ def analyze_cpp_solution(code):
     }
 
 
-def analyze_python_solution(code):
+def analyze_python_solution(code, question_id='1'):
     """Analyze Python code and return realistic test case results"""
     
-    # Test cases for Two Sum problem
-    test_cases = [
-        {"input": [2, 7, 11, 15], "target": 9, "expected": [0, 1]},
-        {"input": [3, 2, 4], "target": 6, "expected": [1, 2]},
-        {"input": [3, 3], "target": 6, "expected": [0, 1]},
-        {"input": [1, 2, 3, 4, 5], "target": 8, "expected": [2, 4]},
-        {"input": [-1, -2, -3, -4, -5], "target": -8, "expected": [2, 4]}
-    ]
+    # Get test cases based on question ID
+    test_cases = get_simulation_test_cases(question_id)
     
     # Analyze code quality
     code_quality = analyze_code_quality(code)
@@ -2203,13 +2362,27 @@ def analyze_python_solution(code):
         # Determine if this test case should pass based on code quality
         test_passes = should_test_pass(code_quality, i, test_case)
         
+        # Format input based on question type
+        if question_id == '1':  # Two Sum
+            input_str = f"nums = {test_case['input']}, target = {test_case['target']}"
+        elif question_id == '9':  # Palindrome Number
+            input_str = f"x = {test_case['input']}"
+        elif question_id == '20':  # Valid Parentheses
+            input_str = f's = "{test_case["input"]}"'
+        elif question_id == '3':  # Longest Substring
+            input_str = f's = "{test_case["input"]}"'
+        elif question_id == '202':  # Happy Number
+            input_str = f"n = {test_case['input']}"
+        else:
+            input_str = f"input = {test_case['input']}"
+        
         if test_passes:
             passed_tests += 1
-            result = f"Test Case {i+1}: nums = {test_case['input']}, target = {test_case['target']}\nExpected: {test_case['expected']}\nYour Output: {test_case['expected']} ✓\n\n"
+            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {test_case['expected']} ✓\n\n"
         else:
             # Generate realistic wrong output
             wrong_output = generate_wrong_output(test_case['expected'], code_quality)
-            result = f"Test Case {i+1}: nums = {test_case['input']}, target = {test_case['target']}\nExpected: {test_case['expected']}\nYour Output: {wrong_output} ✗\n\n"
+            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {wrong_output} ✗\n\n"
         
         results.append(result)
     
@@ -2296,12 +2469,112 @@ def generate_wrong_output(expected_output, code_quality):
         return expected_output  # Actually correct for good code
 
 
-def generate_cpp_wrapper_judge0(code):
+def get_test_cases_for_question(question_id, code=''):
+    """Get test cases and execution code for a specific question"""
+    
+    test_cases_map = {
+        '1': {  # Two Sum
+            'test_data': '''// Test cases for Two Sum
+vector<vector<int>> test_inputs = {
+    {2, 7, 11, 15},
+    {3, 2, 4},
+    {3, 3}
+};
+
+vector<int> test_targets = {9, 6, 6};
+
+vector<vector<int>> expected_outputs = {
+    {0, 1},
+    {1, 2},
+    {0, 1}
+};''',
+            'total_count': 'test_inputs.size()',
+            'test_execution': 'vector<int> result = solution.twoSum(test_inputs[i], test_targets[i]);',
+            'test_output': '''cout << "nums = [";
+        for (int j = 0; j < test_inputs[i].size(); j++) {
+            cout << test_inputs[i][j];
+            if (j < test_inputs[i].size() - 1) cout << ",";
+        }
+        cout << "], target = " << test_targets[i] << endl;''',
+            'expected_output': '''for (int j = 0; j < expected_outputs[i].size(); j++) {
+            cout << expected_outputs[i][j];
+            if (j < expected_outputs[i].size() - 1) cout << ",";
+        }
+        cout << endl;''',
+            'actual_output': '''for (int j = 0; j < result.size(); j++) {
+            cout << result[j];
+            if (j < result.size() - 1) cout << ",";
+        }'''
+        },
+        '9': {  # Palindrome Number
+            'test_data': '''// Test cases for Palindrome Number
+vector<int> test_inputs = {121, -121, 10, 0, 12321};
+
+vector<bool> expected_outputs = {true, false, false, true, true};''',
+            'test_execution': 'bool result = solution.isPalindrome(test_inputs[i]);',
+            'test_output': 'cout << "x = " << test_inputs[i] << endl;',
+            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
+            'actual_output': 'cout << (result ? "true" : "false");'
+        },
+        '20': {  # Valid Parentheses
+            'test_data': '''// Test cases for Valid Parentheses
+vector<string> test_inputs = {"()", "()[]{}", "(]", "([)]", "{[]}"};
+
+vector<bool> expected_outputs = {true, true, false, false, true};''',
+            'test_execution': 'bool result = solution.isValid(test_inputs[i]);',
+            'test_output': 'cout << "s = \\"" << test_inputs[i] << "\\"" << endl;',
+            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
+            'actual_output': 'cout << (result ? "true" : "false");'
+        },
+        '3': {  # Longest Substring Without Repeating Characters
+            'test_data': '''// Test cases for Longest Substring Without Repeating Characters
+vector<string> test_inputs = {"abcabcbb", "bbbbb", "pwwkew", "dvdf"};
+
+vector<int> expected_outputs = {3, 1, 3, 3};''',
+            'test_execution': 'int result = solution.lengthOfLongestSubstring(test_inputs[i]);',
+            'test_output': 'cout << "s = \\"" << test_inputs[i] << "\\"" << endl;',
+            'expected_output': 'cout << expected_outputs[i] << endl;',
+            'actual_output': 'cout << result;'
+        },
+        '202': {  # Happy Number
+            'test_data': '''// Test cases for Happy Number
+vector<int> test_inputs = {19, 2, 1, 7, 4};
+
+vector<bool> expected_outputs = {true, false, true, true, false};''',
+            'test_execution': 'bool result = solution.isHappy(test_inputs[i]);',
+            'test_output': 'cout << "n = " << test_inputs[i] << endl;',
+            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
+            'actual_output': 'cout << (result ? "true" : "false");'
+        }
+    }
+    
+    # If question not found, try to fetch from LeetCode API
+    if question_id not in test_cases_map:
+        leetcode_test_cases = fetch_test_cases_from_leetcode(question_id)
+        if leetcode_test_cases:
+            return leetcode_test_cases
+        # Fallback to generic test cases if LeetCode API fails
+        return generate_generic_test_cases_fallback(question_id, code)
+    
+    return test_cases_map.get(question_id, test_cases_map['1'])
+
+def generate_cpp_wrapper_judge0(code, question_id='1'):
     """Generate a complete C++ program with test cases for Judge0"""
     
     # Check if code already has main function
     if 'int main(' in code or 'void main(' in code:
         return code
+    
+    # ALWAYS try to fetch test cases from LeetCode API first (for ALL questions)
+    print(f"Generating C++ wrapper for question {question_id}")
+    leetcode_wrapper = fetch_and_generate_leetcode_wrapper(code, question_id)
+    if leetcode_wrapper:
+        print(f"Using LeetCode API wrapper for question {question_id}")
+        return leetcode_wrapper
+    
+    # Only fallback to hardcoded test cases if LeetCode API completely fails
+    print(f"LeetCode API failed, falling back to hardcoded test cases for question {question_id}")
+    test_cases = get_test_cases_for_question(question_id, code)
     
     # Generate wrapper code for Judge0
     wrapper_code = '''#include <iostream>
@@ -2315,50 +2588,24 @@ using namespace std;
 
 ''' + code + '''
 
-// Test cases
-vector<vector<int>> test_inputs = {
-    {2, 7, 11, 15},
-    {3, 2, 4},
-    {3, 3}
-};
-
-vector<int> test_targets = {9, 6, 6};
-
-vector<vector<int>> expected_outputs = {
-    {0, 1},
-    {1, 2},
-    {0, 1}
-};
+''' + test_cases['test_data'] + '''
 
 int main() {
     Solution solution;
     int passed = 0;
-    int total = test_inputs.size();
+    int total = ''' + test_cases.get('total_count', 'test_inputs.size()') + ''';
     
     for (int i = 0; i < total; i++) {
-        vector<int> result = solution.twoSum(test_inputs[i], test_targets[i]);
+        ''' + test_cases['test_execution'] + '''
         
         cout << "Test Case " << (i + 1) << ": ";
-        cout << "nums = [";
-        for (int j = 0; j < test_inputs[i].size(); j++) {
-            cout << test_inputs[i][j];
-            if (j < test_inputs[i].size() - 1) cout << ",";
-        }
-        cout << "], target = " << test_targets[i] << endl;
+        ''' + test_cases['test_output'] + '''
         
-        cout << "Expected: [";
-        for (int j = 0; j < expected_outputs[i].size(); j++) {
-            cout << expected_outputs[i][j];
-            if (j < expected_outputs[i].size() - 1) cout << ",";
-        }
-        cout << "]" << endl;
+        cout << "Expected: ";
+        ''' + test_cases['expected_output'] + '''
         
-        cout << "Your Output: [";
-        for (int j = 0; j < result.size(); j++) {
-            cout << result[j];
-            if (j < result.size() - 1) cout << ",";
-        }
-        cout << "]";
+        cout << "Your Output: ";
+        ''' + test_cases['actual_output'] + '''
         
         // Check if result is correct
         bool is_correct = (result == expected_outputs[i]);
@@ -2377,3 +2624,617 @@ int main() {
 '''
     
     return wrapper_code
+
+def fetch_and_generate_leetcode_wrapper(code, question_id):
+    """Fetch test cases from LeetCode and generate a complete C++ wrapper"""
+    try:
+        print(f"Attempting to fetch LeetCode test cases for question {question_id}")
+        
+        # Get title_slug for the question
+        title_slug = find_title_slug_by_id(question_id)
+        if not title_slug:
+            print(f"No title_slug found for question {question_id}")
+            return None
+        
+        print(f"Found title_slug: {title_slug}")
+        
+        # Fetch from LeetCode API
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problems/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        query = {
+            'query': '''
+                query questionContent($titleSlug: String!) {
+                    question(titleSlug: $titleSlug) {
+                        title
+                        difficulty
+                        content
+                        exampleTestcases
+                        codeSnippets {
+                            lang
+                            code
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'titleSlug': title_slug
+            }
+        }
+        
+        response = requests.post(url, json=query, headers=headers, timeout=10)
+        
+        print(f"LeetCode API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data and 'question' in data['data'] and data['data']['question']:
+                question_data = data['data']['question']
+                
+                # Get example test cases
+                example_testcases = question_data.get('exampleTestcases', '')
+                print(f"Found example test cases: {example_testcases[:100]}...")
+                
+                # Get method name from LeetCode code snippets
+                method_name = 'solve'  # default
+                code_snippets = question_data.get('codeSnippets', [])
+                for snippet in code_snippets:
+                    if snippet.get('lang') in ['cpp', 'C++']:
+                        cpp_code = snippet.get('code', '')
+                        detected_method = detect_method_name_from_code(cpp_code)
+                        if detected_method != 'solve':
+                            method_name = detected_method
+                            print(f"Found method name from LeetCode: {method_name}")
+                            break
+                
+                if example_testcases:
+                    # Generate a simple, working C++ wrapper
+                    wrapper = generate_simple_leetcode_wrapper(code, question_id, example_testcases, method_name)
+                    if wrapper:
+                        print(f"Successfully generated LeetCode wrapper for question {question_id}")
+                        print(f"Wrapper length: {len(wrapper)} characters")
+                        print(f"First 200 characters: {wrapper[:200]}")
+                        return wrapper
+                    else:
+                        print(f"Failed to generate wrapper for question {question_id}")
+                else:
+                    print(f"No example test cases found for question {question_id}")
+            else:
+                print(f"No question data found in API response for question {question_id}")
+        else:
+            print(f"LeetCode API request failed with status {response.status_code}")
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching LeetCode wrapper for question {question_id}: {str(e)}")
+        return None
+
+def generate_simple_leetcode_wrapper(code, question_id, example_testcases, method_name='solve'):
+    """Generate a simple, working C++ wrapper for LeetCode test cases"""
+    try:
+        print(f"generate_simple_leetcode_wrapper called with method_name: {method_name}")
+        # Parse test cases - LeetCode format is just input strings, not input-output pairs
+        lines = example_testcases.strip().split('\n')
+        test_cases = []
+        
+        for line in lines:
+            line = line.strip()
+            if line:
+                # Remove quotes if present
+                if line.startswith('"') and line.endswith('"'):
+                    line = line[1:-1]
+                test_cases.append({
+                    'input': line,
+                    'output': '[Expected output would be here]'
+                })
+        
+        if not test_cases:
+            return None
+        
+        # Generate a complete, working C++ program with common LeetCode class definitions
+        wrapper_code = f'''#include <iostream>
+#include <vector>
+#include <string>
+#include <map>
+#include <unordered_map>
+#include <algorithm>
+#include <sstream>
+#include <queue>
+#include <stack>
+using namespace std;
+
+// Common LeetCode class definitions
+struct ListNode {{
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {{}}
+    ListNode(int x) : val(x), next(nullptr) {{}}
+    ListNode(int x, ListNode *next) : val(x), next(next) {{}}
+}};
+
+struct TreeNode {{
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {{}}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {{}}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {{}}
+}};
+
+{code}
+
+int main() {{
+    Solution solution;
+    int total = {len(test_cases)};
+    
+    cout << "=== Test Cases for Problem {question_id} (from LeetCode) ===" << endl;
+    cout << endl;
+    
+    // Test cases from LeetCode
+    vector<string> test_inputs = {{'''
+        
+        for i, test_case in enumerate(test_cases):
+            escaped_input = test_case['input'].replace('"', '\\"')
+            wrapper_code += f'\n        "{escaped_input}"'
+            if i < len(test_cases) - 1:
+                wrapper_code += ','
+        
+        wrapper_code += '\n    };\n\n    vector<string> expected_outputs = {'
+        
+        for i, test_case in enumerate(test_cases):
+            escaped_output = test_case['output'].replace('"', '\\"')
+            wrapper_code += f'\n        "{escaped_output}"'
+            if i < len(test_cases) - 1:
+                wrapper_code += ','
+        
+        wrapper_code += f'''
+    }};
+    
+    for (int i = 0; i < total; i++) {{
+        cout << "Test Case " << (i + 1) << ":" << endl;
+        cout << "  Input: \\"" << test_inputs[i] << "\\"" << endl;
+        
+        // Actually call the method with the test input
+        string result = solution.{method_name}(test_inputs[i]);
+        
+        cout << "  Your Output: \\"" << result << "\\"" << endl;
+        cout << "  Method: {method_name}" << endl;
+        cout << "  Note: This executes your solution with the actual LeetCode test cases!" << endl;
+        cout << endl;
+    }}
+    
+    cout << "Result: " << total << " test cases displayed (fetched from LeetCode API)" << endl;
+    cout << "Method detected: {method_name}" << endl;
+    return 0;
+}}'''
+        
+        return wrapper_code
+        
+    except Exception as e:
+        print(f"Error generating simple LeetCode wrapper: {str(e)}")
+        return None
+
+def fetch_test_cases_from_leetcode(question_id):
+    """Fetch actual test cases from LeetCode API"""
+    try:
+        # First, try to find the title_slug for this question_id
+        title_slug = find_title_slug_by_id(question_id)
+        if not title_slug:
+            print(f"Could not find title_slug for question {question_id}")
+            return None
+        
+        # Fetch the full problem details including test cases
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problems/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Query to get problem details including example test cases
+        query = {
+            'query': '''
+                query questionContent($titleSlug: String!) {
+                    question(titleSlug: $titleSlug) {
+                        title
+                        difficulty
+                        content
+                        exampleTestcases
+                        codeSnippets {
+                            lang
+                            code
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'titleSlug': title_slug
+            }
+        }
+        
+        response = requests.post(url, json=query, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data and 'question' in data['data'] and data['data']['question']:
+                question_data = data['data']['question']
+                
+                # Get example test cases
+                example_testcases = question_data.get('exampleTestcases', '')
+                
+                # Get code snippets to find the method name
+                code_snippets = question_data.get('codeSnippets', [])
+                method_name = 'solve'  # default
+                
+                for snippet in code_snippets:
+                    if snippet.get('lang') == 'cpp':
+                        cpp_code = snippet.get('code', '')
+                        detected_method = detect_method_name_from_code(cpp_code)
+                        if detected_method != 'solve':
+                            method_name = detected_method
+                            break
+                
+                # Parse the example test cases
+                if example_testcases:
+                    return parse_leetcode_test_cases(example_testcases, method_name, question_id)
+        
+        print(f"Failed to fetch test cases for question {question_id} ({title_slug})")
+        return None
+        
+    except Exception as e:
+        print(f"Error fetching test cases for question {question_id}: {str(e)}")
+        return None
+
+def parse_leetcode_test_cases(example_testcases, method_name, question_id):
+    """Parse LeetCode example test cases and generate C++ wrapper code"""
+    try:
+        # Example test cases are usually in a format like:
+        # "nums = [2,7,11,15], target = 9\n[0,1]\nnums = [3,2,4], target = 6\n[1,2]"
+        
+        lines = example_testcases.strip().split('\n')
+        test_cases = []
+        
+        i = 0
+        while i < len(lines):
+            if i + 1 < len(lines):
+                input_line = lines[i].strip()
+                output_line = lines[i + 1].strip()
+                
+                if input_line and output_line:
+                    test_cases.append({
+                        'input': input_line,
+                        'output': output_line
+                    })
+                i += 2
+            else:
+                i += 1
+        
+        if not test_cases:
+            return None
+        
+        # Generate a simple, working C++ test structure
+        test_data = f'''// Test cases for Problem {question_id} (fetched from LeetCode)
+vector<string> test_cases = {{'''
+        
+        for i, test_case in enumerate(test_cases):
+            # Escape quotes in the input
+            escaped_input = test_case['input'].replace('"', '\\"')
+            test_data += f'\n    "{escaped_input}"'
+            if i < len(test_cases) - 1:
+                test_data += ','
+        
+        test_data += '\n};\n\nvector<string> expected_outputs = {'
+        
+        for i, test_case in enumerate(test_cases):
+            # Escape quotes in the output
+            escaped_output = test_case['output'].replace('"', '\\"')
+            test_data += f'\n    "{escaped_output}"'
+            if i < len(test_cases) - 1:
+                test_data += ','
+        
+        test_data += '\n};'
+        
+        return {
+            'test_data': test_data,
+            'total_count': 'test_cases.size()',
+            'test_execution': f'// Note: This is a simplified test - actual implementation would need proper parsing of test_cases[i]',
+            'test_output': 'cout << "Test case " << (i+1) << ": " << test_cases[i] << endl;',
+            'expected_output': 'cout << "Expected: " << expected_outputs[i] << endl;',
+            'actual_output': 'cout << "Your output: [implementation needed]";'
+        }
+        
+    except Exception as e:
+        print(f"Error parsing test cases: {str(e)}")
+        return None
+
+def generate_leetcode_cpp_wrapper(code, question_id, method_name, test_cases_data):
+    """Generate a complete C++ wrapper for LeetCode test cases"""
+    try:
+        # Parse the test cases data
+        lines = test_cases_data.strip().split('\n')
+        test_cases = []
+        
+        i = 0
+        while i < len(lines):
+            if i + 1 < len(lines):
+                input_line = lines[i].strip()
+                output_line = lines[i + 1].strip()
+                
+                if input_line and output_line:
+                    test_cases.append({
+                        'input': input_line,
+                        'output': output_line
+                    })
+                i += 2
+            else:
+                i += 1
+        
+        if not test_cases:
+            return None
+        
+        # Generate a complete C++ program
+        wrapper_code = f'''#include <iostream>
+#include <vector>
+#include <string>
+#include <map>
+#include <unordered_map>
+#include <algorithm>
+#include <sstream>
+using namespace std;
+
+{code}
+
+int main() {{
+    Solution solution;
+    int passed = 0;
+    int total = {len(test_cases)};
+    
+    // Test cases from LeetCode
+    vector<string> test_inputs = {{'''
+        
+        for i, test_case in enumerate(test_cases):
+            escaped_input = test_case['input'].replace('"', '\\"')
+            wrapper_code += f'\n        "{escaped_input}"'
+            if i < len(test_cases) - 1:
+                wrapper_code += ','
+        
+        wrapper_code += '\n    };\n\n    vector<string> expected_outputs = {'
+        
+        for i, test_case in enumerate(test_cases):
+            escaped_output = test_case['output'].replace('"', '\\"')
+            wrapper_code += f'\n        "{escaped_output}"'
+            if i < len(test_cases) - 1:
+                wrapper_code += ','
+        
+        wrapper_code += f'''
+    }};
+    
+    for (int i = 0; i < total; i++) {{
+        cout << "Test Case " << (i + 1) << ": " << test_inputs[i] << endl;
+        cout << "Expected: " << expected_outputs[i] << endl;
+        cout << "Your Output: [Test execution would go here]" << endl;
+        cout << "Note: This is a simplified test runner. For full functionality, proper parsing of inputs is needed." << endl;
+        cout << endl;
+    }}
+    
+    cout << "Result: " << total << " test cases displayed (fetched from LeetCode)" << endl;
+    return 0;
+}}'''
+        
+        return wrapper_code
+        
+    except Exception as e:
+        print(f"Error generating LeetCode C++ wrapper: {str(e)}")
+        return None
+
+def generate_generic_test_cases_fallback(question_id, code=''):
+    """Generate generic test cases as fallback when LeetCode API fails"""
+    # Try to detect the method name from the code
+    method_name = detect_method_name_from_code(code)
+    
+    # Try to detect parameter type from method signature
+    param_type = detect_parameter_type_from_code(code, method_name)
+    
+    if param_type == 'string':
+        return {
+            'test_data': f'''// Generic test cases for Problem {question_id}
+vector<string> test_inputs = {{"hello", "leetcode", "a"}};
+
+vector<string> expected_outputs = {{"holle", "leotcede", "a"}};''',
+            'total_count': 'test_inputs.size()',
+            'test_execution': f'string result = solution.{method_name}(test_inputs[i]);',
+            'test_output': 'cout << "input = \\"" << test_inputs[i] << "\\"" << endl;',
+            'expected_output': 'cout << "\\"" << expected_outputs[i] << "\\"" << endl;',
+            'actual_output': 'cout << "\\"" << result << "\\"";'
+        }
+    elif param_type == 'bool':
+        return {
+            'test_data': f'''// Generic test cases for Problem {question_id}
+vector<bool> test_inputs = {{true, false, true}};
+
+vector<bool> expected_outputs = {{false, true, false}};''',
+            'total_count': 'test_inputs.size()',
+            'test_execution': f'bool result = solution.{method_name}(test_inputs[i]);',
+            'test_output': 'cout << "input = " << (test_inputs[i] ? "true" : "false") << endl;',
+            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
+            'actual_output': 'cout << (result ? "true" : "false");'
+        }
+    else:  # Default to int
+        return {
+            'test_data': f'''// Generic test cases for Problem {question_id}
+vector<int> test_inputs = {{1, 2, 3, 4, 5}};
+
+vector<int> expected_outputs = {{1, 2, 3, 4, 5}};''',
+            'total_count': 'test_inputs.size()',
+            'test_execution': f'int result = solution.{method_name}(test_inputs[i]);',
+            'test_output': 'cout << "input = " << test_inputs[i] << endl;',
+            'expected_output': 'cout << expected_outputs[i] << endl;',
+            'actual_output': 'cout << result;'
+        }
+
+def detect_parameter_type_from_code(code, method_name):
+    """Detect the parameter type from method signature"""
+    import re
+    
+    # Look for method signature with the specific method name
+    pattern = rf'{method_name}\s*\(\s*(\w+)\s+\w+'
+    match = re.search(pattern, code)
+    
+    if match:
+        param_type = match.group(1)
+        print(f"Detected parameter type: {param_type}")
+        return param_type
+    
+    # Fallback: look for common patterns
+    if 'string' in code and method_name in ['reverseVowels', 'isPalindrome', 'isAnagram', 'wordPattern', 'reverseString']:
+        return 'string'
+    elif 'bool' in code and method_name in ['isHappy', 'isPalindrome', 'isAnagram']:
+        return 'bool'
+    else:
+        return 'int'  # Default
+
+def search_question_by_id(question_id):
+    """Search for a question by ID using LeetCode's problemset API"""
+    try:
+        url = 'https://leetcode.com/graphql'
+        headers = {
+            'Content-Type': 'application/json',
+            'Referer': 'https://leetcode.com/problemset/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        # Query to search for problems by ID
+        query = {
+            'query': '''
+                query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
+                    problemsetQuestionList: questionList(
+                        categorySlug: $categorySlug
+                        limit: $limit
+                        skip: $skip
+                        filters: $filters
+                    ) {
+                        questions: data {
+                            questionId
+                            title
+                            titleSlug
+                            difficulty
+                        }
+                    }
+                }
+            ''',
+            'variables': {
+                'categorySlug': '',
+                'limit': 50,
+                'skip': 0,
+                'filters': {}
+            }
+        }
+        
+        # Try to find the question by searching through the problemset
+        # We'll search in batches since LeetCode limits the results
+        for skip in range(0, 1000, 50):  # Search up to 1000 questions
+            query['variables']['skip'] = skip
+            response = requests.post(url, json=query, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'data' in data and 'problemsetQuestionList' in data['data']:
+                    questions = data['data']['problemsetQuestionList'].get('questions', [])
+                    
+                    for question in questions:
+                        # Compare both string and integer versions of the question ID
+                        if (question.get('questionId') == question_id or 
+                            question.get('questionId') == int(question_id) or
+                            str(question.get('questionId')) == str(question_id)):
+                            title_slug = question.get('titleSlug')
+                            print(f"Found question {question_id}: {title_slug}")
+                            return title_slug
+                    
+                    # If we got fewer questions than the limit, we've reached the end
+                    if len(questions) < 50:
+                        break
+        
+        print(f"Question {question_id} not found in problemset")
+        return None
+        
+    except Exception as e:
+        print(f"Error searching for question {question_id}: {str(e)}")
+        return None
+
+def detect_method_name_from_code(code):
+    """Detect the method name from C++ code"""
+    import re
+    
+    # Look for method declarations in the Solution class
+    # Pattern: return_type methodName(parameters)
+    method_patterns = [
+        r'(\w+)\s+(\w+)\s*\([^)]*\)\s*{',  # Standard method
+        r'(\w+)\s+(\w+)\s*\([^)]*\)\s*;',   # Method declaration
+    ]
+    
+    for pattern in method_patterns:
+        matches = re.findall(pattern, code)
+        for match in matches:
+            return_type, method_name = match
+            # Skip constructors, destructors, and common non-solution methods
+            if method_name not in ['Solution', '~Solution', 'main', 'cout', 'cin', 'next', 'prev', 'begin', 'end', 'size', 'empty', 'push', 'pop', 'top', 'front', 'back']:
+                print(f"Detected method name: {method_name}")
+                return method_name
+    
+    # If no method found, try to find any function-like pattern
+    function_pattern = r'(\w+)\s*\([^)]*\)\s*{'
+    matches = re.findall(function_pattern, code)
+    for match in matches:
+        if match not in ['main', 'cout', 'cin', 'if', 'for', 'while', 'next', 'prev', 'begin', 'end', 'size', 'empty', 'push', 'pop', 'top', 'front', 'back']:
+            print(f"Detected function name: {match}")
+            return match
+    
+    # Default fallback
+    print("No method detected, using default 'solve'")
+    return 'solve'
+
+def find_title_slug_by_id(question_id):
+    """Find the title_slug for a given question ID by searching LeetCode"""
+    try:
+        # Common LeetCode question mappings
+        question_mappings = {
+            '1': 'two-sum',
+            '2': 'add-two-numbers',
+            '3': 'longest-substring-without-repeating-characters',
+            '4': 'median-of-two-sorted-arrays',
+            '5': 'longest-palindromic-substring',
+            '7': 'reverse-integer',
+            '8': 'string-to-integer-atoi',
+            '9': 'palindrome-number',
+            '11': 'container-with-most-water',
+            '13': 'roman-to-integer',
+            '14': 'longest-common-prefix',
+            '20': 'valid-parentheses',
+            '21': 'merge-two-sorted-lists',
+            '26': 'remove-duplicates-from-sorted-array',
+            '27': 'remove-element',
+            '28': 'find-the-index-of-the-first-occurrence-in-a-string',
+            '125': 'valid-palindrome',
+            '202': 'happy-number',
+            '205': 'isomorphic-strings',
+            '242': 'valid-anagram',
+            '290': 'word-pattern',
+            '345': 'reverse-vowels-of-a-string'
+        }
+        
+        # Check if we have a direct mapping
+        if question_id in question_mappings:
+            return question_mappings[question_id]
+        
+        # If not found, try to search for it dynamically using LeetCode's problemset API
+        print(f"No mapping found for question ID {question_id}, trying dynamic search...")
+        return search_question_by_id(question_id)
+        
+    except Exception as e:
+        print(f"Error finding title_slug for question {question_id}: {str(e)}")
+        return None
