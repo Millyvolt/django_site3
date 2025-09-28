@@ -2020,7 +2020,8 @@ def execute_code_judge0(code, language, question_id='1'):
     
     # Version indices for different language versions
     version_indices = {
-        'cpp': '4',  # C++11 (version 4)
+        # 'cpp': '4',  # C++11 (version 4)
+        'cpp': '5',  # C++17 (version 5)
         'python3': '3',  # Python 3.5.1
         'java': '3',  # Java 1.8
         'javascript': '2',  # Node.js 0.10.36

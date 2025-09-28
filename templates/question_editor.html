@@ -813,9 +813,9 @@
                     </select>
                 </div>
                 <div class="editor-buttons">
-                    <button class="btn btn-warning" onclick="resetCode()">Reset</button>
+                    <!-- <button class="btn btn-warning" onclick="resetCode()">Reset</button> -->
                     <button class="btn btn-primary" onclick="runCode()">Run Code</button>
-                    <button class="btn btn-success" onclick="submitCode()">Submit</button>
+                    <!-- <button class="btn btn-success" onclick="submitCode()">Submit</button> -->
                     <button class="btn btn-info" onclick="fetchCppTemplateFromLeetCode(currentQuestionId)" id="fetchCppBtn" title="Fetch C++ template from LeetCode">🔧 Get C++ Template</button>
                     <button class="btn btn-info" onclick="toggleMobileView()" id="mobileBtn">📱 Mobile</button>
                     <button class="btn btn-info" onclick="toggleFullscreen()" id="fullscreenBtn">⛶ Full Screen</button>
@@ -1276,16 +1276,16 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             statusIndicator.textContent = 'Ready to code';
         }
         
-        function resetCode() {
-            const problem = problems[currentQuestionId];
-            updateCodeTemplate(problem);
-            outputPanel.innerHTML = '<div>Output will appear here...</div>';
-            outputPanel.className = 'output-panel';
-            statusIndicator.textContent = 'Code reset';
-            setTimeout(() => {
-                statusIndicator.textContent = 'Ready to code';
-            }, 2000);
-        }
+        // function resetCode() {
+        //     const problem = problems[currentQuestionId];
+        //     updateCodeTemplate(problem);
+        //     outputPanel.innerHTML = '<div>Output will appear here...</div>';
+        //     outputPanel.className = 'output-panel';
+        //     statusIndicator.textContent = 'Code reset';
+        //     setTimeout(() => {
+        //         statusIndicator.textContent = 'Ready to code';
+        //     }, 2000);
+        // }
         
         function changeLanguage() {
             const languageSelect = document.getElementById('languageSelect');
@@ -1477,24 +1477,24 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             });
         }
         
-        function submitCode() {
-            const code = codeEditor ? codeEditor.getValue() : '';
-            statusIndicator.textContent = 'Submitting...';
+        // function submitCode() {
+        //     const code = codeEditor ? codeEditor.getValue() : '';
+        //     statusIndicator.textContent = 'Submitting...';
             
-            // Simulate submission
-            setTimeout(() => {
-                const result = simulateSubmission(code);
-                if (result.passed) {
-                    outputPanel.innerHTML = `<div>✅ All test cases passed!<br>Time: ${result.time}ms<br>Memory: ${result.memory}MB</div>`;
-                    outputPanel.className = 'output-panel success';
-                    statusIndicator.textContent = 'Solution accepted!';
-                } else {
-                    outputPanel.innerHTML = `<div>❌ Test case failed:<br>${result.error}</div>`;
-                    outputPanel.className = 'output-panel error';
-                    statusIndicator.textContent = 'Solution rejected';
-                }
-            }, 1500);
-        }
+        //     // Simulate submission
+        //     setTimeout(() => {
+        //         const result = simulateSubmission(code);
+        //         if (result.passed) {
+        //             outputPanel.innerHTML = `<div>✅ All test cases passed!<br>Time: ${result.time}ms<br>Memory: ${result.memory}MB</div>`;
+        //             outputPanel.className = 'output-panel success';
+        //             statusIndicator.textContent = 'Solution accepted!';
+        //         } else {
+        //             outputPanel.innerHTML = `<div>❌ Test case failed:<br>${result.error}</div>`;
+        //             outputPanel.className = 'output-panel error';
+        //             statusIndicator.textContent = 'Solution rejected';
+        //         }
+        //     }, 1500);
+        // }
         
         function simulateCodeExecution(code) {
             // Simple simulation - in reality, this would be handled by a backend
