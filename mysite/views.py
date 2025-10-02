@@ -580,7 +580,7 @@ def question_selection(request):
         
         if response.status_code == 200:
             data = response.json()
-            print(f"API Response data: {data}")  # Debug log
+            # print(f"API Response data: {data}")  # Debug log
             
             # Add comprehensive null checks
             if data and isinstance(data, dict) and 'data' in data:
@@ -2001,17 +2001,19 @@ def compile_code(request):
         # print(f"Code before")
         # print(f"Code before")
 
-        # Get question_id from request if available
+        # Get question_id and title_slug from request if available
         question_id = data.get('question_id', '1')
+        title_slug = data.get('title_slug')
 
         # print(f"Question ID: {question_id}")
+        # print(f"Title Slug: {title_slug}")
         # print(f"Code: {code}")
         # print(f"Language: {language}")
 
         # return JsonResponse({'error': 'Code before: ' + code})
 
         # Use the working approach from my_django_project
-        result = execute_code_jdoodle(code, language, question_id)
+        result = execute_code_jdoodle(code, language, question_id, title_slug)
         return JsonResponse(result)
             
     except json.JSONDecodeError:
@@ -2020,7 +2022,7 @@ def compile_code(request):
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 
-def execute_code_jdoodle(code, language, question_id='1'):
+def execute_code_jdoodle(code, language, question_id='1', title_slug=None):
     """Execute code using JDoodle API (more reliable than Judge0)"""
     
     # JDoodle language codes and version indices
@@ -2048,10 +2050,10 @@ def execute_code_jdoodle(code, language, question_id='1'):
     leetcode_data = None
     if language == 'cpp':
         # Try to get LeetCode API data first
-        leetcode_data = fetch_leetcode_data_for_simulation(question_id)
+        leetcode_data = fetch_leetcode_data_for_simulation(question_id, title_slug)
         
         # Wrap C++ code with test cases
-        full_code = generate_cpp_wrapper_judge0(code, question_id)
+        full_code = generate_cpp_wrapper_judge0(code, question_id, title_slug)
         print(f"Generated wrapper for question {question_id}, length: {len(full_code)}")
         print(f"First 200 chars: {full_code[:200]}")
     else:
@@ -2129,16 +2131,21 @@ def execute_code_jdoodle(code, language, question_id='1'):
         return execute_code_simulation(code, language, question_id, leetcode_data)
 
 
-def fetch_leetcode_data_for_simulation(question_id):
+def fetch_leetcode_data_for_simulation(question_id, title_slug=None):
 
     print(f"Fetching LeetCode data for simulation: {question_id}")
 
     """Fetch LeetCode data for simulation fallback"""
     try:
-        # Get title_slug for the question
-        title_slug = find_title_slug_by_id(question_id)
-        if not title_slug:
-            return None
+        # Use provided title_slug if available (from daily question data)
+        if title_slug:
+            print(f"Using provided title_slug: {title_slug}")
+        else:
+            # Fallback to finding title_slug (for non-daily questions)
+            print(f"No title_slug provided, searching for question_id: {question_id}")
+            title_slug = find_title_slug_by_id(question_id)
+            if not title_slug:
+                return None
         
         # Fetch from LeetCode API
         url = 'https://leetcode.com/graphql'
@@ -2576,7 +2583,7 @@ vector<bool> expected_outputs = {true, false, true, true, false};''',
     
     return test_cases_map.get(question_id, test_cases_map['1'])
 
-def generate_cpp_wrapper_judge0(code, question_id='1'):
+def generate_cpp_wrapper_judge0(code, question_id='1', title_slug=None):
     """Generate a complete C++ program with test cases for Judge0"""
     
     # Check if code already has main function
@@ -2585,7 +2592,7 @@ def generate_cpp_wrapper_judge0(code, question_id='1'):
     
     # ALWAYS try to fetch test cases from LeetCode API first (for ALL questions)
     print(f"Generating C++ wrapper for question {question_id}")
-    leetcode_wrapper = fetch_and_generate_leetcode_wrapper(code, question_id)
+    leetcode_wrapper = fetch_and_generate_leetcode_wrapper(code, question_id, title_slug)
     if leetcode_wrapper:
         print(f"Using LeetCode API wrapper for question {question_id}")
         return leetcode_wrapper
@@ -2643,7 +2650,7 @@ int main() {
     
     return wrapper_code
 
-def fetch_and_generate_leetcode_wrapper(code, question_id):
+def fetch_and_generate_leetcode_wrapper(code, question_id, title_slug=None):
 
     print(f"Fetching and generating LeetCode wrapper for question {question_id}")
 
@@ -2651,11 +2658,16 @@ def fetch_and_generate_leetcode_wrapper(code, question_id):
     try:
         print(f"Attempting to fetch LeetCode test cases for question {question_id}")
         
-        # Get title_slug for the question
-        title_slug = find_title_slug_by_id(question_id)
-        if not title_slug:
-            print(f"No title_slug found for question {question_id}")
-            return None
+        # Use provided title_slug if available (from daily question data)
+        if title_slug:
+            print(f"Using provided title_slug: {title_slug}")
+        else:
+            # Fallback to finding title_slug (for non-daily questions)
+            print(f"No title_slug provided, searching for question_id: {question_id}")
+            title_slug = find_title_slug_by_id(question_id)
+            if not title_slug:
+                print(f"No title_slug found for question {question_id}")
+                return None
         
         print(f"Found title_slug: {title_slug}")
         
@@ -2718,7 +2730,8 @@ def fetch_and_generate_leetcode_wrapper(code, question_id):
                     if wrapper:
                         print(f"Successfully generated LeetCode wrapper for question {question_id}")
                         print(f"Wrapper length: {len(wrapper)} characters")
-                        print(f"First 200 characters: {wrapper[:200]}")
+                        # print(f"First 200 characters: {wrapper[:200]}")
+                        print(f"All wrapper characters: {wrapper}")
                         return wrapper
                     else:
                         print(f"Failed to generate wrapper for question {question_id}")

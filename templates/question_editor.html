@@ -816,7 +816,7 @@
                     <!-- <button class="btn btn-warning" onclick="resetCode()">Reset</button> -->
                     <button class="btn btn-primary" onclick="runCode()">Run Code</button>
                     <!-- <button class="btn btn-success" onclick="submitCode()">Submit</button> -->
-                    <button class="btn btn-info" onclick="fetchCppTemplateFromLeetCode(currentQuestionId)" id="fetchCppBtn" title="Fetch C++ template from LeetCode">🔧 Get C++ Template</button>
+                    <!-- <button class="btn btn-info" onclick="fetchCppTemplateFromLeetCode(currentQuestionId)" id="fetchCppBtn" title="Fetch C++ template from LeetCode">🔧 Get C++ Template</button> -->
                     <button class="btn btn-info" onclick="toggleMobileView()" id="mobileBtn">📱 Mobile</button>
                     <button class="btn btn-info" onclick="toggleFullscreen()" id="fullscreenBtn">⛶ Full Screen</button>
                     <button class="btn btn-info" onclick="toggleOutputPanel()" id="outputToggleBtn" title="Toggle Output Panel">📋 Output</button>
@@ -1437,7 +1437,8 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                     code: code,
                     language: language,
                     input: input,
-                    question_id: currentQuestionId
+                    question_id: currentQuestionId,
+                    title_slug: dailyQuestionData ? dailyQuestionData.title_slug : null
                 })
             })
             .then(response => response.json())
