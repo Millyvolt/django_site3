@@ -1178,8 +1178,8 @@
             
             // If we have daily question data, load it instead
             if (dailyQuestionData) {
-                currentQuestionId = '1'; // Load as question 1
-                loadQuestion('1');
+                currentQuestionId = dailyQuestionData.frontend_id || '1'; // Use actual daily question ID
+                loadQuestion(currentQuestionId);
             } else {
                 loadQuestion(currentQuestionId);
             }
@@ -1299,7 +1299,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             
             // Check if we have daily question data
             let problem;
-            if (dailyQuestionData && currentQuestionId === '1') {
+            if (dailyQuestionData && currentQuestionId === (dailyQuestionData.frontend_id || '1')) {
                 problem = {
                     title: dailyQuestionData.title,
                     difficulty: dailyQuestionData.difficulty,

@@ -379,6 +379,8 @@ def daily_question(request):
                 #     lang = snippet.get('lang', '')
                 #     print(f"Found code snippet in language: {lang}")
                 
+                # print(f"EXAMPLE TESTCASES: {example_testcases}")
+
                 # Find Python and C++ templates from LeetCode
                 for snippet in code_snippets:
                     lang = snippet.get('lang', '').lower()
