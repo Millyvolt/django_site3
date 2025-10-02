@@ -375,9 +375,9 @@ def daily_question(request):
                 cpp_template = ''
                 
                 print(f"Daily question code snippets count: {len(code_snippets)}")
-                for snippet in code_snippets:
-                    lang = snippet.get('lang', '')
-                    print(f"Found code snippet in language: {lang}")
+                # for snippet in code_snippets:
+                #     lang = snippet.get('lang', '')
+                #     print(f"Found code snippet in language: {lang}")
                 
                 # Find Python and C++ templates from LeetCode
                 for snippet in code_snippets:
@@ -423,6 +423,8 @@ def daily_question(request):
     
     # Your code here
     pass
+
+                        # print(f"Found cpp_template snippet in language: {cpp_template}")
 
 # Test your solution on LeetCode!''',
                     'cppTemplate': cpp_template if cpp_template else create_generic_cpp_template(
@@ -1989,16 +1991,25 @@ def compile_code(request):
         data = json.loads(request.body)
         code = data.get('code', '')
         language = data.get('language', 'cpp')
-        input_data = data.get('input', '')
+        # input_data = data.get('input', '')
         
         if not code:
             return JsonResponse({'error': 'No code provided'}, status=400)
-        
+
+        # print(f"Code before")
+        # print(f"Code before")
+
         # Get question_id from request if available
         question_id = data.get('question_id', '1')
-        
+
+        # print(f"Question ID: {question_id}")
+        # print(f"Code: {code}")
+        # print(f"Language: {language}")
+
+        # return JsonResponse({'error': 'Code before: ' + code})
+
         # Use the working approach from my_django_project
-        result = execute_code_judge0(code, language, question_id)
+        result = execute_code_jdoodle(code, language, question_id)
         return JsonResponse(result)
             
     except json.JSONDecodeError:
@@ -2007,7 +2018,7 @@ def compile_code(request):
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 
-def execute_code_judge0(code, language, question_id='1'):
+def execute_code_jdoodle(code, language, question_id='1'):
     """Execute code using JDoodle API (more reliable than Judge0)"""
     
     # JDoodle language codes and version indices
@@ -2028,7 +2039,8 @@ def execute_code_judge0(code, language, question_id='1'):
     }
     
     language_code = language_codes.get(language, 'cpp')
-    version_index = version_indices.get(language, '4')
+    # version_index = version_indices.get(language, '4')
+    version_index = version_indices.get(language, '5')
     
     # Prepare the code for submission
     leetcode_data = None
@@ -2116,6 +2128,9 @@ def execute_code_judge0(code, language, question_id='1'):
 
 
 def fetch_leetcode_data_for_simulation(question_id):
+
+    print(f"Fetching LeetCode data for simulation: {question_id}")
+
     """Fetch LeetCode data for simulation fallback"""
     try:
         # Get title_slug for the question
@@ -2627,6 +2642,9 @@ int main() {
     return wrapper_code
 
 def fetch_and_generate_leetcode_wrapper(code, question_id):
+
+    print(f"Fetching and generating LeetCode wrapper for question {question_id}")
+
     """Fetch test cases from LeetCode and generate a complete C++ wrapper"""
     try:
         print(f"Attempting to fetch LeetCode test cases for question {question_id}")
@@ -2821,6 +2839,9 @@ int main() {{
         return None
 
 def fetch_test_cases_from_leetcode(question_id):
+
+    print(f"Fetching test cases from LeetCode API for question {question_id}")
+
     """Fetch actual test cases from LeetCode API"""
     try:
         # First, try to find the title_slug for this question_id
@@ -3034,6 +3055,9 @@ int main() {{
         return None
 
 def generate_generic_test_cases_fallback(question_id, code=''):
+
+    print(f"Generating generic test cases as fallback for question {question_id}")
+
     """Generate generic test cases as fallback when LeetCode API fails"""
     # Try to detect the method name from the code
     method_name = detect_method_name_from_code(code)
@@ -3168,6 +3192,9 @@ def search_question_by_id(question_id):
         return None
 
 def detect_method_name_from_code(code):
+
+    print(f"Detecting method name from code")
+
     """Detect the method name from C++ code"""
     import re
     
