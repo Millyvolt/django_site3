@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Polls{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'polls/style.css' %}">
+    <style>
+        .auth-links {
+            text-align: right;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .auth-link {
+            display: inline-block;
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 12px;
+            transition: background-color 0.3s;
+        }
+        .auth-link:hover {
+            background-color: #5a6268;
+        }
+        .auth-link.login {
+            background-color: #28a745;
+        }
+        .auth-link.login:hover {
+            background-color: #218838;
+        }
+        .auth-link.register {
+            background-color: #007bff;
+        }
+        .auth-link.register:hover {
+            background-color: #0056b3;
+        }
+        .auth-link.logout {
+            background-color: #dc3545;
+        }
+        .auth-link.logout:hover {
+            background-color: #c82333;
+        }
+        .user-info {
+            display: inline-block;
+            margin-right: 10px;
+            color: #495057;
+            font-weight: bold;
+        }
+        .back-link {
+            margin-bottom: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-links">
+        <div class="back-link">
+            <a href="{% url 'home' %}">← Back to Home</a>
+        </div>
+        {% if user.is_authenticated %}
+            <span class="user-info">Welcome, {{ user.username }}!</span>
+            <a href="{% url 'profile' %}" class="auth-link">Profile</a>
+            <a href="{% url 'logout' %}" class="auth-link logout">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}" class="auth-link login">Login</a>
+            <a href="{% url 'register' %}" class="auth-link register">Register</a>
+        {% endif %}
+    </div>
+    
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 import json
 import requests
 import re
@@ -1219,6 +1220,7 @@ int main() {{
 }}'''
     }
 
+@login_required
 def question_editor(request, question_id=None):
 
     print(f"IN FUNCTION question_editor")
@@ -1338,6 +1340,7 @@ def fetch_cpp_template(request):
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 @csrf_exempt
+@login_required
 def compile_code(request):
     """Compile and run code using JDoodle API with intelligent simulation fallback"""
     if request.method != 'POST':
@@ -2901,4 +2904,34 @@ int main() {{
     
     return wrapper_code
 
+
+# Authentication Views
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+
+
+def register_view(request):
+    """User registration view"""
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Account created for {username}!')
+            # Automatically log in the user after registration
+            login(request, user)
+            return redirect('home')
+    else:
+        form = UserCreationForm()
+    
+    return render(request, 'registration/register.html', {'form': form})
+
+
+@login_required
+def profile_view(request):
+    """User profile view (example of a protected view)"""
+    return render(request, 'registration/profile.html', {'user': request.user})
 

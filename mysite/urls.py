@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django.conf import settings
 from . import views
@@ -31,6 +32,13 @@ urlpatterns = [
     path("editor/<str:question_id>/", views.question_editor, name="question_editor_with_id"),
     path("compile/", views.compile_code, name="compile_code"),
     path("fetch-cpp-template/", views.fetch_cpp_template, name="fetch_cpp_template"),
+    
+    # Authentication URLs
+    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
+    path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("accounts/register/", views.register_view, name="register"),
+    path("accounts/profile/", views.profile_view, name="profile"),
+    
     path("polls/", include("polls.urls")),
     path("admin/", admin.site.urls),
 ]

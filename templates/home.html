@@ -54,11 +54,71 @@
             margin-bottom: 30px;
             line-height: 1.6;
         }
+        .auth-links {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+        }
+        .auth-link {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 8px 16px;
+            background-color: #95a5a6;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .auth-link:hover {
+            background-color: #7f8c8d;
+        }
+        .auth-link.login {
+            background-color: #27ae60;
+        }
+        .auth-link.login:hover {
+            background-color: #229954;
+        }
+        .auth-link.register {
+            background-color: #3498db;
+        }
+        .auth-link.register:hover {
+            background-color: #2980b9;
+        }
+        .auth-link.logout {
+            background-color: #e74c3c;
+        }
+        .auth-link.logout:hover {
+            background-color: #c0392b;
+        }
+        .user-info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Welcome to My Django Site</h1>
+        
+        <!-- Authentication Links -->
+        <div class="auth-links">
+            {% if user.is_authenticated %}
+                <div class="user-info">
+                    Welcome, {{ user.username }}!
+                </div>
+                <a href="{% url 'profile' %}" class="auth-link">Profile</a>
+                <a href="{% url 'logout' %}" class="auth-link logout">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="auth-link login">Login</a>
+                <a href="{% url 'register' %}" class="auth-link register">Register</a>
+            {% endif %}
+        </div>
+        
         <p class="description">
             This is a Django web application featuring a polling system and coding resources. 
             Explore the different sections using the navigation links below.
