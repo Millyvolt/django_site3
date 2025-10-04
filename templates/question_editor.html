@@ -859,8 +859,9 @@
         let currentTheme = 'default';
         
         // Problem data from Django
-        // eslint-disable-next-line
-        const problems = {{ problems|safe }};
+        /* eslint-disable no-undef, no-redeclare, no-unused-vars */
+        const problemsData = {{ problems|safe }};
+        /* eslint-enable */
         
         let currentQuestionId = '{{ current_question_id }}';
         let currentTitleSlug = '{{ current_title_slug|default_if_none:"" }}';
@@ -1179,6 +1180,7 @@
             // If we have daily question data, load it instead
             if (dailyQuestionData) {
                 currentQuestionId = dailyQuestionData.frontend_id || '1'; // Use actual daily question ID
+                currentTitleSlug = dailyQuestionData.title_slug || '';
                 loadQuestion(currentQuestionId);
             } else {
                 loadQuestion(currentQuestionId);
@@ -1210,7 +1212,7 @@
             let problem;
             
             // Check if we have daily question data
-            if (dailyQuestionData && questionId === '1') {
+            if (dailyQuestionData && (questionId === dailyQuestionData.frontend_id || questionId === '1')) {
                 problem = {
                     title: dailyQuestionData.title,
                     difficulty: dailyQuestionData.difficulty,
@@ -1224,13 +1226,13 @@
                 // Update header to show it's a daily question
                 document.getElementById('problem-title').textContent = dailyQuestionData.title + ' (Daily Challenge)';
             } else {
-                problem = problems[questionId];
+                problem = problemsData[questionId];
             }
             
             if (!problem) return;
             
             // Update header (title already set for daily questions)
-            if (!dailyQuestionData || questionId !== '1') {
+            if (!dailyQuestionData || (questionId !== dailyQuestionData.frontend_id && questionId !== '1')) {
                 document.getElementById('problem-title').textContent = problem.title;
             }
             const difficultyBadge = document.getElementById('difficulty-badge');
@@ -1260,9 +1262,13 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             const constraintsHtml = problem.constraints.map(constraint => `<li>${constraint}</li>`).join('');
             document.getElementById('problem-constraints').innerHTML = constraintsHtml;
             
-            // Update code editor
+            // Update code editor with appropriate template based on current language
             if (codeEditor) {
-                codeEditor.setValue(problem.template);
+                if (currentLanguage === 'cpp' && problem.cppTemplate) {
+                    codeEditor.setValue(problem.cppTemplate);
+                } else {
+                    codeEditor.setValue(problem.template);
+                }
             }
             
             // If current language is C++ and we don't have a proper C++ template, fetch it from LeetCode
@@ -1299,7 +1305,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             
             // Check if we have daily question data
             let problem;
-            if (dailyQuestionData && currentQuestionId === (dailyQuestionData.frontend_id || '1')) {
+            if (dailyQuestionData && (currentQuestionId === dailyQuestionData.frontend_id || currentQuestionId === '1')) {
                 problem = {
                     title: dailyQuestionData.title,
                     difficulty: dailyQuestionData.difficulty,
@@ -1310,7 +1316,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                     cppTemplate: dailyQuestionData.cppTemplate || dailyQuestionData.template
                 };
             } else {
-                problem = problems[currentQuestionId];
+                problem = problemsData[currentQuestionId];
             }
             
             if (problem) {
@@ -1333,8 +1339,8 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
             };
             
             // Use title_slug if available for more efficient fetching
-            if (titleSlug || currentTitleSlug) {
-                requestData.title_slug = titleSlug || currentTitleSlug;
+            if (titleSlug || currentTitleSlug || (dailyQuestionData && dailyQuestionData.title_slug)) {
+                requestData.title_slug = titleSlug || currentTitleSlug || dailyQuestionData.title_slug;
             }
             
             fetch('/fetch-cpp-template/', {
@@ -1351,8 +1357,8 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                     console.log('Successfully fetched C++ template from LeetCode');
                     
                     // Update the problem data with the fetched C++ template
-                    if (problems[questionId]) {
-                        problems[questionId].cppTemplate = result.cpp_template;
+                    if (problemsData[questionId]) {
+                        problemsData[questionId].cppTemplate = result.cpp_template;
                     }
                     
                     // If current language is C++, update the editor
@@ -1401,7 +1407,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
         
         function updateCodeTemplate(problem) {
             if (codeEditor) {
-                if (currentLanguage === 'cpp' && problem.cppTemplate) {
+                if (currentLanguage === 'cpp' && problem.cppTemplate && !problem.cppTemplate.includes('// Your code here')) {
                     codeEditor.setValue(problem.cppTemplate);
                 } else {
                     codeEditor.setValue(problem.template);
@@ -1438,7 +1444,7 @@ ${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` :
                     language: language,
                     input: input,
                     question_id: currentQuestionId,
-                    title_slug: dailyQuestionData ? dailyQuestionData.title_slug : null
+                    title_slug: dailyQuestionData ? dailyQuestionData.title_slug : currentTitleSlug
                 })
             })
             .then(response => response.json())
