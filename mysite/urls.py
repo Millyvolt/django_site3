@@ -26,7 +26,6 @@ urlpatterns = [
     path("leetcode-home/", views.leetcode_home, name="leetcode_home"),
     path("daily-question/", views.daily_question, name="daily_question"),
     path("test-html/", views.test_html, name="test_html"),
-    path("leetcode/", views.leetcode, name="leetcode"),
     path("pick-question/", views.question_selection, name="question_selection"),
     path("editor/", views.question_editor, name="question_editor"),
     path("editor/<str:question_id>/", views.question_editor, name="question_editor_with_id"),

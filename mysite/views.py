@@ -471,9 +471,6 @@ def daily_question(request):
     
     return render(request, 'daily_question.html', context)
 
-def leetcode(request):
-    """LeetCode problems page view"""
-    return render(request, 'leetcode.html')
 
 def question_selection(request):
     """Question selection page with LeetCode problems from API"""
