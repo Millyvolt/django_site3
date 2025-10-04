@@ -459,56 +459,8 @@ def daily_question(request):
             
     except Exception as e:
         # Fallback to a default question if API fails
+        print(f"Error fetching daily question: {str(e)}")
         daily_question_data = {
-            'title': 'Two Sum',
-            'difficulty': 'Easy',
-            'date': '2024-12-20',
-            'description': '<p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return indices of the two numbers such that they add up to target.</p><p><strong>Test HTML:</strong> <em>This should be italic</em> and <code>this should be code</code></p>',
-            'examples': [
-                {
-                    'input': 'nums = [2,7,11,15], target = 9',
-                    'output': '[0,1]',
-                    'explanation': 'Because nums[0] + nums[1] == 9, we return [0, 1].'
-                }
-            ],
-            'constraints': [
-                '2 ≤ nums.length ≤ 10⁴',
-                '-10⁹ ≤ nums[i] ≤ 10⁹',
-                '-10⁹ ≤ target ≤ 10⁹'
-            ],
-            'template': '''def twoSum(nums, target):
-        # Your code here
-        pass
-
-    # Test cases
-    print(twoSum([2,7,11,15], 9))  # Expected: [0,1]''',
-            'cppTemplate': '''#include <iostream>
-#include <vector>
-using namespace std;
-
-class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    vector<int> nums = {2,7,11,15};
-    int target = 9;
-    vector<int> result = solution.twoSum(nums, target);
-    
-    cout << "Result: [";
-    for(int i = 0; i < result.size(); i++) {
-        cout << result[i];
-        if(i < result.size() - 1) cout << ",";
-    }
-    cout << "]" << endl;  // Expected: [0,1]
-    
-    return 0;
-}'''
         }
         
         context = {
@@ -677,7 +629,8 @@ def question_selection(request):
         except Exception as e2:
             print(f"Alternative approach also failed: {str(e2)}")
             # Final fallback to sample questions
-            questions = fetch_questions_scraping()  # Use the expanded sample questions
+            # questions = fetch_questions_scraping()  # Use the expanded sample questions
+            questions = []
             
             context = {
                 'questions': questions,
@@ -792,42 +745,12 @@ def fetch_questions_alternative(page, limit, difficulty, search_term):
         
         # If that fails, try scraping the problems page
         print("Alternative API failed, falling back to sample questions")
-        return fetch_questions_scraping()
+        # return fetch_questions_scraping()
+        return []
         
     except Exception as e:
         print(f"Alternative fetch failed: {str(e)}")
-        return fetch_questions_scraping()
-
-def fetch_questions_scraping():
-    """Fallback method using web scraping"""
-    try:
-        # This is a simplified scraping approach - in production you'd want more robust scraping
-        # For now, return an expanded list of sample questions
-        questions = [
-            {'id': '1', 'title': 'Two Sum', 'difficulty': 'Easy', 'acceptance_rate': 46.8, 'title_slug': 'two-sum', 'tags': ['Array', 'Hash Table'], 'leetcode_url': 'https://leetcode.com/problems/two-sum'},
-            {'id': '2', 'title': 'Add Two Numbers', 'difficulty': 'Medium', 'acceptance_rate': 37.4, 'title_slug': 'add-two-numbers', 'tags': ['Linked List', 'Math', 'Recursion'], 'leetcode_url': 'https://leetcode.com/problems/add-two-numbers'},
-            {'id': '3', 'title': 'Longest Substring Without Repeating Characters', 'difficulty': 'Medium', 'acceptance_rate': 33.8, 'title_slug': 'longest-substring-without-repeating-characters', 'tags': ['Hash Table', 'String', 'Sliding Window'], 'leetcode_url': 'https://leetcode.com/problems/longest-substring-without-repeating-characters'},
-            {'id': '4', 'title': 'Median of Two Sorted Arrays', 'difficulty': 'Hard', 'acceptance_rate': 33.1, 'title_slug': 'median-of-two-sorted-arrays', 'tags': ['Array', 'Binary Search', 'Divide and Conquer'], 'leetcode_url': 'https://leetcode.com/problems/median-of-two-sorted-arrays'},
-            {'id': '5', 'title': 'Longest Palindromic Substring', 'difficulty': 'Medium', 'acceptance_rate': 31.9, 'title_slug': 'longest-palindromic-substring', 'tags': ['String', 'Dynamic Programming'], 'leetcode_url': 'https://leetcode.com/problems/longest-palindromic-substring'},
-            {'id': '6', 'title': 'Zigzag Conversion', 'difficulty': 'Medium', 'acceptance_rate': 40.4, 'title_slug': 'zigzag-conversion', 'tags': ['String'], 'leetcode_url': 'https://leetcode.com/problems/zigzag-conversion'},
-            {'id': '7', 'title': 'Reverse Integer', 'difficulty': 'Medium', 'acceptance_rate': 26.0, 'title_slug': 'reverse-integer', 'tags': ['Math'], 'leetcode_url': 'https://leetcode.com/problems/reverse-integer'},
-            {'id': '8', 'title': 'String to Integer (atoi)', 'difficulty': 'Medium', 'acceptance_rate': 16.4, 'title_slug': 'string-to-integer-atoi', 'tags': ['String'], 'leetcode_url': 'https://leetcode.com/problems/string-to-integer-atoi'},
-            {'id': '9', 'title': 'Palindrome Number', 'difficulty': 'Easy', 'acceptance_rate': 52.4, 'title_slug': 'palindrome-number', 'tags': ['Math'], 'leetcode_url': 'https://leetcode.com/problems/palindrome-number'},
-            {'id': '10', 'title': 'Regular Expression Matching', 'difficulty': 'Hard', 'acceptance_rate': 28.1, 'title_slug': 'regular-expression-matching', 'tags': ['String', 'Dynamic Programming', 'Recursion'], 'leetcode_url': 'https://leetcode.com/problems/regular-expression-matching'},
-            {'id': '11', 'title': 'Container With Most Water', 'difficulty': 'Medium', 'acceptance_rate': 54.5, 'title_slug': 'container-with-most-water', 'tags': ['Array', 'Two Pointers', 'Greedy'], 'leetcode_url': 'https://leetcode.com/problems/container-with-most-water'},
-            {'id': '12', 'title': 'Integer to Roman', 'difficulty': 'Medium', 'acceptance_rate': 59.7, 'title_slug': 'integer-to-roman', 'tags': ['Hash Table', 'Math', 'String'], 'leetcode_url': 'https://leetcode.com/problems/integer-to-roman'},
-            {'id': '13', 'title': 'Roman to Integer', 'difficulty': 'Easy', 'acceptance_rate': 58.9, 'title_slug': 'roman-to-integer', 'tags': ['Hash Table', 'Math', 'String'], 'leetcode_url': 'https://leetcode.com/problems/roman-to-integer'},
-            {'id': '14', 'title': 'Longest Common Prefix', 'difficulty': 'Easy', 'acceptance_rate': 38.1, 'title_slug': 'longest-common-prefix', 'tags': ['String', 'Trie'], 'leetcode_url': 'https://leetcode.com/problems/longest-common-prefix'},
-            {'id': '15', 'title': '3Sum', 'difficulty': 'Medium', 'acceptance_rate': 30.8, 'title_slug': '3sum', 'tags': ['Array', 'Two Pointers', 'Sorting'], 'leetcode_url': 'https://leetcode.com/problems/3sum'},
-            {'id': '20', 'title': 'Valid Parentheses', 'difficulty': 'Easy', 'acceptance_rate': 40.2, 'title_slug': 'valid-parentheses', 'tags': ['String', 'Stack'], 'leetcode_url': 'https://leetcode.com/problems/valid-parentheses'},
-            {'id': '21', 'title': 'Merge Two Sorted Lists', 'difficulty': 'Easy', 'acceptance_rate': 60.3, 'title_slug': 'merge-two-sorted-lists', 'tags': ['Linked List', 'Recursion'], 'leetcode_url': 'https://leetcode.com/problems/merge-two-sorted-lists'},
-            {'id': '26', 'title': 'Remove Duplicates from Sorted Array', 'difficulty': 'Easy', 'acceptance_rate': 52.1, 'title_slug': 'remove-duplicates-from-sorted-array', 'tags': ['Array', 'Two Pointers'], 'leetcode_url': 'https://leetcode.com/problems/remove-duplicates-from-sorted-array'},
-            {'id': '27', 'title': 'Remove Element', 'difficulty': 'Easy', 'acceptance_rate': 55.8, 'title_slug': 'remove-element', 'tags': ['Array', 'Two Pointers'], 'leetcode_url': 'https://leetcode.com/problems/remove-element'},
-            {'id': '28', 'title': 'Find the Index of the First Occurrence in a String', 'difficulty': 'Easy', 'acceptance_rate': 41.7, 'title_slug': 'find-the-index-of-the-first-occurrence-in-a-string', 'tags': ['Two Pointers', 'String', 'String Matching'], 'leetcode_url': 'https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string'}
-        ]
-        return questions
-    except Exception as e:
-        print(f"Scraping fallback failed: {str(e)}")
+        # return fetch_questions_scraping()
         return []
 
 def fetch_problem_from_leetcode_api(question_id):
@@ -1300,6 +1223,9 @@ int main() {{
     }
 
 def question_editor(request, question_id=None):
+
+    print(f"IN FUNCTION question_editor")
+
     """Question editor page for coding problems"""
     # Check if this is a daily question request
     is_daily = request.GET.get('daily') == 'true'
@@ -1312,576 +1238,7 @@ def question_editor(request, question_id=None):
     title_slug = request.GET.get('slug', None)
     
     # Define problem data
-    problems = {
-        '1': {
-            'title': 'Two Sum',
-            'difficulty': 'Easy',
-            'description': 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
-            'examples': [
-                {
-                    'input': 'nums = [2,7,11,15], target = 9',
-                    'output': '[0,1]',
-                    'explanation': 'Because nums[0] + nums[1] == 9, we return [0, 1].'
-                },
-                {
-                    'input': 'nums = [3,2,4], target = 6',
-                    'output': '[1,2]',
-                    'explanation': ''
-                }
-            ],
-            'constraints': [
-                '2 ≤ nums.length ≤ 10⁴',
-                '-10⁹ ≤ nums[i] ≤ 10⁹',
-                '-10⁹ ≤ target ≤ 10⁹',
-                'Only one valid answer exists.'
-            ],
-            'template': '''def twoSum(nums, target):
-    # Your code here
-    pass
-
-# Test cases
-print(twoSum([2,7,11,15], 9))  # Expected: [0,1]
-print(twoSum([3,2,4], 6))      # Expected: [1,2]''',
-            'cppTemplate': '''#include <iostream>
-#include <vector>
-using namespace std;
-
-class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    vector<int> nums1 = {2,7,11,15};
-    int target1 = 9;
-    vector<int> result1 = solution.twoSum(nums1, target1);
-    
-    cout << "Test 1: [";
-    for(int i = 0; i < result1.size(); i++) {
-        cout << result1[i];
-        if(i < result1.size() - 1) cout << ",";
-    }
-    cout << "]" << endl;  // Expected: [0,1]
-    
-    return 0;
-}'''
-        },
-        '2': {
-            'title': 'Add Two Numbers',
-            'difficulty': 'Medium',
-            'description': 'You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.',
-            'examples': [
-                {
-                    'input': 'l1 = [2,4,3], l2 = [5,6,4]',
-                    'output': '[7,0,8]',
-                    'explanation': '342 + 465 = 807.'
-                }
-            ],
-            'constraints': [
-                'The number of nodes in each linked list is in the range [1, 100].',
-                '0 ≤ Node.val ≤ 9',
-                'It is guaranteed that the list represents a number that does not have leading zeros.'
-            ],
-            'template': '''class ListNode:
-    def __init__(self, val=0, next=None):
-        self.val = val
-        self.next = next
-
-def addTwoNumbers(l1, l2):
-    # Your code here
-    pass
-
-# Test cases would go here''',
-            'cppTemplate': '''#include <iostream>
-using namespace std;
-
-struct ListNode {
-    int val;
-    ListNode *next;
-    ListNode() : val(0), next(nullptr) {}
-    ListNode(int x) : val(x), next(nullptr) {}
-    ListNode(int x, ListNode *next) : val(x), next(next) {}
-};
-
-class Solution {
-public:
-    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    // Test cases would go here
-    return 0;
-}'''
-        },
-        '3': {
-            'title': 'Longest Substring Without Repeating Characters',
-            'difficulty': 'Medium',
-            'description': 'Given a string s, find the length of the longest substring without repeating characters.',
-            'examples': [
-                {
-                    'input': 's = "abcabcbb"',
-                    'output': '3',
-                    'explanation': 'The answer is "abc", with the length of 3.'
-                },
-                {
-                    'input': 's = "bbbbb"',
-                    'output': '1',
-                    'explanation': 'The answer is "b", with the length of 1.'
-                }
-            ],
-            'constraints': [
-                '0 ≤ s.length ≤ 5 * 10⁴',
-                's consists of English letters, digits, symbols and spaces.'
-            ],
-            'template': '''def lengthOfLongestSubstring(s):
-    # Your code here
-    pass
-
-# Test cases
-print(lengthOfLongestSubstring("abcabcbb"))  # Expected: 3
-print(lengthOfLongestSubstring("bbbbb"))     # Expected: 1''',
-            'cppTemplate': '''#include <iostream>
-#include <string>
-#include <unordered_set>
-using namespace std;
-
-class Solution {
-public:
-    int lengthOfLongestSubstring(string s) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    cout << "Test 1: " << solution.lengthOfLongestSubstring("abcabcbb") << endl;  // Expected: 3
-    cout << "Test 2: " << solution.lengthOfLongestSubstring("bbbbb") << endl;     // Expected: 1
-    return 0;
-}'''
-        },
-        '4': {
-            'title': 'Median of Two Sorted Arrays',
-            'difficulty': 'Hard',
-            'description': 'Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.',
-            'examples': [
-                {
-                    'input': 'nums1 = [1,3], nums2 = [2]',
-                    'output': '2.0',
-                    'explanation': 'merged array = [1,2,3] and median is 2.'
-                }
-            ],
-            'constraints': [
-                'nums1.length == m',
-                'nums2.length == n',
-                '0 ≤ m ≤ 1000',
-                '0 ≤ n ≤ 1000',
-                '1 ≤ m + n ≤ 2000'
-            ],
-            'template': '''def findMedianSortedArrays(nums1, nums2):
-    # Your code here
-    pass
-
-# Test cases
-print(findMedianSortedArrays([1,3], [2]))  # Expected: 2.0''',
-            'cppTemplate': '''#include <iostream>
-#include <vector>
-using namespace std;
-
-class Solution {
-public:
-    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    vector<int> nums1 = {1, 3};
-    vector<int> nums2 = {2};
-    cout << "Test 1: " << solution.findMedianSortedArrays(nums1, nums2) << endl;  // Expected: 2.0
-    return 0;
-}'''
-        },
-        '5': {
-            'title': 'Longest Palindromic Substring',
-            'difficulty': 'Medium',
-            'description': 'Given a string s, return the longest palindromic substring in s.',
-            'examples': [
-                {
-                    'input': 's = "babad"',
-                    'output': '"bab"',
-                    'explanation': '"aba" is also a valid answer.'
-                }
-            ],
-            'constraints': [
-                '1 ≤ s.length ≤ 1000',
-                's consist of only digits and English letters.'
-            ],
-            'template': '''def longestPalindrome(s):
-    # Your code here
-    pass
-
-# Test cases
-print(longestPalindrome("babad"))  # Expected: "bab" or "aba"''',
-            'cppTemplate': '''#include <iostream>
-#include <string>
-using namespace std;
-
-class Solution {
-public:
-    string longestPalindrome(string s) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    cout << "Test 1: " << solution.longestPalindrome("babad") << endl;  // Expected: "bab" or "aba"
-    return 0;
-}'''
-        },
-        '9': {
-            'title': 'Palindrome Number',
-            'difficulty': 'Easy',
-            'description': 'Given an integer x, return true if x is a palindrome integer.',
-            'examples': [
-                {
-                    'input': 'x = 121',
-                    'output': 'true',
-                    'explanation': '121 reads as 121 from left to right and from right to left.'
-                }
-            ],
-            'constraints': [
-                '-2³¹ ≤ x ≤ 2³¹ - 1'
-            ],
-            'template': '''def isPalindrome(x):
-    # Your code here
-    pass
-
-# Test cases
-print(isPalindrome(121))  # Expected: True''',
-            'cppTemplate': '''#include <iostream>
-using namespace std;
-
-class Solution {
-public:
-    bool isPalindrome(int x) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    cout << "Test 1: " << (solution.isPalindrome(121) ? "true" : "false") << endl;  // Expected: true
-    return 0;
-}'''
-        },
-        '20': {
-            'title': 'Valid Parentheses',
-            'difficulty': 'Easy',
-            'description': 'Given a string s containing just the characters \'(\', \')\', \'{\', \'}\', \'[\' and \']\', determine if the input string is valid.',
-            'examples': [
-                {
-                    'input': 's = "()"',
-                    'output': 'true',
-                    'explanation': ''
-                }
-            ],
-            'constraints': [
-                '1 ≤ s.length ≤ 10⁴',
-                's consists of parentheses only \'()[]{}.\''
-            ],
-            'template': '''def isValid(s):
-    # Your code here
-    pass
-
-# Test cases
-print(isValid("()"))  # Expected: True''',
-            'cppTemplate': '''#include <iostream>
-#include <string>
-#include <stack>
-using namespace std;
-
-class Solution {
-public:
-    bool isValid(string s) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    cout << "Test 1: " << (solution.isValid("()") ? "true" : "false") << endl;  // Expected: true
-    return 0;
-}'''
-        },
-        '21': {
-            'title': 'Merge Two Sorted Lists',
-            'difficulty': 'Easy',
-            'description': 'You are given the heads of two sorted linked lists list1 and list2. Merge the two lists in a one sorted list.',
-            'examples': [
-                {
-                    'input': 'list1 = [1,2,4], list2 = [1,3,4]',
-                    'output': '[1,1,2,3,4,4]',
-                    'explanation': ''
-                }
-            ],
-            'constraints': [
-                'The number of nodes in both lists is in the range [0, 50].',
-                '-100 ≤ Node.val ≤ 100',
-                'Both list1 and list2 are sorted in non-decreasing order.'
-            ],
-            'template': '''class ListNode:
-    def __init__(self, val=0, next=None):
-        self.val = val
-        self.next = next
-
-def mergeTwoLists(list1, list2):
-    # Your code here
-    pass
-
-# Test cases would go here''',
-            'cppTemplate': '''#include <iostream>
-using namespace std;
-
-struct ListNode {
-    int val;
-    ListNode *next;
-    ListNode() : val(0), next(nullptr) {}
-    ListNode(int x) : val(x), next(nullptr) {}
-    ListNode(int x, ListNode *next) : val(x), next(next) {}
-};
-
-class Solution {
-public:
-    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    // Test cases would go here
-    return 0;
-}'''
-        },
-        '26': {
-            'title': 'Remove Duplicates from Sorted Array',
-            'difficulty': 'Easy',
-            'description': 'Given an integer array nums sorted in non-decreasing order, remove the duplicates in-place such that each unique element appears only once.',
-            'examples': [
-                {
-                    'input': 'nums = [1,1,2]',
-                    'output': '2, nums = [1,2,_]',
-                    'explanation': 'Your function should return k = 2, with the first two elements of nums being 1 and 2 respectively.'
-                }
-            ],
-            'constraints': [
-                '1 ≤ nums.length ≤ 3 * 10⁴',
-                '-100 ≤ nums[i] ≤ 100',
-                'nums is sorted in non-decreasing order.'
-            ],
-            'template': '''def removeDuplicates(nums):
-    # Your code here
-    pass
-
-# Test cases
-print(removeDuplicates([1,1,2]))  # Expected: 2''',
-            'cppTemplate': '''#include <iostream>
-#include <vector>
-using namespace std;
-
-class Solution {
-public:
-    int removeDuplicates(vector<int>& nums) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    vector<int> nums = {1,1,2};
-    cout << "Test 1: " << solution.removeDuplicates(nums) << endl;  // Expected: 2
-    return 0;
-}'''
-        },
-        '27': {
-            'title': 'Remove Element',
-            'difficulty': 'Easy',
-            'description': 'Given an integer array nums and an integer val, remove all occurrences of val in-place.',
-            'examples': [
-                {
-                    'input': 'nums = [3,2,2,3], val = 3',
-                    'output': '2, nums = [2,2,_,_]',
-                    'explanation': 'Your function should return k = 2, with the first two elements of nums being 2.'
-                }
-            ],
-            'constraints': [
-                '0 ≤ nums.length ≤ 100',
-                '0 ≤ nums[i] ≤ 50',
-                '0 ≤ val ≤ 100'
-            ],
-            'template': '''def removeElement(nums, val):
-    # Your code here
-    pass
-
-# Test cases
-print(removeElement([3,2,2,3], 3))  # Expected: 2''',
-            'cppTemplate': '''#include <iostream>
-#include <vector>
-using namespace std;
-
-class Solution {
-public:
-    int removeElement(vector<int>& nums, int val) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    vector<int> nums = {3,2,2,3};
-    cout << "Test 1: " << solution.removeElement(nums, 3) << endl;  // Expected: 2
-    return 0;
-}'''
-        },
-        '28': {
-            'title': 'Find the Index of the First Occurrence in a String',
-            'difficulty': 'Easy',
-            'description': 'Given two strings needle and haystack, return the index of the first occurrence of needle in haystack, or -1 if needle is not part of haystack.',
-            'examples': [
-                {
-                    'input': 'haystack = "sadbutsad", needle = "sad"',
-                    'output': '0',
-                    'explanation': '"sad" occurs at index 0 and 6. The first occurrence is at index 0.'
-                }
-            ],
-            'constraints': [
-                '1 ≤ haystack.length, needle.length ≤ 10⁴',
-                'haystack and needle consist of only lowercase English characters.'
-            ],
-            'template': '''def strStr(haystack, needle):
-    # Your code here
-    pass
-
-# Test cases
-print(strStr("sadbutsad", "sad"))  # Expected: 0''',
-            'cppTemplate': '''#include <iostream>
-#include <string>
-using namespace std;
-
-class Solution {
-public:
-    int strStr(string haystack, string needle) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    cout << "Test 1: " << solution.strStr("sadbutsad", "sad") << endl;  // Expected: 0
-    return 0;
-}'''
-        },
-        '6': {
-            'title': 'Zigzag Conversion',
-            'difficulty': 'Medium',
-            'description': 'The string "PAYPALISHIRING" is written in a zigzag pattern on a given number of rows like this: (you may want to display this pattern in a fixed font for better legibility)',
-            'examples': [
-                {
-                    'input': 's = "PAYPALISHIRING", numRows = 3',
-                    'output': '"PAHNAPLSIIGYIR"',
-                    'explanation': 'P   A   H   N\nA P L S I I G\nY   I   R'
-                }
-            ],
-            'constraints': [
-                '1 ≤ s.length ≤ 1000',
-                's consists of English letters (lower-case and upper-case), \',\' and \'.\'.',
-                '1 ≤ numRows ≤ 1000'
-            ],
-            'template': '''def convert(s, numRows):
-    # Your code here
-    pass
-
-# Test cases
-print(convert("PAYPALISHIRING", 3))  # Expected: "PAHNAPLSIIGYIR"''',
-            'cppTemplate': '''#include <iostream>
-#include <string>
-using namespace std;
-
-class Solution {
-public:
-    string convert(string s, int numRows) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    cout << "Test 1: " << solution.convert("PAYPALISHIRING", 3) << endl;  // Expected: "PAHNAPLSIIGYIR"
-    return 0;
-}'''
-        },
-        '8': {
-            'title': 'String to Integer (atoi)',
-            'difficulty': 'Medium',
-            'description': 'Implement the myAtoi(string s) function, which converts a string to a 32-bit signed integer (similar to C/C++\'s atoi function).',
-            'examples': [
-                {
-                    'input': 's = "42"',
-                    'output': '42',
-                    'explanation': 'The underlined characters are what is read in, the caret is the current reader position.'
-                }
-            ],
-            'constraints': [
-                '0 ≤ s.length ≤ 200',
-                's consists of English letters (lower-case and upper-case), digits (0-9), \' \', \'+\', \'-\', and \'.\'.'
-            ],
-            'template': '''def myAtoi(s):
-    # Your code here
-    pass
-
-# Test cases
-print(myAtoi("42"))      # Expected: 42
-print(myAtoi("   -42"))  # Expected: -42''',
-            'cppTemplate': '''#include <iostream>
-#include <string>
-using namespace std;
-
-class Solution {
-public:
-    int myAtoi(string s) {
-        // Your code here
-        
-    }
-};
-
-int main() {
-    Solution solution;
-    cout << "Test 1: " << solution.myAtoi("42") << endl;      // Expected: 42
-    cout << "Test 2: " << solution.myAtoi("   -42") << endl;  // Expected: -42
-    return 0;
-}'''
-        }
-    }
-    
-    
+    problems = {}
     problem = problems.get(question_id)
     if not problem:
         # Try to fetch the problem dynamically from LeetCode API
@@ -2053,7 +1410,7 @@ def execute_code_jdoodle(code, language, question_id='1', title_slug=None):
         leetcode_data = fetch_leetcode_data_for_simulation(question_id, title_slug)
         
         # Wrap C++ code with test cases
-        full_code = generate_cpp_wrapper_judge0(code, question_id, title_slug)
+        full_code = generate_cpp_wrapper_jdoodle(code, question_id, title_slug)
         print(f"Generated wrapper for question {question_id}, length: {len(full_code)}")
         print(f"First 200 chars: {full_code[:200]}")
     else:
@@ -2122,13 +1479,15 @@ def execute_code_jdoodle(code, language, question_id='1', title_slug=None):
             # Debug: Print the error response
             print(f"JDoodle API Error: Status {response.status_code}, Response: {response.text}")
             # Fallback to simulated execution for demo
-            return execute_code_simulation(code, language, question_id, leetcode_data)
+            # return execute_code_simulation(code, language, question_id, leetcode_data)
+            return None
     
     except requests.exceptions.RequestException as e:
         # Debug: Print the exception
         print(f"JDoodle API Request Exception: {str(e)}")
         # Fallback to simulated execution
-        return execute_code_simulation(code, language, question_id, leetcode_data)
+        # return execute_code_simulation(code, language, question_id, leetcode_data)
+        return None
 
 
 def fetch_leetcode_data_for_simulation(question_id, title_slug=None):
@@ -2236,354 +1595,21 @@ def parse_leetcode_test_cases_for_simulation(leetcode_data):
         print(f"Error parsing LeetCode test cases for simulation: {str(e)}")
         return []
 
-def execute_code_simulation(code, language, question_id='1', leetcode_data=None):
-    """Intelligent fallback simulation with realistic test case validation"""
-    
-    # Basic validation
-    if language == 'cpp':
-        # Check for basic C++ syntax
-        if 'class Solution' not in code:
-            return {
-                'success': False,
-                'error': 'Missing class Solution declaration',
-                'error_type': 'compilation_error'
-            }
-        
-        if 'return' not in code:
-            return {
-                'success': False,
-                'error': 'Missing return statement',
-                'error_type': 'compilation_error'
-            }
-        
-        # Analyze code quality to determine realistic results
-        test_results = analyze_cpp_solution(code, question_id, leetcode_data)
-        return test_results
-    
-    else:
-        # Python simulation with realistic validation
-        test_results = analyze_python_solution(code, question_id)
-        return test_results
-
-
-def get_simulation_test_cases(question_id):
-    """Get test cases for simulation based on question ID"""
-    
-    test_cases_map = {
-        '1': [  # Two Sum
-        {"input": [2, 7, 11, 15], "target": 9, "expected": [0, 1]},
-        {"input": [3, 2, 4], "target": 6, "expected": [1, 2]},
-        {"input": [3, 3], "target": 6, "expected": [0, 1]},
-        {"input": [1, 2, 3, 4, 5], "target": 8, "expected": [2, 4]},
-        {"input": [-1, -2, -3, -4, -5], "target": -8, "expected": [2, 4]}
-        ],
-        '9': [  # Palindrome Number
-            {"input": 121, "expected": True},
-            {"input": -121, "expected": False},
-            {"input": 10, "expected": False},
-            {"input": 0, "expected": True},
-            {"input": 12321, "expected": True}
-        ],
-        '20': [  # Valid Parentheses
-            {"input": "()", "expected": True},
-            {"input": "()[]{}", "expected": True},
-            {"input": "(]", "expected": False},
-            {"input": "([)]", "expected": False},
-            {"input": "{[]}", "expected": True}
-        ],
-        '3': [  # Longest Substring Without Repeating Characters
-            {"input": "abcabcbb", "expected": 3},
-            {"input": "bbbbb", "expected": 1},
-            {"input": "pwwkew", "expected": 3},
-            {"input": "dvdf", "expected": 3},
-            {"input": "au", "expected": 2}
-        ],
-        '202': [  # Happy Number
-            {"input": 19, "expected": True},
-            {"input": 2, "expected": False},
-            {"input": 1, "expected": True},
-            {"input": 7, "expected": True},
-            {"input": 4, "expected": False}
-        ]
-    }
-    
-    # Default to Two Sum if question not found
-    return test_cases_map.get(question_id, test_cases_map['1'])
-
-def analyze_cpp_solution(code, question_id='1', leetcode_data=None):
-    """Analyze C++ code and return realistic test case results"""
-    
-    # Get test cases based on question ID
-    if leetcode_data and leetcode_data.get('example_testcases'):
-        # Use LeetCode API data for simulation
-        test_cases = parse_leetcode_test_cases_for_simulation(leetcode_data)
-        print(f"Using LeetCode API data for simulation: {len(test_cases)} test cases")
-    else:
-        # Fallback to hardcoded test cases
-        test_cases = get_simulation_test_cases(question_id)
-        print(f"Using hardcoded test cases for simulation: {len(test_cases)} test cases")
-    
-    # Analyze code quality
-    code_quality = analyze_code_quality(code)
-    
-    # Generate realistic test results
-    results = []
-    passed_tests = 0
-    
-    for i, test_case in enumerate(test_cases):
-        # Determine if this test case should pass based on code quality
-        test_passes = should_test_pass(code_quality, i, test_case)
-        
-        # Format input based on question type
-        if question_id == '1':  # Two Sum
-            input_str = f"nums = {test_case['input']}, target = {test_case['target']}"
-        elif question_id == '9':  # Palindrome Number
-            input_str = f"x = {test_case['input']}"
-        elif question_id == '20':  # Valid Parentheses
-            input_str = f's = "{test_case["input"]}"'
-        elif question_id == '3':  # Longest Substring
-            input_str = f's = "{test_case["input"]}"'
-        elif question_id == '202':  # Happy Number
-            input_str = f"n = {test_case['input']}"
-        else:
-            input_str = f"input = {test_case['input']}"
-        
-        if test_passes:
-            passed_tests += 1
-            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {test_case['expected']} ✓\n\n"
-        else:
-            # Generate realistic wrong output
-            wrong_output = generate_wrong_output(test_case['expected'], code_quality)
-            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {wrong_output} ✗\n\n"
-        
-        results.append(result)
-    
-    stdout = ''.join(results) + f"Result: {passed_tests}/{len(test_cases)} test cases passed"
-    
-    return {
-        'success': True,
-        'output': stdout,
-        'error': '',
-        'statusCode': 0,
-        'memory': '10800',
-        'cpuTime': '0.008'
-    }
-
-
-def analyze_python_solution(code, question_id='1'):
-    """Analyze Python code and return realistic test case results"""
-    
-    # Get test cases based on question ID
-    test_cases = get_simulation_test_cases(question_id)
-    
-    # Analyze code quality
-    code_quality = analyze_code_quality(code)
-    
-    # Generate realistic test results
-    results = []
-    passed_tests = 0
-    
-    for i, test_case in enumerate(test_cases):
-        # Determine if this test case should pass based on code quality
-        test_passes = should_test_pass(code_quality, i, test_case)
-        
-        # Format input based on question type
-        if question_id == '1':  # Two Sum
-            input_str = f"nums = {test_case['input']}, target = {test_case['target']}"
-        elif question_id == '9':  # Palindrome Number
-            input_str = f"x = {test_case['input']}"
-        elif question_id == '20':  # Valid Parentheses
-            input_str = f's = "{test_case["input"]}"'
-        elif question_id == '3':  # Longest Substring
-            input_str = f's = "{test_case["input"]}"'
-        elif question_id == '202':  # Happy Number
-            input_str = f"n = {test_case['input']}"
-        else:
-            input_str = f"input = {test_case['input']}"
-        
-        if test_passes:
-            passed_tests += 1
-            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {test_case['expected']} ✓\n\n"
-        else:
-            # Generate realistic wrong output
-            wrong_output = generate_wrong_output(test_case['expected'], code_quality)
-            result = f"Test Case {i+1}: {input_str}\nExpected: {test_case['expected']}\nYour Output: {wrong_output} ✗\n\n"
-        
-        results.append(result)
-    
-    stdout = ''.join(results) + f"Result: {passed_tests}/{len(test_cases)} test cases passed"
-    
-    return {
-        'success': True,
-        'output': stdout,
-        'error': '',
-        'statusCode': 0,
-        'memory': '15200',
-        'cpuTime': '0.045'
-    }
-
-
-def analyze_code_quality(code):
-    """Analyze code quality and return a quality score (0-100)"""
-    
-    quality_score = 0
-    
-    # Check for optimal algorithms (hash map/dictionary)
-    if any(keyword in code.lower() for keyword in ['unordered_map', 'map', 'hash', 'dict']):
-        quality_score += 40  # Hash map approach is optimal
-    
-    # Check for brute force (nested loops)
-    elif 'for' in code and code.count('for') >= 2:
-        quality_score += 20  # Brute force approach
-    
-    # Check for proper structure
-    if 'class Solution' in code:
-        quality_score += 15
-    
-    if 'return' in code:
-        quality_score += 15
-    
-    # Check for common mistakes
-    if 'pass' in code or '// your code here' in code.lower() or '# your code here' in code.lower():
-        quality_score -= 30  # Incomplete code
-    
-    if 'return []' in code or 'return {}' in code:
-        quality_score -= 20  # Empty return
-    
-    # Check for edge case handling
-    if 'size()' in code or 'len(' in code:
-        quality_score += 10
-    
-    # Check for proper variable usage
-    if 'target' in code and 'nums' in code:
-        quality_score += 10
-    
-    return max(0, min(100, quality_score))
-
-
-def should_test_pass(code_quality, test_index, test_case):
-    """Determine if a test case should pass based on code quality and complexity"""
-    
-    # Simple test cases (0-2) are easier to pass
-    if test_index <= 2:
-        return code_quality >= 30
-    
-    # Medium complexity test cases (3)
-    elif test_index == 3:
-        return code_quality >= 50
-    
-    # Complex test cases (4+) require better algorithms
-    else:
-        return code_quality >= 70
-
-
-def generate_wrong_output(expected_output, code_quality):
-    """Generate realistic wrong output based on code quality"""
-    
-    if code_quality < 20:
-        # Very poor code - common mistakes
-        return [1, 1]  # Wrong indices
-    elif code_quality < 40:
-        # Poor code - might work for some cases
-        return [0, 0] if expected_output != [0, 0] else [1, 1]
-    elif code_quality < 60:
-        # Medium code - edge case issues
-        return [expected_output[0], expected_output[1] + 1] if len(expected_output) > 1 else [0]
-    else:
-        # Good code - might have minor issues
-        return expected_output  # Actually correct for good code
-
-
 def get_test_cases_for_question(question_id, code=''):
     """Get test cases and execution code for a specific question"""
-    
-    test_cases_map = {
-        '1': {  # Two Sum
-            'test_data': '''// Test cases for Two Sum
-vector<vector<int>> test_inputs = {
-    {2, 7, 11, 15},
-    {3, 2, 4},
-    {3, 3}
-};
-
-vector<int> test_targets = {9, 6, 6};
-
-vector<vector<int>> expected_outputs = {
-    {0, 1},
-    {1, 2},
-    {0, 1}
-};''',
-            'total_count': 'test_inputs.size()',
-            'test_execution': 'vector<int> result = solution.twoSum(test_inputs[i], test_targets[i]);',
-            'test_output': '''cout << "nums = [";
-        for (int j = 0; j < test_inputs[i].size(); j++) {
-            cout << test_inputs[i][j];
-            if (j < test_inputs[i].size() - 1) cout << ",";
-        }
-        cout << "], target = " << test_targets[i] << endl;''',
-            'expected_output': '''for (int j = 0; j < expected_outputs[i].size(); j++) {
-            cout << expected_outputs[i][j];
-            if (j < expected_outputs[i].size() - 1) cout << ",";
-        }
-        cout << endl;''',
-            'actual_output': '''for (int j = 0; j < result.size(); j++) {
-            cout << result[j];
-            if (j < result.size() - 1) cout << ",";
-        }'''
-        },
-        '9': {  # Palindrome Number
-            'test_data': '''// Test cases for Palindrome Number
-vector<int> test_inputs = {121, -121, 10, 0, 12321};
-
-vector<bool> expected_outputs = {true, false, false, true, true};''',
-            'test_execution': 'bool result = solution.isPalindrome(test_inputs[i]);',
-            'test_output': 'cout << "x = " << test_inputs[i] << endl;',
-            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
-            'actual_output': 'cout << (result ? "true" : "false");'
-        },
-        '20': {  # Valid Parentheses
-            'test_data': '''// Test cases for Valid Parentheses
-vector<string> test_inputs = {"()", "()[]{}", "(]", "([)]", "{[]}"};
-
-vector<bool> expected_outputs = {true, true, false, false, true};''',
-            'test_execution': 'bool result = solution.isValid(test_inputs[i]);',
-            'test_output': 'cout << "s = \\"" << test_inputs[i] << "\\"" << endl;',
-            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
-            'actual_output': 'cout << (result ? "true" : "false");'
-        },
-        '3': {  # Longest Substring Without Repeating Characters
-            'test_data': '''// Test cases for Longest Substring Without Repeating Characters
-vector<string> test_inputs = {"abcabcbb", "bbbbb", "pwwkew", "dvdf"};
-
-vector<int> expected_outputs = {3, 1, 3, 3};''',
-            'test_execution': 'int result = solution.lengthOfLongestSubstring(test_inputs[i]);',
-            'test_output': 'cout << "s = \\"" << test_inputs[i] << "\\"" << endl;',
-            'expected_output': 'cout << expected_outputs[i] << endl;',
-            'actual_output': 'cout << result;'
-        },
-        '202': {  # Happy Number
-            'test_data': '''// Test cases for Happy Number
-vector<int> test_inputs = {19, 2, 1, 7, 4};
-
-vector<bool> expected_outputs = {true, false, true, true, false};''',
-            'test_execution': 'bool result = solution.isHappy(test_inputs[i]);',
-            'test_output': 'cout << "n = " << test_inputs[i] << endl;',
-            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
-            'actual_output': 'cout << (result ? "true" : "false");'
-        }
-    }
-    
+    test_cases_map = {}
     # If question not found, try to fetch from LeetCode API
     if question_id not in test_cases_map:
         leetcode_test_cases = fetch_test_cases_from_leetcode(question_id)
         if leetcode_test_cases:
             return leetcode_test_cases
         # Fallback to generic test cases if LeetCode API fails
-        return generate_generic_test_cases_fallback(question_id, code)
-    
+        print(f"Test cases LeetCode API fails")
+        # return generate_generic_test_cases_fallback(question_id, code)
+        return None
     return test_cases_map.get(question_id, test_cases_map['1'])
 
-def generate_cpp_wrapper_judge0(code, question_id='1', title_slug=None):
+def generate_cpp_wrapper_jdoodle(code, question_id='1', title_slug=None):
     """Generate a complete C++ program with test cases for Judge0"""
     
     # Check if code already has main function
@@ -2987,53 +2013,53 @@ int main() {{
         print(f"Error generating LeetCode C++ wrapper: {str(e)}")
         return None
 
-def generate_generic_test_cases_fallback(question_id, code=''):
+# def generate_generic_test_cases_fallback(question_id, code=''):
 
-    print(f"Generating generic test cases as fallback for question {question_id}")
+#     print(f"Generating generic test cases as fallback for question {question_id}")
 
-    """Generate generic test cases as fallback when LeetCode API fails"""
-    # Try to detect the method name from the code
-    method_name = detect_method_name_from_code(code)
+#     """Generate generic test cases as fallback when LeetCode API fails"""
+#     # Try to detect the method name from the code
+#     method_name = detect_method_name_from_code(code)
     
-    # Try to detect parameter type from method signature
-    param_type = detect_parameter_type_from_code(code, method_name)
+#     # Try to detect parameter type from method signature
+#     param_type = detect_parameter_type_from_code(code, method_name)
     
-    if param_type == 'string':
-        return {
-            'test_data': f'''// Generic test cases for Problem {question_id}
-vector<string> test_inputs = {{"hello", "leetcode", "a"}};
+#     if param_type == 'string':
+#         return {
+#             'test_data': f'''// Generic test cases for Problem {question_id}
+# vector<string> test_inputs = {{"hello", "leetcode", "a"}};
 
-vector<string> expected_outputs = {{"holle", "leotcede", "a"}};''',
-            'total_count': 'test_inputs.size()',
-            'test_execution': f'string result = solution.{method_name}(test_inputs[i]);',
-            'test_output': 'cout << "input = \\"" << test_inputs[i] << "\\"" << endl;',
-            'expected_output': 'cout << "\\"" << expected_outputs[i] << "\\"" << endl;',
-            'actual_output': 'cout << "\\"" << result << "\\"";'
-        }
-    elif param_type == 'bool':
-        return {
-            'test_data': f'''// Generic test cases for Problem {question_id}
-vector<bool> test_inputs = {{true, false, true}};
+# vector<string> expected_outputs = {{"holle", "leotcede", "a"}};''',
+#             'total_count': 'test_inputs.size()',
+#             'test_execution': f'string result = solution.{method_name}(test_inputs[i]);',
+#             'test_output': 'cout << "input = \\"" << test_inputs[i] << "\\"" << endl;',
+#             'expected_output': 'cout << "\\"" << expected_outputs[i] << "\\"" << endl;',
+#             'actual_output': 'cout << "\\"" << result << "\\"";'
+#         }
+#     elif param_type == 'bool':
+#         return {
+#             'test_data': f'''// Generic test cases for Problem {question_id}
+# vector<bool> test_inputs = {{true, false, true}};
 
-vector<bool> expected_outputs = {{false, true, false}};''',
-            'total_count': 'test_inputs.size()',
-            'test_execution': f'bool result = solution.{method_name}(test_inputs[i]);',
-            'test_output': 'cout << "input = " << (test_inputs[i] ? "true" : "false") << endl;',
-            'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
-            'actual_output': 'cout << (result ? "true" : "false");'
-        }
-    else:  # Default to int
-        return {
-            'test_data': f'''// Generic test cases for Problem {question_id}
-vector<int> test_inputs = {{1, 2, 3, 4, 5}};
+# vector<bool> expected_outputs = {{false, true, false}};''',
+#             'total_count': 'test_inputs.size()',
+#             'test_execution': f'bool result = solution.{method_name}(test_inputs[i]);',
+#             'test_output': 'cout << "input = " << (test_inputs[i] ? "true" : "false") << endl;',
+#             'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
+#             'actual_output': 'cout << (result ? "true" : "false");'
+#         }
+#     else:  # Default to int
+#         return {
+#             'test_data': f'''// Generic test cases for Problem {question_id}
+# vector<int> test_inputs = {{1, 2, 3, 4, 5}};
 
-vector<int> expected_outputs = {{1, 2, 3, 4, 5}};''',
-            'total_count': 'test_inputs.size()',
-            'test_execution': f'int result = solution.{method_name}(test_inputs[i]);',
-            'test_output': 'cout << "input = " << test_inputs[i] << endl;',
-            'expected_output': 'cout << expected_outputs[i] << endl;',
-            'actual_output': 'cout << result;'
-        }
+# vector<int> expected_outputs = {{1, 2, 3, 4, 5}};''',
+#             'total_count': 'test_inputs.size()',
+#             'test_execution': f'int result = solution.{method_name}(test_inputs[i]);',
+#             'test_output': 'cout << "input = " << test_inputs[i] << endl;',
+#             'expected_output': 'cout << expected_outputs[i] << endl;',
+#             'actual_output': 'cout << result;'
+#         }
 
 def detect_parameter_type_from_code(code, method_name):
     """Detect the parameter type from method signature"""
@@ -3878,44 +2904,4 @@ int main() {{
     
     return wrapper_code
 
-def find_title_slug_by_id(question_id):
-    """Find the title_slug for a given question ID by searching LeetCode"""
-    try:
-        # Common LeetCode question mappings
-        question_mappings = {
-            '1': 'two-sum',
-            '2': 'add-two-numbers',
-            '3': 'longest-substring-without-repeating-characters',
-            '4': 'median-of-two-sorted-arrays',
-            '5': 'longest-palindromic-substring',
-            '7': 'reverse-integer',
-            '8': 'string-to-integer-atoi',
-            '9': 'palindrome-number',
-            '11': 'container-with-most-water',
-            '13': 'roman-to-integer',
-            '14': 'longest-common-prefix',
-            '20': 'valid-parentheses',
-            '21': 'merge-two-sorted-lists',
-            '26': 'remove-duplicates-from-sorted-array',
-            '27': 'remove-element',
-            '28': 'find-the-index-of-the-first-occurrence-in-a-string',
-            '125': 'valid-palindrome',
-            '202': 'happy-number',
-            '205': 'isomorphic-strings',
-            '242': 'valid-anagram',
-            '290': 'word-pattern',
-            '345': 'reverse-vowels-of-a-string'
-        }
-        
-        # Check if we have a direct mapping
-        if question_id in question_mappings:
-            return question_mappings[question_id]
-        
-        # If not found, try to search for it dynamically using LeetCode's problemset API
-        print(f"No mapping found for question ID {question_id}, trying dynamic search...")
-        return search_question_by_id(question_id)
-        
-    except Exception as e:
-        print(f"Error finding title_slug for question {question_id}: {str(e)}")
-        return None
 
