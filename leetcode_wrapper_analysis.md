@@ -25,7 +25,6 @@ This document provides a comprehensive analysis of the LeetCode wrapper generati
    if 'int main(' in code or 'void main(' in code:
        return code  // Return as-is if already complete
    ```
-
 2. **Fetch LeetCode test cases**:
    - **Primary approach**: Calls `fetch_and_generate_leetcode_wrapper()` to get real test cases from LeetCode API
    - **Fallback**: Uses hardcoded test cases if API fails

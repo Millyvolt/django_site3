@@ -2752,100 +2752,18 @@ def generate_simple_leetcode_wrapper(code, question_id, example_testcases, metho
     """Generate a simple, working C++ wrapper for LeetCode test cases"""
     try:
         print(f"generate_simple_leetcode_wrapper called with method_name: {method_name}")
-        # Parse test cases - LeetCode format is just input strings, not input-output pairs
-        lines = example_testcases.strip().split('\n')
-        test_cases = []
         
-        for line in lines:
-            line = line.strip()
-            if line:
-                # Remove quotes if present
-                if line.startswith('"') and line.endswith('"'):
-                    line = line[1:-1]
-                test_cases.append({
-                    'input': line,
-                    'output': '[Expected output would be here]'
-                })
+        # Try to detect the complete function signature
+        function_signature = detect_function_signature(code, method_name)
         
-        if not test_cases:
+        # Parse test cases with proper type conversion
+        typed_test_cases = parse_typed_test_cases(example_testcases, function_signature)
+        
+        if not typed_test_cases:
             return None
         
-        # Generate a complete, working C++ program with common LeetCode class definitions
-        wrapper_code = f'''#include <iostream>
-#include <vector>
-#include <string>
-#include <map>
-#include <unordered_map>
-#include <algorithm>
-#include <sstream>
-#include <queue>
-#include <stack>
-using namespace std;
-
-// Common LeetCode class definitions
-struct ListNode {{
-    int val;
-    ListNode *next;
-    ListNode() : val(0), next(nullptr) {{}}
-    ListNode(int x) : val(x), next(nullptr) {{}}
-    ListNode(int x, ListNode *next) : val(x), next(next) {{}}
-}};
-
-struct TreeNode {{
-    int val;
-    TreeNode *left;
-    TreeNode *right;
-    TreeNode() : val(0), left(nullptr), right(nullptr) {{}}
-    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {{}}
-    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {{}}
-}};
-
-{code}
-
-int main() {{
-    Solution solution;
-    int total = {len(test_cases)};
-    
-    cout << "=== Test Cases for Problem {question_id} (from LeetCode) ===" << endl;
-    cout << endl;
-    
-    // Test cases from LeetCode
-    vector<string> test_inputs = {{'''
-        
-        for i, test_case in enumerate(test_cases):
-            escaped_input = test_case['input'].replace('"', '\\"')
-            wrapper_code += f'\n        "{escaped_input}"'
-            if i < len(test_cases) - 1:
-                wrapper_code += ','
-        
-        wrapper_code += '\n    };\n\n    vector<string> expected_outputs = {'
-        
-        for i, test_case in enumerate(test_cases):
-            escaped_output = test_case['output'].replace('"', '\\"')
-            wrapper_code += f'\n        "{escaped_output}"'
-            if i < len(test_cases) - 1:
-                wrapper_code += ','
-        
-        wrapper_code += f'''
-    }};
-    
-    for (int i = 0; i < total; i++) {{
-        cout << "Test Case " << (i + 1) << ":" << endl;
-        cout << "  Input: \\"" << test_inputs[i] << "\\"" << endl;
-        
-        // Actually call the method with the test input
-        string result = solution.{method_name}(test_inputs[i]);
-        
-        cout << "  Your Output: \\"" << result << "\\"" << endl;
-        cout << "  Method: {method_name}" << endl;
-        cout << "  Note: This executes your solution with the actual LeetCode test cases!" << endl;
-        cout << endl;
-    }}
-    
-    cout << "Result: " << total << " test cases displayed (fetched from LeetCode API)" << endl;
-    cout << "Method detected: {method_name}" << endl;
-    return 0;
-}}'''
+        # Use the enhanced typed wrapper generation
+        wrapper_code = generate_typed_cpp_wrapper(code, question_id, function_signature, typed_test_cases)
         
         return wrapper_code
         
@@ -3241,6 +3159,725 @@ def detect_method_name_from_code(code):
     print("No method detected, using default 'solve'")
     return 'solve'
 
+def detect_function_signature(code, method_name):
+    """Extract complete function signature including all parameters"""
+    import re
+    
+    print(f"Detecting function signature for method: {method_name}")
+    
+    # Pattern to match: return_type methodName(type1 param1, type2 param2, ...)
+    # This pattern handles various C++ type declarations including references, pointers, and templates
+    pattern = rf'(\w+(?:<[^>]*>)?(?:\s*&\s*|\s*\*\s*)?)\s+{method_name}\s*\(\s*([^)]*)\s*\)'
+    match = re.search(pattern, code)
+    
+    if match:
+        return_type = match.group(1).strip()
+        params_str = match.group(2).strip()
+        
+        print(f"Found signature: {return_type} {method_name}({params_str})")
+        
+        # Parse individual parameters
+        parameters = []
+        if params_str:
+            # Split by comma, but be careful with template parameters
+            param_parts = []
+            current_param = ""
+            template_depth = 0
+            
+            for char in params_str:
+                if char == '<':
+                    template_depth += 1
+                elif char == '>':
+                    template_depth -= 1
+                elif char == ',' and template_depth == 0:
+                    param_parts.append(current_param.strip())
+                    current_param = ""
+                    continue
+                current_param += char
+            
+            if current_param.strip():
+                param_parts.append(current_param.strip())
+            
+            for param in param_parts:
+                if param:
+                    # Split type and name - handle complex types
+                    # Look for the last word as the parameter name
+                    words = param.split()
+                    if len(words) >= 2:
+                        # Handle cases like "vector<int>& nums" or "const string& s"
+                        param_name = words[-1]  # Last word is the parameter name
+                        param_type = ' '.join(words[:-1])  # Everything else is the type
+                        
+                        parameters.append({
+                            'type': param_type,
+                            'name': param_name
+                        })
+                        print(f"  Parameter: {param_type} {param_name}")
+        
+        result = {
+            'return_type': return_type,
+            'parameters': parameters,
+            'method_name': method_name
+        }
+        
+        print(f"Complete signature detected: {result}")
+        return result
+    
+    print(f"No signature found for method: {method_name}")
+    return None
+
+def parse_typed_test_cases(example_testcases, function_signature):
+    """Parse test cases with proper type conversion based on function signature"""
+    print(f"Parsing typed test cases for signature: {function_signature}")
+    
+    if not function_signature:
+        print("No function signature provided, using fallback parsing")
+        return parse_fallback_test_cases(example_testcases)
+    
+    parameters = function_signature['parameters']
+    
+    # Parse LeetCode test case format
+    lines = example_testcases.strip().split('\n')
+    test_cases = []
+    
+    # Handle different test case formats
+    if len(parameters) == 1:
+        # Single parameter: input-output pairs
+        i = 0
+        while i < len(lines):
+            if i + 1 < len(lines):
+                input_line = lines[i].strip()
+                output_line = lines[i + 1].strip()
+                
+                if input_line and output_line:
+                    # Parse individual parameters from input string
+                    parsed_params = parse_parameters_from_string(input_line, parameters)
+                    expected_output = parse_output_value(output_line, function_signature['return_type'])
+                    
+                    test_cases.append({
+                        'input_params': parsed_params,
+                        'expected_output': expected_output,
+                        'raw_input': input_line,
+                        'raw_output': output_line
+                    })
+                    print(f"  Parsed test case {len(test_cases)}: {parsed_params} -> {expected_output}")
+                i += 2
+            else:
+                i += 1
+    else:
+        # Multiple parameters: need to group input lines together
+        # Format: param1, param2, ..., expected_output
+        i = 0
+        while i < len(lines):
+            # Check if we have enough lines for all parameters + output
+            if i + len(parameters) < len(lines):
+                # Collect input parameters
+                input_lines = []
+                for j in range(len(parameters)):
+                    input_lines.append(lines[i + j].strip())
+                
+                # Get expected output
+                output_line = lines[i + len(parameters)].strip()
+                
+                if all(input_lines) and output_line:
+                    # Parse parameters from multiple input lines
+                    parsed_params = parse_parameters_from_multiple_lines(input_lines, parameters)
+                    expected_output = parse_output_value(output_line, function_signature['return_type'])
+                    
+                    test_cases.append({
+                        'input_params': parsed_params,
+                        'expected_output': expected_output,
+                        'raw_input': '\n'.join(input_lines),
+                        'raw_output': output_line
+                    })
+                    print(f"  Parsed test case {len(test_cases)}: {parsed_params} -> {expected_output}")
+                
+                i += len(parameters) + 1
+            else:
+                i += 1
+    
+    print(f"Successfully parsed {len(test_cases)} test cases")
+    return test_cases
+
+def parse_parameters_from_string(input_string, parameters):
+    """Parse individual parameters from LeetCode input string"""
+    print(f"Parsing parameters from: '{input_string}'")
+    parsed = {}
+    
+    # Handle different input formats
+    if '=' in input_string:
+        # Format: "nums = [2,7,11,15], target = 9"
+        # Need to be more careful with splitting to handle nested brackets
+        parts = []
+        current_part = ""
+        bracket_depth = 0
+        
+        for char in input_string:
+            if char == '[':
+                bracket_depth += 1
+            elif char == ']':
+                bracket_depth -= 1
+            elif char == ',' and bracket_depth == 0:
+                parts.append(current_part.strip())
+                current_part = ""
+                continue
+            current_part += char
+        
+        if current_part.strip():
+            parts.append(current_part.strip())
+        
+        for part in parts:
+            if '=' in part:
+                key, value = part.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                
+                # Find matching parameter
+                for param in parameters:
+                    if param['name'] == key:
+                        parsed[key] = convert_value_to_type(value, param['type'])
+                        print(f"    {key} = {value} -> {parsed[key]} ({param['type']})")
+                        break
+    else:
+        # Format: "[2,7,11,15]\n9" (separate lines) - handle this case
+        # For now, try to match parameters by position
+        values = [line.strip() for line in input_string.split('\n') if line.strip()]
+        for i, param in enumerate(parameters):
+            if i < len(values):
+                parsed[param['name']] = convert_value_to_type(values[i], param['type'])
+                print(f"    {param['name']} = {values[i]} -> {parsed[param['name']]} ({param['type']})")
+    
+    return parsed
+
+def parse_parameters_from_multiple_lines(input_lines, parameters):
+    """Parse parameters from multiple input lines (one per parameter)"""
+    print(f"Parsing parameters from multiple lines: {input_lines}")
+    parsed = {}
+    
+    for i, param in enumerate(parameters):
+        if i < len(input_lines):
+            value_str = input_lines[i].strip()
+            parsed[param['name']] = convert_value_to_type(value_str, param['type'])
+            print(f"    {param['name']} = {value_str} -> {parsed[param['name']]} ({param['type']})")
+    
+    return parsed
+
+def convert_value_to_type(value_str, target_type):
+    """Convert string value to appropriate type"""
+    value_str = value_str.strip()
+    print(f"Converting '{value_str}' to type '{target_type}'")
+    
+    # Handle vector types
+    if target_type.startswith('vector<') and target_type.endswith('>'):
+        # Parse "[1,2,3]" format
+        if value_str.startswith('[') and value_str.endswith(']'):
+            inner = value_str[1:-1]
+            if inner.strip():
+                # Determine inner type
+                inner_type = target_type[7:-1]  # Extract type from vector<type>
+                if inner_type == 'int':
+                    # Handle both "[1,2,3]" and "["1","2","3"]" formats
+                    elements = []
+                    current_element = ""
+                    bracket_depth = 0
+                    
+                    for char in inner:
+                        if char == '[':
+                            bracket_depth += 1
+                        elif char == ']':
+                            bracket_depth -= 1
+                        elif char == ',' and bracket_depth == 0:
+                            if current_element.strip():
+                                elements.append(int(current_element.strip()))
+                            current_element = ""
+                            continue
+                        current_element += char
+                    
+                    if current_element.strip():
+                        elements.append(int(current_element.strip()))
+                    
+                    return elements
+                elif inner_type == 'string':
+                    # Handle string vectors - remove quotes from each element
+                    elements = []
+                    current_element = ""
+                    bracket_depth = 0
+                    
+                    for char in inner:
+                        if char == '[':
+                            bracket_depth += 1
+                        elif char == ']':
+                            bracket_depth -= 1
+                        elif char == ',' and bracket_depth == 0:
+                            if current_element.strip():
+                                elements.append(current_element.strip().strip('"'))
+                            current_element = ""
+                            continue
+                        current_element += char
+                    
+                    if current_element.strip():
+                        elements.append(current_element.strip().strip('"'))
+                    
+                    return elements
+                elif inner_type == 'char':
+                    # Handle char vectors
+                    elements = []
+                    current_element = ""
+                    bracket_depth = 0
+                    
+                    for char in inner:
+                        if char == '[':
+                            bracket_depth += 1
+                        elif char == ']':
+                            bracket_depth -= 1
+                        elif char == ',' and bracket_depth == 0:
+                            if current_element.strip():
+                                elements.append(current_element.strip().strip('"'))
+                            current_element = ""
+                            continue
+                        current_element += char
+                    
+                    if current_element.strip():
+                        elements.append(current_element.strip().strip('"'))
+                    
+                    return elements
+            else:
+                return []  # Empty vector
+        return []
+    
+    # Handle string type
+    elif target_type == 'string':
+        # Remove quotes
+        if value_str.startswith('"') and value_str.endswith('"'):
+            return value_str[1:-1]
+        return value_str
+    
+    # Handle int type
+    elif target_type == 'int':
+        try:
+            return int(value_str)
+        except ValueError:
+            return 0
+    
+    # Handle bool type
+    elif target_type == 'bool':
+        return value_str.lower() in ['true', '1']
+    
+    # Handle pointer types (for now, return as string)
+    elif target_type.endswith('*'):
+        return value_str
+    
+    # Handle reference types
+    elif target_type.endswith('&'):
+        # Remove the & and process the base type
+        base_type = target_type[:-1].strip()
+        return convert_value_to_type(value_str, base_type)
+    
+    # Default fallback
+    return value_str
+
+def parse_output_value(output_str, return_type):
+    """Parse expected output value based on return type"""
+    print(f"Parsing output '{output_str}' for return type '{return_type}'")
+    return convert_value_to_type(output_str, return_type)
+
+def parse_fallback_test_cases(example_testcases):
+    """Fallback parsing when no function signature is available"""
+    print("Using fallback test case parsing")
+    lines = example_testcases.strip().split('\n')
+    test_cases = []
+    
+    for line in lines:
+        line = line.strip()
+        if line:
+            # Remove quotes if present
+            if line.startswith('"') and line.endswith('"'):
+                line = line[1:-1]
+            test_cases.append({
+                'input_params': {'input': line},
+                'expected_output': '[Expected output would be here]',
+                'raw_input': line,
+                'raw_output': '[Expected output would be here]'
+            })
+    
+    return test_cases
+
+def generate_typed_cpp_wrapper(code, question_id, function_signature, test_cases):
+    """Generate C++ wrapper with proper type handling and enhanced features"""
+    print(f"Generating typed C++ wrapper for question {question_id}")
+    
+    if not function_signature:
+        print("No function signature provided, using fallback wrapper generation")
+        return generate_fallback_wrapper(code, question_id, test_cases)
+    
+    method_name = function_signature['method_name']
+    return_type = function_signature['return_type']
+    parameters = function_signature['parameters']
+    
+    # Generate parameter declarations
+    param_declarations = []
+    for param in parameters:
+        param_declarations.append(f"{param['type']} {param['name']}")
+    
+    # Generate test case data with proper types
+    test_data = generate_typed_test_data(test_cases, parameters, return_type, method_name)
+    
+    # Generate includes based on detected types
+    includes = generate_necessary_includes(parameters, return_type)
+    
+    # Generate data structure definitions
+    data_structures = generate_data_structures(parameters, return_type)
+    
+    wrapper_code = f'''{includes}
+
+{data_structures}
+
+{code}
+
+int main() {{
+    Solution solution;
+    int passed = 0;
+    int total = {len(test_cases)};
+    
+    cout << "=== Test Cases for Problem {question_id} ===" << endl;
+    cout << "Method: {method_name}({', '.join(param_declarations)}) -> {return_type}" << endl;
+    cout << "Parameters detected: {len(parameters)}" << endl;
+    '''
+    
+    for i, param in enumerate(parameters):
+        wrapper_code += f'''    cout << "  {i+1}. {param['type']} {param['name']}" << endl;
+    '''
+    
+    wrapper_code += f'''    cout << endl;
+    
+    {test_data}
+    
+    cout << "Result: " << passed << "/" << total << " test cases passed" << endl;
+    cout << "Function signature: {return_type} {method_name}({', '.join(param_declarations)})" << endl;
+    return 0;
+}}'''
+    
+    return wrapper_code
+
+def generate_necessary_includes(parameters, return_type):
+    """Generate necessary #include statements based on detected types"""
+    includes = set(['<iostream>', '<vector>', '<string>'])
+    
+    # Check parameters and return type for additional includes
+    all_types = [return_type] + [param['type'] for param in parameters]
+    
+    for type_str in all_types:
+        if 'map' in type_str or 'unordered_map' in type_str:
+            includes.add('<map>')
+            includes.add('<unordered_map>')
+        if 'set' in type_str or 'unordered_set' in type_str:
+            includes.add('<set>')
+            includes.add('<unordered_set>')
+        if 'queue' in type_str or 'priority_queue' in type_str:
+            includes.add('<queue>')
+        if 'stack' in type_str:
+            includes.add('<stack>')
+        if 'algorithm' in type_str or 'sort' in type_str or 'find' in type_str:
+            includes.add('<algorithm>')
+        if 'sstream' in type_str or 'stringstream' in type_str:
+            includes.add('<sstream>')
+        if 'ListNode' in type_str or 'TreeNode' in type_str:
+            # These are custom structures, no additional includes needed
+            pass
+    
+    # Convert to sorted list and format
+    include_list = sorted(list(includes))
+    return '\n'.join([f'#include {inc}' for inc in include_list]) + '\nusing namespace std;'
+
+def generate_data_structures(parameters, return_type):
+    """Generate necessary data structure definitions"""
+    all_types = [return_type] + [param['type'] for param in parameters]
+    
+    structures = []
+    
+    # Check if ListNode is needed
+    if any('ListNode' in type_str for type_str in all_types):
+        structures.append('''struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};''')
+    
+    # Check if TreeNode is needed
+    if any('TreeNode' in type_str for type_str in all_types):
+        structures.append('''struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+};''')
+    
+    return '\n\n'.join(structures) if structures else ''
+
+def generate_typed_test_data(test_cases, parameters, return_type, method_name):
+    """Generate properly typed test case execution code with enhanced features"""
+    test_code = ""
+    
+    for i, test_case in enumerate(test_cases):
+        test_code += f'''    // Test Case {i+1}
+    cout << "Test Case {i+1}:" << endl;
+    '''
+        
+        # Generate parameter values with proper types and unique variable names
+        param_values = []
+        for param in parameters:
+            param_name = param['name']
+            param_type = param['type']
+            unique_param_name = f"{param_name}_{i+1}"  # Make variable names unique per test case
+            
+            if param_name in test_case['input_params']:
+                value = test_case['input_params'][param_name]
+                
+                # Generate proper C++ variable declarations
+                if param_type == 'vector<int>' or param_type == 'vector<int>&':
+                    test_code += f'    vector<int> {unique_param_name} = {{{", ".join(map(str, value))}}};\n'
+                elif param_type == 'vector<string>' or param_type == 'vector<string>&':
+                    test_code += f'    vector<string> {unique_param_name} = {{'
+                    for j, v in enumerate(value):
+                        test_code += f'"{v}"'
+                        if j < len(value) - 1:
+                            test_code += ', '
+                    test_code += f'}};\n'
+                elif param_type == 'vector<char>' or param_type == 'vector<char>&':
+                    test_code += f'    vector<char> {unique_param_name} = {{'
+                    for j, v in enumerate(value):
+                        test_code += f"'{v}'"
+                        if j < len(value) - 1:
+                            test_code += ', '
+                    test_code += f'}};\n'
+                elif param_type == 'string':
+                    test_code += f'    string {unique_param_name} = "{value}";\n'
+                elif param_type == 'int':
+                    test_code += f'    int {unique_param_name} = {value};\n'
+                elif param_type == 'bool':
+                    test_code += f'    bool {unique_param_name} = {str(value).lower()};\n'
+                elif param_type == 'ListNode*':
+                    test_code += f'    // ListNode* {unique_param_name} = createListNode({value});\n'
+                    test_code += f'    ListNode* {unique_param_name} = nullptr; // TODO: Implement ListNode creation\n'
+                elif param_type == 'TreeNode*':
+                    test_code += f'    // TreeNode* {unique_param_name} = createTreeNode({value});\n'
+                    test_code += f'    TreeNode* {unique_param_name} = nullptr; // TODO: Implement TreeNode creation\n'
+                else:
+                    test_code += f'    // {param_type} {unique_param_name} = {value};\n'
+                    test_code += f'    // Unsupported type: {param_type}\n'
+                
+                param_values.append(unique_param_name)
+        
+        # Generate function call with proper return type handling
+        param_list = ', '.join(param_values)
+        
+        if return_type == 'void':
+            test_code += f'    solution.{method_name}({param_list});\n'
+            test_code += f'    // void function - no return value to check\n'
+        else:
+            test_code += f'    {return_type} result_{i+1} = solution.{method_name}({param_list});\n'
+        
+        # Generate expected output with proper type handling
+        expected = test_case['expected_output']
+        if return_type != 'void':
+            if return_type == 'vector<int>':
+                test_code += f'    vector<int> expected_{i+1} = {{{", ".join(map(str, expected))}}};\n'
+            elif return_type == 'vector<string>':
+                test_code += f'    vector<string> expected_{i+1} = {{'
+                for j, v in enumerate(expected):
+                    test_code += f'"{v}"'
+                    if j < len(expected) - 1:
+                        test_code += ', '
+                test_code += f'}};\n'
+            elif return_type == 'vector<char>':
+                test_code += f'    vector<char> expected_{i+1} = {{'
+                for j, v in enumerate(expected):
+                    test_code += f"'{v}'"
+                    if j < len(expected) - 1:
+                        test_code += ', '
+                test_code += f'}};\n'
+            elif return_type == 'string':
+                test_code += f'    string expected_{i+1} = "{expected}";\n'
+            elif return_type == 'int':
+                test_code += f'    int expected_{i+1} = {expected};\n'
+            elif return_type == 'bool':
+                test_code += f'    bool expected_{i+1} = {str(expected).lower()};\n'
+            elif return_type == 'ListNode*':
+                test_code += f'    // ListNode* expected_{i+1} = createListNode({expected});\n'
+                test_code += f'    ListNode* expected_{i+1} = nullptr; // TODO: Implement ListNode comparison\n'
+            elif return_type == 'TreeNode*':
+                test_code += f'    // TreeNode* expected_{i+1} = createTreeNode({expected});\n'
+                test_code += f'    TreeNode* expected_{i+1} = nullptr; // TODO: Implement TreeNode comparison\n'
+            else:
+                test_code += f'    // Expected: {expected}\n'
+                test_code += f'    // Unsupported return type: {return_type}\n'
+        
+        # Generate output display with very simple approach
+        test_code += '''
+    cout << "  Input: ";
+    '''
+        
+        # Print input parameters one by one
+        for j, param in enumerate(parameters):
+            if param['name'] in test_case['input_params']:
+                param_name = param['name']
+                unique_param_name = f"{param_name}_{i+1}"
+                if j > 0:
+                    test_code += 'cout << ", ";'
+                if param['type'] == 'string':
+                    test_code += f'cout << "{param_name} = \\"" << {unique_param_name} << "\\"";'
+                elif param['type'] in ['int', 'bool']:
+                    test_code += f'cout << "{param_name} = " << {unique_param_name};'
+                else:
+                    test_code += f'cout << "{param_name} = [complex type]";'
+        
+        # Handle expected output properly
+        expected_str = str(test_case['expected_output'])
+        if expected_str == 'True':
+            expected_str = 'true'
+        elif expected_str == 'False':
+            expected_str = 'false'
+        
+        test_code += f'''
+    cout << endl;
+    cout << "  Expected: {expected_str}" << endl;
+    cout << "  Your Output: ";
+    '''
+        
+        # Generate result display based on return type
+        if return_type == 'void':
+            test_code += f'''
+    cout << "void (no return value)" << endl;
+    '''
+        elif return_type == 'vector<int>':
+            test_code += f'''
+    cout << "[";
+    for (int j = 0; j < result_{i+1}.size(); j++) {{
+        cout << result_{i+1}[j];
+        if (j < result_{i+1}.size() - 1) cout << ",";
+    }}
+    cout << "]" << endl;
+    '''
+        elif return_type == 'vector<string>':
+            test_code += f'''
+    cout << "[";
+    for (int j = 0; j < result_{i+1}.size(); j++) {{
+        cout << "\\"" << result_{i+1}[j] << "\\"";
+        if (j < result_{i+1}.size() - 1) cout << ",";
+    }}
+    cout << "]" << endl;
+    '''
+        elif return_type == 'vector<char>':
+            test_code += f'''
+    cout << "[";
+    for (int j = 0; j < result_{i+1}.size(); j++) {{
+        cout << "\\"" << result_{i+1}[j] << "\\"";
+        if (j < result_{i+1}.size() - 1) cout << ",";
+    }}
+    cout << "]" << endl;
+    '''
+        elif return_type == 'string':
+            test_code += f'    cout << "\\"" << result_{i+1} << "\\"" << endl;\n'
+        elif return_type == 'int':
+            test_code += f'    cout << result_{i+1} << endl;\n'
+        elif return_type == 'bool':
+            test_code += f'    cout << (result_{i+1} ? "true" : "false") << endl;\n'
+        elif return_type == 'ListNode*':
+            test_code += f'''
+    // TODO: Implement ListNode printing
+    cout << "ListNode* (not implemented)" << endl;
+    '''
+        elif return_type == 'TreeNode*':
+            test_code += f'''
+    // TODO: Implement TreeNode printing
+    cout << "TreeNode* (not implemented)" << endl;
+    '''
+        else:
+            test_code += f'    cout << "Unsupported type: {return_type}" << endl;\n'
+        
+        # Generate result checking
+        if return_type == 'void':
+            test_code += f'''
+    // void function - cannot check result
+    cout << "  Note: void function - result cannot be verified" << endl;
+    '''
+        else:
+            test_code += f'''
+    bool is_correct_{i+1} = false;
+    '''
+            
+            if return_type == 'vector<int>':
+                test_code += f'    is_correct_{i+1} = (result_{i+1} == expected_{i+1});\n'
+            elif return_type == 'vector<string>':
+                test_code += f'    is_correct_{i+1} = (result_{i+1} == expected_{i+1});\n'
+            elif return_type == 'vector<char>':
+                test_code += f'    is_correct_{i+1} = (result_{i+1} == expected_{i+1});\n'
+            elif return_type in ['string', 'int', 'bool']:
+                test_code += f'    is_correct_{i+1} = (result_{i+1} == expected_{i+1});\n'
+            elif return_type == 'ListNode*':
+                test_code += f'''
+    // TODO: Implement ListNode comparison
+    is_correct_{i+1} = false; // Not implemented
+    '''
+            elif return_type == 'TreeNode*':
+                test_code += f'''
+    // TODO: Implement TreeNode comparison
+    is_correct_{i+1} = false; // Not implemented
+    '''
+            else:
+                test_code += f'    is_correct_{i+1} = false; // Unsupported type\n'
+            
+            test_code += f'''
+    if (is_correct_{i+1}) {{
+        cout << "  ✓ PASSED" << endl;
+        passed++;
+    }} else {{
+        cout << "  ✗ FAILED" << endl;
+    }}
+    '''
+        
+        test_code += f'''
+    cout << endl;
+    '''
+    
+    return test_code
+
+def generate_fallback_wrapper(code, question_id, test_cases):
+    """Generate a basic wrapper when no function signature is available"""
+    print("Generating fallback wrapper")
+    
+    wrapper_code = f'''#include <iostream>
+#include <vector>
+#include <string>
+using namespace std;
+
+{code}
+
+int main() {{
+    Solution solution;
+    int total = {len(test_cases)};
+    
+    cout << "=== Test Cases for Problem {question_id} (Fallback Mode) ===" << endl;
+    cout << "Note: Function signature not detected, using basic testing" << endl;
+    cout << endl;
+    
+    for (int i = 0; i < total; i++) {{
+        cout << "Test Case " << (i + 1) << ":" << endl;
+        cout << "  Input: {test_cases[0]['raw_input'] if test_cases else 'N/A'}" << endl;
+        cout << "  Note: Cannot execute without proper signature detection" << endl;
+        cout << endl;
+    }}
+    
+    cout << "Result: " << total << " test cases displayed (fallback mode)" << endl;
+    return 0;
+}}'''
+    
+    return wrapper_code
+
 def find_title_slug_by_id(question_id):
     """Find the title_slug for a given question ID by searching LeetCode"""
     try:
@@ -3281,3 +3918,4 @@ def find_title_slug_by_id(question_id):
     except Exception as e:
         print(f"Error finding title_slug for question {question_id}: {str(e)}")
         return None
+
