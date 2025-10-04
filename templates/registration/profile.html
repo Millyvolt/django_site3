@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,10 +10,7 @@
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 20px;
             min-height: 100vh;
         }
         .profile-container {
@@ -21,18 +19,45 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 500px;
+            max-width: 800px;
+            margin: 0 auto;
         }
         h2 {
             text-align: center;
             color: #333;
             margin-bottom: 1.5rem;
         }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #ddd;
+        }
+        .profile-basic-info h3 {
+            margin: 0 0 0.5rem 0;
+            color: #333;
+        }
+        .profile-basic-info p {
+            margin: 0.25rem 0;
+            color: #666;
+        }
         .profile-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
             margin-bottom: 2rem;
         }
         .info-item {
-            margin-bottom: 1rem;
             padding: 0.75rem;
             background-color: #f8f9fa;
             border-radius: 4px;
@@ -45,20 +70,66 @@
         .info-value {
             color: #333;
         }
+        .image-section {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .image-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .default-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .default-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: border-color 0.3s;
+        }
+        .default-image:hover {
+            border-color: #007bff;
+        }
+        .default-image.selected {
+            border-color: #28a745;
+        }
+        .upload-section {
+            margin: 1rem 0;
+        }
         .btn {
             display: inline-block;
             padding: 0.75rem 1.5rem;
-            background-color: #dc3545;
+            background-color: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
             font-size: 1rem;
             cursor: pointer;
             text-decoration: none;
-            margin-right: 1rem;
+            margin: 0.25rem;
+            transition: background-color 0.3s;
         }
         .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
             background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
         }
         .btn-secondary {
             background-color: #6c757d;
@@ -66,15 +137,57 @@
         .btn-secondary:hover {
             background-color: #5a6268;
         }
-        .btn-primary {
-            background-color: #007bff;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
         .actions {
             text-align: center;
             margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #ddd;
+        }
+        .messages {
+            margin-bottom: 1rem;
+        }
+        .alert {
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .bio-section {
+            margin: 1rem 0;
+        }
+        .bio-section textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .profile-info {
+                grid-template-columns: 1fr;
+            }
+            .default-images {
+                grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            }
+            .default-image {
+                width: 60px;
+                height: 60px;
+            }
         }
     </style>
 </head>
@@ -82,11 +195,27 @@
     <div class="profile-container">
         <h2>User Profile</h2>
         
-        <div class="profile-info">
-            <div class="info-item">
-                <div class="info-label">Username:</div>
-                <div class="info-value">{{ user.username }}</div>
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
             </div>
+        {% endif %}
+        
+        <div class="profile-header">
+            <img src="{{ user_profile.get_profile_image_url }}" alt="Profile Image" class="profile-image">
+            <div class="profile-basic-info">
+                <h3>{{ user.username }}</h3>
+                <p><strong>Member since:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+                <p><strong>Last login:</strong> {{ user.last_login|date:"F d, Y g:i A"|default:"Never" }}</p>
+                {% if user_profile.bio %}
+                    <p><strong>Bio:</strong> {{ user_profile.bio }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="profile-info">
             <div class="info-item">
                 <div class="info-label">Email:</div>
                 <div class="info-value">{{ user.email|default:"Not provided" }}</div>
@@ -100,23 +229,83 @@
                 <div class="info-value">{{ user.last_name|default:"Not provided" }}</div>
             </div>
             <div class="info-item">
-                <div class="info-label">Date Joined:</div>
-                <div class="info-value">{{ user.date_joined|date:"F d, Y" }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Last Login:</div>
-                <div class="info-value">{{ user.last_login|date:"F d, Y g:i A"|default:"Never" }}</div>
-            </div>
-            <div class="info-item">
                 <div class="info-label">Staff Status:</div>
                 <div class="info-value">{{ user.is_staff|yesno:"Yes,No" }}</div>
             </div>
         </div>
         
+        <!-- Bio Section -->
+        <div class="bio-section">
+            <h3>Bio</h3>
+            <form method="post" style="margin-bottom: 1rem;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_profile">
+                <textarea name="bio" placeholder="Tell us about yourself...">{{ user_profile.bio }}</textarea>
+                <button type="submit" class="btn btn-success">Update Bio</button>
+            </form>
+        </div>
+        
+        <!-- Profile Image Section -->
+        <div class="image-section">
+            <h3>Profile Image</h3>
+            
+            <!-- Custom Image Upload -->
+            <div class="upload-section">
+                <h4>Upload Custom Image</h4>
+                <form method="post" enctype="multipart/form-data" style="margin-bottom: 1rem;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="upload_image">
+                    <input type="file" name="profile_image" accept="image/*" style="margin-bottom: 0.5rem;">
+                    <button type="submit" class="btn">Upload Image</button>
+                </form>
+                {% if user_profile.has_custom_image %}
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="remove_image">
+                        <button type="submit" class="btn btn-danger">Remove Custom Image</button>
+                    </form>
+                {% endif %}
+            </div>
+            
+            <!-- Default Images -->
+            <div>
+                <h4>Choose Default Avatar</h4>
+                <div class="default-images">
+                    {% for value, label in default_images %}
+                        <img src="{% static 'images/default_avatars/' %}{{ value }}.svg" 
+                             alt="{{ label }}" 
+                             class="default-image {% if user_profile.default_image == value %}selected{% endif %}"
+                             onclick="selectDefaultImage('{{ value }}')">
+                    {% endfor %}
+                </div>
+                <form method="post" id="default-image-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="select_default">
+                    <input type="hidden" name="default_image" id="selected-image">
+                </form>
+            </div>
+        </div>
+        
         <div class="actions">
-            <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
-            <a href="{% url 'logout' %}" class="btn">Logout</a>
+            <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
+            <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
         </div>
     </div>
+    
+    <script>
+        function selectDefaultImage(imageValue) {
+            // Remove selected class from all images
+            document.querySelectorAll('.default-image').forEach(img => {
+                img.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked image
+            event.target.classList.add('selected');
+            
+            // Submit form
+            document.getElementById('selected-image').value = imageValue;
+            document.getElementById('default-image-form').submit();
+        }
+    </script>
 </body>
 </html>

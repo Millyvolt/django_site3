@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from polls.models import UserCodeSubmission
 import json
 import requests
 import re
@@ -494,6 +495,13 @@ def question_selection(request):
         }
         
         # Build the GraphQL query to fetch problems (with required parameters)
+        # Build filters object based on search and difficulty
+        filters = {}
+        if difficulty:
+            filters['difficulty'] = difficulty
+        if search_term:
+            filters['searchKeywords'] = search_term
+        
         query = {
             'query': '''
                 query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
@@ -522,7 +530,7 @@ def question_selection(request):
                 'categorySlug': '',  # Empty string for all problems
                 'skip': skip,
                 'limit': min(limit, 50),  # Start with smaller limit
-                'filters': {}  # Empty filters object
+                'filters': filters
             }
         }
         
@@ -666,6 +674,13 @@ def fetch_questions_alternative(page, limit, difficulty, search_term):
         }
         
         # Try with required parameters
+        # Build filters object based on search and difficulty for alternative method
+        filters = {}
+        if difficulty:
+            filters['difficulty'] = difficulty
+        if search_term:
+            filters['searchKeywords'] = search_term
+            
         query = {
             'query': '''
                 query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
@@ -691,7 +706,7 @@ def fetch_questions_alternative(page, limit, difficulty, search_term):
                 'categorySlug': '',
                 'limit': 10,
                 'skip': 0,
-                'filters': {}
+                'filters': filters
             }
         }
         
@@ -1287,12 +1302,29 @@ int main() {{
         # Add the fetched/created problem to the problems dictionary so JavaScript can find it
         problems[question_id] = problem
     
+    # Load user's saved code if they're logged in
+    user_code = ""
+    if request.user.is_authenticated:
+        try:
+            user_submission = UserCodeSubmission.objects.get(
+                user=request.user, 
+                question_id=question_id
+            )
+            user_code = user_submission.code
+            # Override the template with user's saved code
+            problem['template'] = user_code
+            problem['cppTemplate'] = user_code
+        except UserCodeSubmission.DoesNotExist:
+            # No saved code found, use default template
+            pass
+    
     context = {
         'problems': json.dumps(problems),
         'current_problem': problem,
         'current_question_id': question_id,
         'current_title_slug': title_slug,
-        'is_daily': is_daily
+        'is_daily': is_daily,
+        'user_code': user_code
     }
     return render(request, 'question_editor.html', context)
 
@@ -1371,6 +1403,27 @@ def compile_code(request):
 
         # Use the working approach from my_django_project
         result = execute_code_jdoodle(code, language, question_id, title_slug)
+        
+        # Save user's code if they're logged in
+        if request.user.is_authenticated and code.strip():
+            try:
+                user_submission, created = UserCodeSubmission.objects.get_or_create(
+                    user=request.user,
+                    question_id=question_id,
+                    defaults={
+                        'code': code,
+                        'language': language
+                    }
+                )
+                if not created:
+                    # Update existing submission
+                    user_submission.code = code
+                    user_submission.language = language
+                    user_submission.save()
+            except Exception as e:
+                # Log error but don't fail the compilation
+                print(f"Error saving user code: {e}")
+        
         return JsonResponse(result)
             
     except json.JSONDecodeError:
@@ -2905,12 +2958,52 @@ int main() {{
     return wrapper_code
 
 
+@csrf_exempt
+@login_required
+def save_user_code(request):
+    """Save user's code without compiling it"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        code = data.get('code', '')
+        language = data.get('language', 'cpp')
+        question_id = data.get('question_id', '1')
+        
+        if not code.strip():
+            return JsonResponse({'error': 'No code provided'}, status=400)
+        
+        # Save user's code
+        user_submission, created = UserCodeSubmission.objects.get_or_create(
+            user=request.user,
+            question_id=question_id,
+            defaults={
+                'code': code,
+                'language': language
+            }
+        )
+        if not created:
+            # Update existing submission
+            user_submission.code = code
+            user_submission.language = language
+            user_submission.save()
+        
+        return JsonResponse({'success': True, 'message': 'Code saved successfully'})
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
+
+
 # Authentication Views
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from polls.models import UserProfile
 
 
 def register_view(request):
@@ -2932,6 +3025,103 @@ def register_view(request):
 
 @login_required
 def profile_view(request):
-    """User profile view (example of a protected view)"""
-    return render(request, 'registration/profile.html', {'user': request.user})
+    """User profile view with image upload and update functionality"""
+    # Get or create user profile
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        # Handle profile updates
+        action = request.POST.get('action')
+        
+        if action == 'update_profile':
+            # Update bio
+            bio = request.POST.get('bio', '')
+            user_profile.bio = bio
+            user_profile.save()
+            messages.success(request, 'Profile updated successfully!')
+            
+        elif action == 'upload_image':
+            # Handle image upload
+            if 'profile_image' in request.FILES:
+                user_profile.profile_image = request.FILES['profile_image']
+                user_profile.default_image = ''  # Clear default image when custom image is uploaded
+                user_profile.save()
+                messages.success(request, 'Profile image uploaded successfully!')
+            else:
+                messages.error(request, 'No image file selected.')
+                
+        elif action == 'select_default':
+            # Handle default image selection
+            default_image = request.POST.get('default_image')
+            if default_image:
+                user_profile.default_image = default_image
+                user_profile.profile_image.delete(save=False)  # Remove custom image
+                user_profile.profile_image = None
+                user_profile.save()
+                messages.success(request, 'Default profile image selected!')
+                
+        elif action == 'remove_image':
+            # Remove custom image
+            if user_profile.profile_image:
+                user_profile.profile_image.delete(save=False)
+                user_profile.profile_image = None
+                user_profile.save()
+                messages.success(request, 'Custom profile image removed!')
+        
+        return redirect('profile')
+    
+    context = {
+        'user': request.user,
+        'user_profile': user_profile,
+        'default_images': UserProfile.DEFAULT_IMAGES,
+    }
+    return render(request, 'registration/profile.html', context)
+
+
+def logout_view(request):
+    """Custom logout view that redirects to home page"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('home')
+
+
+def test_static_files(request):
+    """Test view to debug static file serving"""
+    from django.templatetags.static import static
+    from django.conf import settings
+    from polls.models import UserProfile
+    import os
+    
+    # Test static file paths
+    avatar1_path = static("images/default_avatars/avatar1.svg")
+    
+    # Check if files exist in multiple locations
+    static_root = settings.STATIC_ROOT
+    static_dir = settings.STATICFILES_DIRS[0]
+    
+    avatar1_static_root = os.path.join(static_root, "images/default_avatars/avatar1.svg")
+    avatar1_static_dir = os.path.join(static_dir, "images/default_avatars/avatar1.svg")
+    
+    file_exists_static_root = os.path.exists(avatar1_static_root)
+    file_exists_static_dir = os.path.exists(avatar1_static_dir)
+    
+    # Test user profile
+    user_profile = None
+    if request.user.is_authenticated:
+        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    return JsonResponse({
+        'static_url': settings.STATIC_URL,
+        'static_root': str(static_root),
+        'static_dir': str(static_dir),
+        'avatar1_path': avatar1_path,
+        'avatar1_static_root': avatar1_static_root,
+        'avatar1_static_dir': avatar1_static_dir,
+        'file_exists_static_root': file_exists_static_root,
+        'file_exists_static_dir': file_exists_static_dir,
+        'staticfiles_dirs': [str(d) for d in settings.STATICFILES_DIRS],
+        'user_authenticated': request.user.is_authenticated,
+        'user_profile_exists': user_profile is not None,
+        'profile_image_url': user_profile.get_profile_image_url if user_profile else None,
+    })
 

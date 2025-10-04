@@ -35,3 +35,5 @@ Option 3: Direct Uvicorn command
 uvicorn mysite.asgi:application --host 127.0.0.1 --port 8000 --reload
 
 Uvicorn doesnt working with django debug toolbar
+
+admin   1q2w

@@ -105,6 +105,17 @@
     <div class="container">
         <h1>Welcome to My Django Site</h1>
         
+        <!-- Messages -->
+        {% if messages %}
+            <div class="messages" style="margin-bottom: 20px; text-align: center;">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}" style="padding: 10px; margin: 5px 0; border-radius: 4px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         <!-- Authentication Links -->
         <div class="auth-links">
             {% if user.is_authenticated %}

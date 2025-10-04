@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Choice, Question
+from .models import Choice, Question, UserCodeSubmission, UserProfile
 
 
 class ChoiceInline(admin.TabularInline):
@@ -17,4 +17,20 @@ class QuestionAdmin(admin.ModelAdmin):
     list_filter = ["pub_date"]
     search_fields = ["question_text"]
 
+class UserCodeSubmissionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'question_id', 'language', 'code_preview', 'updated_at']
+    list_filter = ['language', 'updated_at', 'created_at']
+    search_fields = ['user__username', 'question_id', 'code']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-updated_at']
+
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'default_image', 'has_custom_image', 'updated_at']
+    list_filter = ['default_image', 'created_at', 'updated_at']
+    search_fields = ['user__username', 'user__email', 'bio']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-updated_at']
+
 admin.site.register(Question, QuestionAdmin)
+admin.site.register(UserCodeSubmission, UserCodeSubmissionAdmin)
+admin.site.register(UserProfile, UserProfileAdmin)

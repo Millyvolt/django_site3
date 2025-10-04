@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 
 
@@ -35,9 +36,15 @@ urlpatterns = [
     
     # Authentication URLs
     path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
-    path("accounts/logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("accounts/logout/", views.logout_view, name="logout"),
     path("accounts/register/", views.register_view, name="register"),
     path("accounts/profile/", views.profile_view, name="profile"),
+    
+    # Code saving URL
+    path("save-code/", views.save_user_code, name="save_user_code"),
+    
+    # Test URL for debugging
+    path("test-static/", views.test_static_files, name="test_static_files"),
     
     path("polls/", include("polls.urls")),
     path("admin/", admin.site.urls),
@@ -47,3 +54,8 @@ urlpatterns = [
 if not settings.TESTING:
     from debug_toolbar.toolbar import debug_toolbar_urls
     urlpatterns += debug_toolbar_urls()
+
+# Serve media and static files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])

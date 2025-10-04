@@ -69,6 +69,41 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .user-info .username {
+            background-color: #34495e;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+        
+        .user-info .auth-links a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            transition: background-color 0.3s;
+            font-size: 12px;
+        }
+        
+        .user-info .auth-links a:hover {
+            background-color: #34495e;
+        }
+        
+        .user-info .auth-links a.profile {
+            background-color: #3498db;
+        }
+        
+        .user-info .auth-links a.logout {
+            background-color: #e74c3c;
+        }
+        
         .header-left {
             display: flex;
             align-items: center;
@@ -592,6 +627,21 @@
             font-size: 1.2em !important;
         }
         
+        .mobile-mode .user-info {
+            gap: 8px !important;
+            font-size: 12px !important;
+        }
+        
+        .mobile-mode .user-info .username {
+            padding: 3px 8px !important;
+            font-size: 11px !important;
+        }
+        
+        .mobile-mode .user-info .auth-links a {
+            padding: 3px 6px !important;
+            font-size: 10px !important;
+        }
+        
         .mobile-mode .question-selector {
             flex-wrap: wrap !important;
             gap: 5px !important;
@@ -770,6 +820,22 @@
                 <button class="question-btn" onclick="switchQuestion('2')">Add Two Numbers</button>
                 <button class="question-btn" onclick="switchQuestion('3')">Longest Substring</button>
             </div> -->
+        </div>
+        
+        <!-- User Info Section -->
+        <div class="user-info">
+            {% if user.is_authenticated %}
+                <div class="username">👤 {{ user.username }}</div>
+                <div class="auth-links">
+                    <a href="{% url 'profile' %}" class="profile">Profile</a>
+                    <a href="{% url 'logout' %}" class="logout">Logout</a>
+                </div>
+            {% else %}
+                <div class="auth-links">
+                    <a href="{% url 'login' %}" class="login">Login</a>
+                    <a href="{% url 'register' %}" class="register">Register</a>
+                </div>
+            {% endif %}
         </div>
         <a href="/pick-question/" class="back-link">← Back to Problems</a>
     </div>
