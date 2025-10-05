@@ -497,8 +497,9 @@ def question_selection(request):
         # Build the GraphQL query to fetch problems (with required parameters)
         # Build filters object based on search and difficulty
         filters = {}
-        if difficulty:
-            filters['difficulty'] = difficulty
+        # Temporarily disable difficulty filter to fix API issue
+        # if difficulty:
+        #     filters['difficulty'] = difficulty
         if search_term:
             filters['searchKeywords'] = search_term
         
@@ -676,8 +677,9 @@ def fetch_questions_alternative(page, limit, difficulty, search_term):
         # Try with required parameters
         # Build filters object based on search and difficulty for alternative method
         filters = {}
-        if difficulty:
-            filters['difficulty'] = difficulty
+        # Temporarily disable difficulty filter to fix API issue
+        # if difficulty:
+        #     filters['difficulty'] = difficulty
         if search_term:
             filters['searchKeywords'] = search_term
             
@@ -1318,13 +1320,20 @@ int main() {{
             # No saved code found, use default template
             pass
     
+    # Get user profile for avatar display
+    user_profile = None
+    if request.user.is_authenticated:
+        from polls.models import UserProfile
+        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
     context = {
         'problems': json.dumps(problems),
         'current_problem': problem,
         'current_question_id': question_id,
         'current_title_slug': title_slug,
         'is_daily': is_daily,
-        'user_code': user_code
+        'user_code': user_code,
+        'user_profile': user_profile
     }
     return render(request, 'question_editor.html', context)
 
@@ -3124,4 +3133,19 @@ def test_static_files(request):
         'user_profile_exists': user_profile is not None,
         'profile_image_url': user_profile.get_profile_image_url if user_profile else None,
     })
+
+
+def serve_media(request, path):
+    """Custom view to serve media files with Uvicorn"""
+    from django.http import FileResponse
+    from django.conf import settings
+    import os
+    
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'))
+    else:
+        from django.http import Http404
+        raise Http404("File not found")
 

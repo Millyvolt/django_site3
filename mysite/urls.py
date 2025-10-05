@@ -46,6 +46,9 @@ urlpatterns = [
     # Test URL for debugging
     path("test-static/", views.test_static_files, name="test_static_files"),
     
+    # Media file serving
+    path("media/<path:path>", views.serve_media, name="serve_media"),
+    
     path("polls/", include("polls.urls")),
     path("admin/", admin.site.urls),
 ]
@@ -57,5 +60,11 @@ if not settings.TESTING:
 
 # Serve media and static files during development
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
+    # Note: Media files are now served by the custom serve_media view above
+    # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Serve static files - use WhiteNoise for ASGI servers like Uvicorn
+    from django.contrib.staticfiles.views import serve
+    from django.urls import re_path
+    urlpatterns += [
+        re_path(r'^static/(?P<path>.*)$', serve),
+    ]

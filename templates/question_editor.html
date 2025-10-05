@@ -76,6 +76,27 @@
             font-size: 14px;
         }
         
+        .user-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+            transition: opacity 0.3s;
+        }
+        
+        .user-link:hover {
+            opacity: 0.8;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #34495e;
+            object-fit: cover;
+        }
+        
         .user-info .username {
             background-color: #34495e;
             padding: 5px 12px;
@@ -632,6 +653,11 @@
             font-size: 12px !important;
         }
         
+        .mobile-mode .user-avatar {
+            width: 24px !important;
+            height: 24px !important;
+        }
+        
         .mobile-mode .user-info .username {
             padding: 3px 8px !important;
             font-size: 11px !important;
@@ -825,7 +851,11 @@
         <!-- User Info Section -->
         <div class="user-info">
             {% if user.is_authenticated %}
-                <div class="username">👤 {{ user.username }}</div>
+                {% load static %}
+                <a href="{% url 'profile' %}" class="user-link">
+                    <img src="{{ user.userprofile.get_profile_image_url }}" alt="Profile" class="user-avatar">
+                    <div class="username">{{ user.username }}</div>
+                </a>
                 <div class="auth-links">
                     <a href="{% url 'profile' %}" class="profile">Profile</a>
                     <a href="{% url 'logout' %}" class="logout">Logout</a>
