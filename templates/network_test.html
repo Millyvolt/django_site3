@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Connectivity Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .failed {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .test-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .test-details {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            margin-top: 10px;
+        }
+        .back-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Network Connectivity Test</h1>
+        
+        <div class="test-result {% if results.basic_connectivity.status == 'success' %}success{% else %}failed{% endif %}">
+            <div class="test-name">Basic Internet Connectivity</div>
+            <div>Status: {{ results.basic_connectivity.status|title }}</div>
+            {% if results.basic_connectivity.status == 'success' %}
+                <div class="test-details">Response: {{ results.basic_connectivity.response }}</div>
+            {% else %}
+                <div class="test-details">Error: {{ results.basic_connectivity.error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="test-result {% if results.leetcode_connectivity.status == 'success' %}success{% else %}failed{% endif %}">
+            <div class="test-name">LeetCode Website Connectivity</div>
+            <div>Status: {{ results.leetcode_connectivity.status|title }}</div>
+            {% if results.leetcode_connectivity.status == 'success' %}
+                <div class="test-details">HTTP Status: {{ results.leetcode_connectivity.status_code }}</div>
+            {% else %}
+                <div class="test-details">Error: {{ results.leetcode_connectivity.error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="test-result {% if results.leetcode_graphql.status == 'success' %}success{% else %}failed{% endif %}">
+            <div class="test-name">LeetCode GraphQL API</div>
+            <div>Status: {{ results.leetcode_graphql.status|title }}</div>
+            {% if results.leetcode_graphql.status == 'success' %}
+                <div class="test-details">HTTP Status: {{ results.leetcode_graphql.status_code }}</div>
+            {% else %}
+                <div class="test-details">Error: {{ results.leetcode_graphql.error }}</div>
+            {% endif %}
+        </div>
+
+        <div class="back-link">
+            <a href="{% url 'daily_question' %}">← Back to Daily Question</a>
+        </div>
+    </div>
+</body>
+</html>

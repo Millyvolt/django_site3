@@ -321,6 +321,54 @@ def test_html(request):
     }
     return render(request, 'daily_question.html', {'daily_question': test_data, 'is_real_question': False})
 
+def test_network_connectivity(request):
+    """Test network connectivity to external APIs"""
+    results = {}
+    
+    # Test basic connectivity
+    try:
+        response = requests.get('https://httpbin.org/ip', timeout=10)
+        results['basic_connectivity'] = {
+            'status': 'success',
+            'response': response.json() if response.status_code == 200 else f'HTTP {response.status_code}'
+        }
+    except Exception as e:
+        results['basic_connectivity'] = {
+            'status': 'failed',
+            'error': str(e)
+        }
+    
+    # Test LeetCode connectivity
+    try:
+        response = requests.get('https://leetcode.com', timeout=10)
+        results['leetcode_connectivity'] = {
+            'status': 'success',
+            'status_code': response.status_code
+        }
+    except Exception as e:
+        results['leetcode_connectivity'] = {
+            'status': 'failed',
+            'error': str(e)
+        }
+    
+    # Test LeetCode GraphQL endpoint
+    try:
+        response = requests.post('https://leetcode.com/graphql', 
+                               json={'query': '{ __typename }'}, 
+                               headers={'Content-Type': 'application/json'}, 
+                               timeout=10)
+        results['leetcode_graphql'] = {
+            'status': 'success',
+            'status_code': response.status_code
+        }
+    except Exception as e:
+        results['leetcode_graphql'] = {
+            'status': 'failed',
+            'error': str(e)
+        }
+    
+    return render(request, 'network_test.html', {'results': results})
+
 def daily_question(request):
     """LeetCode daily question page view"""
     try:
@@ -356,7 +404,22 @@ def daily_question(request):
             '''
         }
         
-        response = requests.post(url, json=query, headers=headers, timeout=10)
+        # Try with longer timeout and session for deployed environments that may have network issues
+        session = requests.Session()
+        session.headers.update(headers)
+        
+        # Add retry mechanism for network issues
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = session.post(url, json=query, timeout=30)
+                break
+            except requests.exceptions.ConnectionError as e:
+                if attempt == max_retries - 1:
+                    raise e
+                print(f"Connection attempt {attempt + 1} failed, retrying...")
+                import time
+                time.sleep(2)
         
         if response.status_code == 200:
             data = response.json()
@@ -462,13 +525,89 @@ def daily_question(request):
     except Exception as e:
         # Fallback to a default question if API fails
         print(f"Error fetching daily question: {str(e)}")
-        daily_question_data = {
+        print(f"Error type: {type(e).__name__}")
+        
+        # Log additional details for network issues
+        if "Network is unreachable" in str(e) or "ConnectionError" in str(e):
+            print("Network connectivity issue detected. This may be due to:")
+            print("1. Firewall restrictions on the deployment platform")
+            print("2. Network configuration issues")
+            print("3. LeetCode API being temporarily unavailable")
+            print("Using fallback question instead.")
+        
+        # Create a fallback daily question when API is unreachable
+        fallback_question = {
+            'title': 'Two Sum',
+            'difficulty': 'Easy',
+            'date': '2024-12-20',
+            'ac_rate': 45.8,
+            'frontend_id': '1',
+            'title_slug': 'two-sum',
+            'link': 'https://leetcode.com/problems/two-sum/',
+            'description': '''
+            <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p>
+            
+            <p>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.</p>
+            
+            <p>You can return the answer in any order.</p>
+            
+            <p><strong>Note:</strong> This is a fallback question shown when the LeetCode API is unreachable. The actual daily question may be different.</p>
+            ''',
+            'examples': [
+                {
+                    'input': 'nums = [2,7,11,15], target = 9',
+                    'output': '[0,1]',
+                    'explanation': 'Because nums[0] + nums[1] == 9, we return [0, 1].'
+                },
+                {
+                    'input': 'nums = [3,2,4], target = 6',
+                    'output': '[1,2]',
+                    'explanation': 'Because nums[1] + nums[2] == 6, we return [1, 2].'
+                },
+                {
+                    'input': 'nums = [3,3], target = 6',
+                    'output': '[0,1]',
+                    'explanation': 'Because nums[0] + nums[1] == 6, we return [0, 1].'
+                }
+            ],
+            'constraints': [
+                '2 <= nums.length <= 10⁴',
+                '-10⁹ <= nums[i] <= 10⁹',
+                '-10⁹ <= target <= 10⁹',
+                'Only one valid answer exists.'
+            ],
+            'example_testcases': 'nums = [2,7,11,15], target = 9',
+            'template': '''def two_sum(nums, target):
+    """
+    Two Sum - LeetCode Problem 1
+    Difficulty: Easy
+    Acceptance Rate: 45.8%
+    
+    Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.
+    
+    Args:
+        nums: List of integers
+        target: Target sum
+        
+    Returns:
+        List of two indices that sum to target
+    """
+    # Your solution here
+    pass
+
+# Test cases:
+# print(two_sum([2,7,11,15], 9))  # Expected: [0,1]
+# print(two_sum([3,2,4], 6))      # Expected: [1,2]
+# print(two_sum([3,3], 6))        # Expected: [0,1]''',
+            'cppTemplate': create_generic_cpp_template('Two Sum', 'Easy', '1', 'two-sum'),
+            'hasRealCppTemplate': False
         }
         
         context = {
-            'daily_question': daily_question_data,
+            'daily_question': fallback_question,
             'is_real_question': False,
-            'api_error': str(e)
+            'api_error': str(e),
+            'is_fallback': True
         }
     
     return render(request, 'daily_question.html', context)
