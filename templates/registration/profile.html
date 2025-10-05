@@ -173,6 +173,79 @@
             resize: vertical;
             min-height: 100px;
         }
+        .password-section {
+            margin: 1rem 0;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .password-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 3rem 0.75rem 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 0.75rem 3rem 0.75rem 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        .form-group input[type="password"]:focus,
+        .form-group input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        .password-toggle {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            transition: color 0.3s, background-color 0.3s;
+        }
+        .password-toggle:hover {
+            color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .toggle-text {
+            font-weight: 500;
+        }
+        .password-help-text {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+        .help-text {
+            display: block;
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
         @media (max-width: 768px) {
             .profile-header {
                 flex-direction: column;
@@ -251,6 +324,51 @@
             </form>
         </div>
         
+        <!-- Password Change Section -->
+        <div class="password-section">
+            <h3>Change Password</h3>
+            <p class="password-help-text">Enter your current password to verify your identity, then choose a new secure password.</p>
+            <form method="post" style="margin-bottom: 1rem;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="change_password">
+                <div class="form-group">
+                    <label for="old_password">Current Password:</label>
+                    <div class="password-input-container">
+                        <input type="password" id="old_password" name="old_password" required placeholder="Enter your current password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('old_password', this)">
+                            <span class="toggle-text">Show</span>
+                        </button>
+                    </div>
+                    <small class="help-text">This is the password you use to log in.</small>
+                </div>
+                <div class="form-group">
+                    <label for="new_password1">New Password:</label>
+                    <div class="password-input-container">
+                        <input type="password" id="new_password1" name="new_password1" required placeholder="Enter new password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('new_password1', this)">
+                            <span class="toggle-text">Show</span>
+                        </button>
+                    </div>
+                    <small class="help-text">Must be at least 8 characters long.</small>
+                </div>
+                <div class="form-group">
+                    <label for="new_password2">Confirm New Password:</label>
+                    <div class="password-input-container">
+                        <input type="password" id="new_password2" name="new_password2" required placeholder="Confirm new password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('new_password2', this)">
+                            <span class="toggle-text">Show</span>
+                        </button>
+                    </div>
+                    <small class="help-text">Must match the new password above.</small>
+                </div>
+                <button type="submit" class="btn btn-success">Change Password</button>
+            </form>
+            <div style="margin-top: 1rem; text-align: center;">
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">Forgot your current password?</p>
+                <a href="{% url 'password_reset' %}" class="btn btn-secondary" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Reset Password via Email</a>
+            </div>
+        </div>
+        
         <!-- Profile Image Section -->
         <div class="image-section">
             <h3>Profile Image</h3>
@@ -307,6 +425,43 @@
             document.getElementById('selected-image').value = imageValue;
             document.getElementById('default-image-form').submit();
         }
+        
+        // Password visibility toggle
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const toggleText = button.querySelector('.toggle-text');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggleText.textContent = 'Hide';
+            } else {
+                input.type = 'password';
+                toggleText.textContent = 'Show';
+            }
+        }
+        
+        // Password validation
+        function validatePasswords() {
+            const newPassword1 = document.getElementById('new_password1');
+            const newPassword2 = document.getElementById('new_password2');
+            
+            if (newPassword1.value !== newPassword2.value) {
+                newPassword2.setCustomValidity("Passwords don't match");
+            } else {
+                newPassword2.setCustomValidity('');
+            }
+        }
+        
+        // Add event listeners for password validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const newPassword1 = document.getElementById('new_password1');
+            const newPassword2 = document.getElementById('new_password2');
+            
+            if (newPassword1 && newPassword2) {
+                newPassword1.addEventListener('input', validatePasswords);
+                newPassword2.addEventListener('input', validatePasswords);
+            }
+        });
     </script>
 </body>
 </html>

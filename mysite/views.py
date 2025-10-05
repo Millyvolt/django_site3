@@ -2,6 +2,9 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.shortcuts import redirect
 from polls.models import UserCodeSubmission, UserProfile
 import json
 import requests
@@ -3556,6 +3559,29 @@ def profile_view(request):
                 user_profile.profile_image = None
                 user_profile.save()
                 messages.success(request, 'Custom profile image removed!')
+                
+        elif action == 'change_password':
+            # Handle password change
+            old_password = request.POST.get('old_password')
+            new_password1 = request.POST.get('new_password1')
+            new_password2 = request.POST.get('new_password2')
+            
+            # Validate old password
+            if not request.user.check_password(old_password):
+                messages.error(request, 'Current password is incorrect.')
+            elif new_password1 != new_password2:
+                messages.error(request, 'New passwords do not match.')
+            elif len(new_password1) < 8:
+                messages.error(request, 'New password must be at least 8 characters long.')
+            else:
+                # Change password
+                request.user.set_password(new_password1)
+                request.user.save()
+                messages.success(request, 'Password changed successfully!')
+                # Re-authenticate the user
+                user = authenticate(username=request.user.username, password=new_password1)
+                if user is not None:
+                    login(request, user)
         
         return redirect('profile')
     

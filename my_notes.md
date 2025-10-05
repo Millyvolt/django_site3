@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 
 ****To Do:****
-- changing password from user profile
+- check reset password via email functionality
 - static files attach to amvera data storage
 - newer C++ version (check that 17 using)
 - Linux
@@ -41,5 +41,6 @@ Uvicorn doesnt working with django debug toolbar
 admin   1q2w
 
 Ideas for site:
+- russian version of site
 - coworking pages (private or not)
 - users making new polls
