@@ -24,9 +24,11 @@ pip install -r requirements.txt
 
 
 ****To Do:****
+- changing password from user profile
+- static files attach to amvera data storage
+- newer C++ version (check that 17 using)
+- Linux
 
-- newer C++ version
-- dfdf
 
 Uvicorn
 Option 1: Using the Python script
@@ -39,6 +41,5 @@ Uvicorn doesnt working with django debug toolbar
 admin   1q2w
 
 Ideas for site:
-- changing password from user profile
 - coworking pages (private or not)
 - users making new polls

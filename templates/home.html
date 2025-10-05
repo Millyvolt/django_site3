@@ -99,6 +99,37 @@
             color: #2c3e50;
             font-weight: bold;
         }
+        .user-profile-button {
+            display: inline-block;
+            margin: 0 10px;
+            width: 48px;
+            height: 48px;
+            background-color: #95a5a6;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            border: 2px solid transparent;
+            overflow: hidden;
+            vertical-align: middle;
+        }
+        .user-profile-button:hover {
+            background-color: #7f8c8d;
+            transform: scale(1.1);
+            border-color: #3498db;
+        }
+        .user-profile-button img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: block;
+            object-fit: cover;
+        }
+        .auth-button-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -122,8 +153,17 @@
                 <div class="user-info">
                     Welcome, {{ user.username }}!
                 </div>
-                <a href="{% url 'profile' %}" class="auth-link">Profile</a>
-                <a href="{% url 'logout' %}" class="auth-link logout">Logout</a>
+                <div class="auth-button-container">
+                    <a href="{% url 'profile' %}" class="user-profile-button" title="Profile">
+                        {% load static %}
+                        {% if user_profile %}
+                            <img src="{{ user_profile.get_profile_image_url }}" alt="Profile Picture">
+                        {% else %}
+                            <img src="{% static 'images/default_avatars/avatar1.svg' %}" alt="Default Profile">
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'logout' %}" class="auth-link logout">Logout</a>
+                </div>
             {% else %}
                 <a href="{% url 'login' %}" class="auth-link login">Login</a>
                 <a href="{% url 'register' %}" class="auth-link register">Register</a>
@@ -136,11 +176,14 @@
         </p>
         
         <div class="nav-links">
+            <a href="/leetcode-home/" class="nav-link leetcode">
+                💻 LeetCode
+            </a>
             <a href="/polls/" class="nav-link">
                 📊 Polls & Voting
             </a>
-            <a href="/leetcode-home/" class="nav-link leetcode">
-                💻 LeetCode
+            <a href="/test-html/" class="nav-link">
+                🧪 Test
             </a>
         </div>
         

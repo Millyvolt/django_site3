@@ -69,9 +69,14 @@
     <div class="container">
         <h1>Network Connectivity Test</h1>
         
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="{% url 'test_network' %}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">🔄 Refresh Test</a>
+        </div>
+        
         <div class="test-result {% if results.basic_connectivity.status == 'success' %}success{% else %}failed{% endif %}">
             <div class="test-name">Basic Internet Connectivity</div>
             <div>Status: {{ results.basic_connectivity.status|title }}</div>
+            <div><strong>Last Tested:</strong> {{ results.basic_connectivity.timestamp }}</div>
             {% if results.basic_connectivity.status == 'success' %}
                 <div class="test-details">Response: {{ results.basic_connectivity.response }}</div>
             {% else %}
@@ -82,6 +87,7 @@
         <div class="test-result {% if results.leetcode_connectivity.status == 'success' %}success{% else %}failed{% endif %}">
             <div class="test-name">LeetCode Website Connectivity</div>
             <div>Status: {{ results.leetcode_connectivity.status|title }}</div>
+            <div><strong>Last Tested:</strong> {{ results.leetcode_connectivity.timestamp }}</div>
             {% if results.leetcode_connectivity.status == 'success' %}
                 <div class="test-details">HTTP Status: {{ results.leetcode_connectivity.status_code }}</div>
             {% else %}
@@ -92,6 +98,7 @@
         <div class="test-result {% if results.leetcode_graphql.status == 'success' %}success{% else %}failed{% endif %}">
             <div class="test-name">LeetCode GraphQL API</div>
             <div>Status: {{ results.leetcode_graphql.status|title }}</div>
+            <div><strong>Last Tested:</strong> {{ results.leetcode_graphql.timestamp }}</div>
             {% if results.leetcode_graphql.status == 'success' %}
                 <div class="test-details">HTTP Status: {{ results.leetcode_graphql.status_code }}</div>
             {% else %}
@@ -100,7 +107,7 @@
         </div>
 
         <div class="back-link">
-            <a href="{% url 'daily_question' %}">← Back to Daily Question</a>
+            <a href="{% url 'test_html' %}">← Back to Test Hub</a>
         </div>
     </div>
 </body>

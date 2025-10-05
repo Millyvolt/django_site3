@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from polls.models import UserCodeSubmission
+from polls.models import UserCodeSubmission, UserProfile
 import json
 import requests
 import re
@@ -17,7 +17,14 @@ _problem_cache = {}
 
 def home(request):
     """Home page view with links to polls and LeetCode"""
-    return render(request, 'home.html')
+    user_profile = None
+    if request.user.is_authenticated:
+        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    context = {
+        'user_profile': user_profile,
+    }
+    return render(request, 'home.html', context)
 
 def leetcode_home(request):
     """LeetCode home page view"""
@@ -314,15 +321,18 @@ def parse_leetcode_content(content):
         }
 
 def test_html(request):
-    """Test HTML rendering"""
-    test_data = {
-        'title': 'HTML Test',
-        'description': '<p>This is a <strong>test</strong> with <em>HTML markup</em> and <code>code blocks</code>.</p><ul><li>List item 1</li><li>List item 2</li></ul>'
-    }
-    return render(request, 'daily_question.html', {'daily_question': test_data, 'is_real_question': False})
+    """Test hub page with links to various tests"""
+    return render(request, 'test_hub.html')
 
 def test_network_connectivity(request):
     """Test network connectivity to external APIs"""
+    from datetime import datetime, timezone, timedelta
+    
+    # Get current timestamp in Moscow time (UTC+3)
+    moscow_tz = timezone(timedelta(hours=3))
+    current_time = datetime.now(moscow_tz)
+    timestamp_str = current_time.strftime("%Y-%m-%d %H:%M:%S MSK")
+    
     results = {}
     
     # Test basic connectivity
@@ -330,12 +340,14 @@ def test_network_connectivity(request):
         response = requests.get('https://httpbin.org/ip', timeout=10)
         results['basic_connectivity'] = {
             'status': 'success',
-            'response': response.json() if response.status_code == 200 else f'HTTP {response.status_code}'
+            'response': response.json() if response.status_code == 200 else f'HTTP {response.status_code}',
+            'timestamp': timestamp_str
         }
     except Exception as e:
         results['basic_connectivity'] = {
             'status': 'failed',
-            'error': str(e)
+            'error': str(e),
+            'timestamp': timestamp_str
         }
     
     # Test LeetCode connectivity
@@ -343,12 +355,14 @@ def test_network_connectivity(request):
         response = requests.get('https://leetcode.com', timeout=10)
         results['leetcode_connectivity'] = {
             'status': 'success',
-            'status_code': response.status_code
+            'status_code': response.status_code,
+            'timestamp': timestamp_str
         }
     except Exception as e:
         results['leetcode_connectivity'] = {
             'status': 'failed',
-            'error': str(e)
+            'error': str(e),
+            'timestamp': timestamp_str
         }
     
     # Test LeetCode GraphQL endpoint
@@ -359,15 +373,191 @@ def test_network_connectivity(request):
                                timeout=10)
         results['leetcode_graphql'] = {
             'status': 'success',
-            'status_code': response.status_code
+            'status_code': response.status_code,
+            'timestamp': timestamp_str
         }
     except Exception as e:
         results['leetcode_graphql'] = {
             'status': 'failed',
-            'error': str(e)
+            'error': str(e),
+            'timestamp': timestamp_str
         }
     
     return render(request, 'network_test.html', {'results': results})
+
+def test_site_functionality(request):
+    """Test site functionality by checking all main pages and navigation flows"""
+    from datetime import datetime, timezone, timedelta
+    import requests
+    
+    # Get current timestamp in Moscow time (UTC+3)
+    moscow_tz = timezone(timedelta(hours=3))
+    current_time = datetime.now(moscow_tz)
+    timestamp_str = current_time.strftime("%Y-%m-%d %H:%M:%S MSK")
+    
+    results = {}
+    
+    # Get the base URL from the request
+    base_url = f"{request.scheme}://{request.get_host()}"
+    
+    # Test Home page
+    try:
+        from django.urls import reverse
+        response = requests.get(f"{base_url}{reverse('home')}", timeout=10)
+        results['home_page'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('home'),
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['home_page'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Profile page (requires authentication)
+    try:
+        response = requests.get(f"{base_url}{reverse('profile')}", timeout=10)
+        results['profile_page'] = {
+            'status': 'success' if response.status_code in [200, 302] else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('profile'),
+            'note': 'Redirects to login if not authenticated (expected behavior)',
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['profile_page'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test LeetCode Home page
+    try:
+        response = requests.get(f"{base_url}{reverse('leetcode_home')}", timeout=10)
+        results['leetcode_home'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('leetcode_home'),
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['leetcode_home'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Pick Question page
+    try:
+        response = requests.get(f"{base_url}{reverse('question_selection')}", timeout=10)
+        results['pick_question'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('question_selection'),
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['pick_question'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Daily Question page
+    try:
+        response = requests.get(f"{base_url}{reverse('daily_question')}", timeout=10)
+        results['daily_question'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('daily_question'),
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['daily_question'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Question Editor page (with a sample question ID)
+    try:
+        response = requests.get(f"{base_url}{reverse('question_editor_with_id', args=['1'])}", timeout=10)
+        results['question_editor'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('question_editor_with_id', args=['1']),
+            'note': 'Testing with question ID "1"',
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['question_editor'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Login page
+    try:
+        response = requests.get(f"{base_url}{reverse('login')}", timeout=10)
+        results['login_page'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('login'),
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['login_page'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Register page
+    try:
+        response = requests.get(f"{base_url}{reverse('register')}", timeout=10)
+        results['register_page'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': reverse('register'),
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['register_page'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Polls page
+    try:
+        response = requests.get(f"{base_url}/polls/", timeout=10)
+        results['polls_page'] = {
+            'status': 'success' if response.status_code == 200 else 'failed',
+            'status_code': response.status_code,
+            'url': '/polls/',
+            'timestamp': timestamp_str
+        }
+    except Exception as e:
+        results['polls_page'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Calculate overall status
+    total_tests = len(results)
+    successful_tests = sum(1 for result in results.values() if result['status'] == 'success')
+    results['summary'] = {
+        'total_tests': total_tests,
+        'successful_tests': successful_tests,
+        'failed_tests': total_tests - successful_tests,
+        'success_rate': round((successful_tests / total_tests) * 100, 1) if total_tests > 0 else 0
+    }
+    
+    return render(request, 'functionality_test.html', {'results': results})
 
 def daily_question(request):
     """LeetCode daily question page view"""
@@ -2213,54 +2403,6 @@ int main() {{
     except Exception as e:
         print(f"Error generating LeetCode C++ wrapper: {str(e)}")
         return None
-
-# def generate_generic_test_cases_fallback(question_id, code=''):
-
-#     print(f"Generating generic test cases as fallback for question {question_id}")
-
-#     """Generate generic test cases as fallback when LeetCode API fails"""
-#     # Try to detect the method name from the code
-#     method_name = detect_method_name_from_code(code)
-    
-#     # Try to detect parameter type from method signature
-#     param_type = detect_parameter_type_from_code(code, method_name)
-    
-#     if param_type == 'string':
-#         return {
-#             'test_data': f'''// Generic test cases for Problem {question_id}
-# vector<string> test_inputs = {{"hello", "leetcode", "a"}};
-
-# vector<string> expected_outputs = {{"holle", "leotcede", "a"}};''',
-#             'total_count': 'test_inputs.size()',
-#             'test_execution': f'string result = solution.{method_name}(test_inputs[i]);',
-#             'test_output': 'cout << "input = \\"" << test_inputs[i] << "\\"" << endl;',
-#             'expected_output': 'cout << "\\"" << expected_outputs[i] << "\\"" << endl;',
-#             'actual_output': 'cout << "\\"" << result << "\\"";'
-#         }
-#     elif param_type == 'bool':
-#         return {
-#             'test_data': f'''// Generic test cases for Problem {question_id}
-# vector<bool> test_inputs = {{true, false, true}};
-
-# vector<bool> expected_outputs = {{false, true, false}};''',
-#             'total_count': 'test_inputs.size()',
-#             'test_execution': f'bool result = solution.{method_name}(test_inputs[i]);',
-#             'test_output': 'cout << "input = " << (test_inputs[i] ? "true" : "false") << endl;',
-#             'expected_output': 'cout << (expected_outputs[i] ? "true" : "false") << endl;',
-#             'actual_output': 'cout << (result ? "true" : "false");'
-#         }
-#     else:  # Default to int
-#         return {
-#             'test_data': f'''// Generic test cases for Problem {question_id}
-# vector<int> test_inputs = {{1, 2, 3, 4, 5}};
-
-# vector<int> expected_outputs = {{1, 2, 3, 4, 5}};''',
-#             'total_count': 'test_inputs.size()',
-#             'test_execution': f'int result = solution.{method_name}(test_inputs[i]);',
-#             'test_output': 'cout << "input = " << test_inputs[i] << endl;',
-#             'expected_output': 'cout << expected_outputs[i] << endl;',
-#             'actual_output': 'cout << result;'
-#         }
 
 def detect_parameter_type_from_code(code, method_name):
     """Detect the parameter type from method signature"""

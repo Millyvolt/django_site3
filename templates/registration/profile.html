@@ -203,6 +203,12 @@
             </div>
         {% endif %}
         
+        <div class="actions" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
+            <a href="{{ back_url }}" class="btn btn-secondary">← Back</a>
+            <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
+            <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+        </div>
+        
         <div class="profile-header">
             <img src="{{ user_profile.get_profile_image_url }}" alt="Profile Image" class="profile-image">
             <div class="profile-basic-info">
@@ -284,12 +290,6 @@
                     <input type="hidden" name="default_image" id="selected-image">
                 </form>
             </div>
-        </div>
-        
-        <div class="actions">
-            <a href="{{ back_url }}" class="btn btn-secondary">← Back</a>
-            <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
-            <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
         </div>
     </div>
     
