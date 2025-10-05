@@ -67,6 +67,9 @@
 </head>
 <body>
     <div class="container">
+        <div class="back-link" style="margin-bottom: 20px;">
+            <a href="{% url 'test_html' %}">← Back to Test Hub</a>
+        </div>
         <h1>Network Connectivity Test</h1>
         
         <div style="text-align: center; margin-bottom: 20px;">
@@ -106,9 +109,6 @@
             {% endif %}
         </div>
 
-        <div class="back-link">
-            <a href="{% url 'test_html' %}">← Back to Test Hub</a>
-        </div>
     </div>
 </body>
 </html>
