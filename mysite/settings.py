@@ -25,9 +25,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-0%i=@rjnt%x2ry9cm#n17k+1&ss9i+yj!^70!st(7^7l&9@cbp'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']  # Allow access from any host (for local network access)
+
+# CSRF trusted origins for deployed sites
+CSRF_TRUSTED_ORIGINS = [
+    'https://django-site-vladimirk.amvera.io',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 
 # Application definition

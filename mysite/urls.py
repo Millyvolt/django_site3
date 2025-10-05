@@ -35,7 +35,7 @@ urlpatterns = [
     path("fetch-cpp-template/", views.fetch_cpp_template, name="fetch_cpp_template"),
     
     # Authentication URLs
-    path("accounts/login/", auth_views.LoginView.as_view(template_name='registration/login.html'), name="login"),
+    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
     path("accounts/logout/", views.logout_view, name="logout"),
     path("accounts/register/", views.register_view, name="register"),
     path("accounts/profile/", views.profile_view, name="profile"),

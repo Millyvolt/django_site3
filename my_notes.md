@@ -39,5 +39,6 @@ Uvicorn doesnt working with django debug toolbar
 admin   1q2w
 
 Ideas for site:
+- changing password from user profile
 - coworking pages (private or not)
 - users making new polls
