@@ -3038,6 +3038,12 @@ def profile_view(request):
     # Get or create user profile
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     
+    # Store referrer in session on GET request (first visit)
+    if request.method == 'GET':
+        referrer = request.META.get('HTTP_REFERER', '')
+        if referrer:
+            request.session['profile_referrer'] = referrer
+    
     if request.method == 'POST':
         # Handle profile updates
         action = request.POST.get('action')
@@ -3079,10 +3085,47 @@ def profile_view(request):
         
         return redirect('profile')
     
+    # Get referrer URL for intelligent back navigation
+    # Use stored referrer from session if available, otherwise use current referrer
+    referrer = request.session.get('profile_referrer', request.META.get('HTTP_REFERER', ''))
+    back_url = None
+    
+    # Determine the best back URL based on referrer
+    if 'editor' in referrer:
+        # Extract question_id from referrer if available
+        import re
+        match = re.search(r'editor/(\d+)/?', referrer)
+        if match:
+            back_url = f"/editor/{match.group(1)}/"
+        else:
+            # Check for query parameters in editor URL
+            if 'daily=true' in referrer:
+                back_url = "/editor/?daily=true"
+            elif 'q=' in referrer:
+                # Extract question ID from query parameter
+                q_match = re.search(r'q=(\d+)', referrer)
+                if q_match:
+                    back_url = f"/editor/?q={q_match.group(1)}"
+                else:
+                    back_url = "/editor/"
+            else:
+                back_url = "/editor/"
+    elif 'pick-question' in referrer:
+        back_url = "/pick-question/"
+    elif 'leetcode-home' in referrer:
+        back_url = "/leetcode-home/"
+    else:
+        back_url = "/"  # Default to home
+    
+    # Clear the stored referrer after using it
+    if 'profile_referrer' in request.session:
+        del request.session['profile_referrer']
+    
     context = {
         'user': request.user,
         'user_profile': user_profile,
         'default_images': UserProfile.DEFAULT_IMAGES,
+        'back_url': back_url,
     }
     return render(request, 'registration/profile.html', context)
 

@@ -853,7 +853,7 @@
             {% if user.is_authenticated %}
                 {% load static %}
                 <a href="{% url 'profile' %}" class="user-link">
-                    <img src="{{ user.userprofile.get_profile_image_url }}" alt="Profile" class="user-avatar">
+                    <img src="{{ user.userprofile.get_profile_image_url }}?v={{ user.userprofile.updated_at|date:'U' }}" alt="Profile" class="user-avatar">
                     <div class="username">{{ user.username }}</div>
                 </a>
                 <div class="auth-links">
