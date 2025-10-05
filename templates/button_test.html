@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Functionality Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .summary {
+            background: #e8f4fd;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .summary h2 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        .summary .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .page-test {
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .page-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .page-header.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .page-header.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .page-content {
+            padding: 20px;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .button-test {
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+        .button-test.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .button-test.failed {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .button-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .button-test.success .button-name {
+            color: #155724;
+        }
+        .button-test.failed .button-name {
+            color: #721c24;
+        }
+        .button-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .button-test.success .button-details {
+            color: #155724;
+        }
+        .button-test.failed .button-details {
+            color: #721c24;
+        }
+        .status-code {
+            font-family: monospace;
+            background-color: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .url {
+            font-family: monospace;
+            background-color: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            word-break: break-all;
+        }
+        .note {
+            font-style: italic;
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+        .back-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        .refresh-button {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .refresh-button a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .refresh-button a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔘 Button Functionality Test</h1>
+        
+        <div class="refresh-button">
+            <a href="{% url 'test_buttons' %}">🔄 Refresh Test</a>
+        </div>
+        
+        <div class="summary">
+            <h2>Test Summary</h2>
+            <p>Navigation button functionality test results</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="number">{{ results.summary.successful_tests }}</div>
+                    <div class="label">Pages Passed</div>
+                </div>
+                <div class="stat">
+                    <div class="number">{{ results.summary.failed_tests }}</div>
+                    <div class="label">Pages Failed</div>
+                </div>
+                <div class="stat">
+                    <div class="number">{{ results.summary.success_rate }}%</div>
+                    <div class="label">Success Rate</div>
+                </div>
+            </div>
+        </div>
+        
+        {% for test_name, result in results.items %}
+            {% if test_name != 'summary' %}
+                <div class="page-test">
+                    <div class="page-header {{ result.status }}">
+                        {% if test_name == 'home_page_buttons' %}🏠 Home Page Buttons
+                        {% elif test_name == 'profile_page_buttons' %}👤 Profile Page Buttons
+                        {% elif test_name == 'leetcode_home_buttons' %}💻 LeetCode Home Buttons
+                        {% else %}{{ test_name|title }}
+                        {% endif %}
+                        - {{ result.status|title }}
+                    </div>
+                    <div class="page-content">
+                        <div class="button-details">
+                            Page Status: <span class="status-code">{{ result.page_status_code }}</span><br>
+                            <strong>Last Tested:</strong> {{ result.timestamp }}
+                            {% if result.note %}
+                                <div class="note">{{ result.note }}</div>
+                            {% endif %}
+                            {% if result.error %}
+                                <div class="note">Error: {{ result.error }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if result.button_tests %}
+                            <div class="button-grid">
+                                {% for button_name, button_result in result.button_tests.items %}
+                                    <div class="button-test {{ button_result.status }}">
+                                        <div class="button-name">{{ button_name }}</div>
+                                        <div class="button-details">
+                                            Status: <span class="status-code">{{ button_result.status_code }}</span><br>
+                                            URL: <span class="url">{{ button_result.url }}</span>
+                                            {% if button_result.error %}
+                                                <div class="note">Error: {{ button_result.error }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+        
+        <div class="back-link">
+            <a href="{% url 'test_html' %}">← Back to Test Hub</a>
+        </div>
+    </div>
+</body>
+</html>

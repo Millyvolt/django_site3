@@ -559,6 +559,199 @@ def test_site_functionality(request):
     
     return render(request, 'functionality_test.html', {'results': results})
 
+def test_button_functionality(request):
+    """Test if navigation buttons work properly on main pages"""
+    from datetime import datetime, timezone, timedelta
+    import requests
+    from bs4 import BeautifulSoup
+    
+    # Get current timestamp in Moscow time (UTC+3)
+    moscow_tz = timezone(timedelta(hours=3))
+    current_time = datetime.now(moscow_tz)
+    timestamp_str = current_time.strftime("%Y-%m-%d %H:%M:%S MSK")
+    
+    results = {}
+    
+    # Get the base URL from the request
+    base_url = f"{request.scheme}://{request.get_host()}"
+    
+    # Test Home page buttons
+    try:
+        from django.urls import reverse
+        response = requests.get(f"{base_url}{reverse('home')}", timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Check for main navigation buttons
+            nav_links = soup.find_all('a', class_='nav-link')
+            button_tests = {}
+            
+            for link in nav_links:
+                href = link.get('href', '')
+                text = link.get_text(strip=True)
+                
+                # Test each button by making a request to its URL
+                try:
+                    if href.startswith('/'):
+                        test_url = f"{base_url}{href}"
+                    else:
+                        test_url = href
+                    
+                    test_response = requests.get(test_url, timeout=10)
+                    button_tests[text] = {
+                        'status': 'success' if test_response.status_code in [200, 302] else 'failed',
+                        'status_code': test_response.status_code,
+                        'url': href
+                    }
+                except Exception as e:
+                    button_tests[text] = {
+                        'status': 'failed',
+                        'error': str(e),
+                        'url': href
+                    }
+            
+            results['home_page_buttons'] = {
+                'status': 'success',
+                'page_status_code': response.status_code,
+                'button_tests': button_tests,
+                'timestamp': timestamp_str
+            }
+        else:
+            results['home_page_buttons'] = {
+                'status': 'failed',
+                'error': f'Home page returned status {response.status_code}',
+                'timestamp': timestamp_str
+            }
+    except Exception as e:
+        results['home_page_buttons'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test Profile page buttons (if accessible)
+    try:
+        response = requests.get(f"{base_url}{reverse('profile')}", timeout=10)
+        if response.status_code in [200, 302]:  # 302 is redirect to login, which is expected
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # Check for profile page buttons
+                profile_buttons = soup.find_all('a', class_='auth-link')
+                button_tests = {}
+                
+                for link in profile_buttons:
+                    href = link.get('href', '')
+                    text = link.get_text(strip=True)
+                    
+                    try:
+                        if href.startswith('/'):
+                            test_url = f"{base_url}{href}"
+                        else:
+                            test_url = href
+                        
+                        test_response = requests.get(test_url, timeout=10)
+                        button_tests[text] = {
+                            'status': 'success' if test_response.status_code in [200, 302] else 'failed',
+                            'status_code': test_response.status_code,
+                            'url': href
+                        }
+                    except Exception as e:
+                        button_tests[text] = {
+                            'status': 'failed',
+                            'error': str(e),
+                            'url': href
+                        }
+                
+                results['profile_page_buttons'] = {
+                    'status': 'success',
+                    'page_status_code': response.status_code,
+                    'button_tests': button_tests,
+                    'timestamp': timestamp_str
+                }
+            else:
+                results['profile_page_buttons'] = {
+                    'status': 'success',
+                    'page_status_code': response.status_code,
+                    'note': 'Redirected to login (expected behavior)',
+                    'timestamp': timestamp_str
+                }
+        else:
+            results['profile_page_buttons'] = {
+                'status': 'failed',
+                'error': f'Profile page returned status {response.status_code}',
+                'timestamp': timestamp_str
+            }
+    except Exception as e:
+        results['profile_page_buttons'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Test LeetCode Home page buttons
+    try:
+        response = requests.get(f"{base_url}{reverse('leetcode_home')}", timeout=10)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Check for LeetCode page buttons/links
+            leetcode_links = soup.find_all('a')
+            button_tests = {}
+            
+            # Focus on main navigation links
+            for link in leetcode_links:
+                href = link.get('href', '')
+                text = link.get_text(strip=True)
+                
+                # Only test internal links that look like navigation
+                if href.startswith('/') and text and len(text) < 50:
+                    try:
+                        test_url = f"{base_url}{href}"
+                        test_response = requests.get(test_url, timeout=10)
+                        button_tests[text] = {
+                            'status': 'success' if test_response.status_code in [200, 302] else 'failed',
+                            'status_code': test_response.status_code,
+                            'url': href
+                        }
+                    except Exception as e:
+                        button_tests[text] = {
+                            'status': 'failed',
+                            'error': str(e),
+                            'url': href
+                        }
+            
+            results['leetcode_home_buttons'] = {
+                'status': 'success',
+                'page_status_code': response.status_code,
+                'button_tests': button_tests,
+                'timestamp': timestamp_str
+            }
+        else:
+            results['leetcode_home_buttons'] = {
+                'status': 'failed',
+                'error': f'LeetCode home page returned status {response.status_code}',
+                'timestamp': timestamp_str
+            }
+    except Exception as e:
+        results['leetcode_home_buttons'] = {
+            'status': 'failed',
+            'error': str(e),
+            'timestamp': timestamp_str
+        }
+    
+    # Calculate overall status
+    total_tests = len(results)
+    successful_tests = sum(1 for result in results.values() if result['status'] == 'success')
+    results['summary'] = {
+        'total_tests': total_tests,
+        'successful_tests': successful_tests,
+        'failed_tests': total_tests - successful_tests,
+        'success_rate': round((successful_tests / total_tests) * 100, 1) if total_tests > 0 else 0
+    }
+    
+    return render(request, 'button_test.html', {'results': results})
+
 def daily_question(request):
     """LeetCode daily question page view"""
     try:

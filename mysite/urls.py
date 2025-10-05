@@ -30,6 +30,7 @@ urlpatterns = [
     path("test-html/", views.test_html, name="test_html"),
     path("test-network/", views.test_network_connectivity, name="test_network"),
     path("test-functionality/", views.test_site_functionality, name="test_functionality"),
+    path("test-buttons/", views.test_button_functionality, name="test_buttons"),
     path("pick-question/", views.question_selection, name="question_selection"),
     path("editor/", views.question_editor, name="question_editor"),
     path("editor/<str:question_id>/", views.question_editor, name="question_editor_with_id"),
