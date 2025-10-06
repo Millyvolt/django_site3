@@ -11,6 +11,7 @@ urlpatterns = [
     path('daily-question/', views.daily_question, name='daily_question'),
     path('compile/', views.compile_code, name='compile_code'),
     path('fetch-cpp-template/', views.fetch_cpp_template, name='fetch_cpp_template'),
+    path('save-code/', views.save_user_code, name='save_user_code'),
 ]
 
 

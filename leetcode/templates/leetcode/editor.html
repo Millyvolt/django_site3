@@ -1,2 +1,1708 @@
-{% include "question_editor.html" %}
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor - LeetCode Problems</title>
+    
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    
+    <!-- CodeMirror JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Allow scrolling in mobile mode */
+        .mobile-mode {
+            overflow: auto !important;
+        }
+        
+        /* Mobile device specific styles */
+        .mobile-device .output-panel {
+            display: block !important;
+            visibility: visible !important;
+            min-height: 120px !important;
+            max-height: 200px !important;
+        }
+        
+        .mobile-device .output-panel::before {
+            content: "📋 Output" !important;
+            position: absolute !important;
+            top: -25px !important;
+            left: 10px !important;
+            background-color: #34495e !important;
+            color: #ecf0f1 !important;
+            padding: 2px 8px !important;
+            font-size: 10px !important;
+            border-radius: 3px 3px 0 0 !important;
+            z-index: 11 !important;
+        }
+        
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .user-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: inherit;
+            transition: opacity 0.3s;
+        }
+        
+        .user-link:hover {
+            opacity: 0.8;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #34495e;
+            object-fit: cover;
+        }
+        
+        .user-info .username {
+            background-color: #34495e;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+        
+        .user-info .auth-links a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            transition: background-color 0.3s;
+            font-size: 12px;
+        }
+        
+        .user-info .auth-links a:hover {
+            background-color: #34495e;
+        }
+        
+        .user-info .auth-links a.profile {
+            background-color: #3498db;
+        }
+        
+        .user-info .auth-links a.logout {
+            background-color: #e74c3c;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+        
+        .question-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .question-btn {
+            padding: 8px 12px;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .question-btn:hover {
+            background-color: #3498db;
+        }
+        
+        .question-btn.active {
+            background-color: #3498db;
+        }
+        
+        .difficulty-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .difficulty-easy {
+            background-color: #27ae60;
+        }
+        
+        .difficulty-medium {
+            background-color: #f39c12;
+        }
+        
+        .difficulty-hard {
+            background-color: #e74c3c;
+        }
+        
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .back-link:hover {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .main-container {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+        
+        .problem-panel {
+            width: 40%;
+            background-color: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .editor-panel {
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .problem-section {
+            margin-bottom: 25px;
+        }
+        
+        .problem-section h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .problem-section p {
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .example {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .example strong {
+            color: #2c3e50;
+        }
+        
+        .example pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+        
+        .constraints ul {
+            padding-left: 20px;
+        }
+        
+        .constraints li {
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .code-editor {
+            flex: 1;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 20px;
+            border: none;
+            outline: none;
+            resize: none;
+            white-space: pre;
+            overflow: auto;
+        }
+        
+        /* CodeMirror specific styles */
+        .CodeMirror {
+            height: 100% !important;
+            font-family: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+        }
+        
+        .CodeMirror-gutters {
+            background-color: #2c3e50 !important;
+            border-right: 1px solid #7f8c8d !important;
+        }
+        
+        .CodeMirror-linenumber {
+            color: #95a5a6 !important;
+        }
+        
+        .CodeMirror-cursor {
+            border-left: 2px solid #3498db !important;
+        }
+        
+        .CodeMirror-selected {
+            background-color: #3498db33 !important;
+        }
+        
+        .CodeMirror-focused .CodeMirror-selected {
+            background-color: #3498db44 !important;
+        }
+        
+        /* Bracket matching styles */
+        .CodeMirror-matchingbracket {
+            background-color: #d1d1d1 !important;
+            color: #000000 !important;
+            font-weight: bold !important;
+            border-radius: 2px !important;
+            padding: 1px 2px !important;
+        }
+        
+        .CodeMirror-nonmatchingbracket {
+            background-color: #e74c3c !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border-radius: 2px !important;
+            padding: 1px 2px !important;
+        }
+        
+        /* Make all brackets more prominent */
+        .CodeMirror .cm-bracket {
+            font-weight: bold !important;
+        }
+        
+        /* Theme-specific bracket highlighting */
+        .cm-s-monokai .CodeMirror-matchingbracket {
+            background-color: #f92672 !important;
+            color: #272822 !important;
+        }
+        
+        .cm-s-material .CodeMirror-matchingbracket {
+            background-color: #ff5722 !important;
+            color: #ffffff !important;
+        }
+        
+        .cm-s-dracula .CodeMirror-matchingbracket {
+            background-color: #ff79c6 !important;
+            color: #282a36 !important;
+        }
+        
+        /* Syntax highlighting themes */
+        .cm-s-monokai .CodeMirror {
+            background-color: #272822 !important;
+            color: #f8f8f2 !important;
+        }
+        
+        .cm-s-material .CodeMirror {
+            background-color: #263238 !important;
+            color: #eceff1 !important;
+        }
+        
+        .cm-s-dracula .CodeMirror {
+            background-color: #282a36 !important;
+            color: #f8f8f2 !important;
+        }
+        
+        .editor-toolbar {
+            background-color: #34495e;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .language-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .language-selector label {
+            font-weight: 500;
+            color: #ecf0f1;
+        }
+        
+        .language-selector select {
+            padding: 4px 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+     
+        .editor-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #229954;
+        }
+        
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        
+        /* Full-screen mode styles */
+        .fullscreen-mode {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background-color: #2c3e50 !important;
+        }
+        
+        .fullscreen-mode .problem-panel {
+            display: none !important;
+        }
+        
+        .fullscreen-mode .editor-panel {
+            width: 100% !important;
+            height: 100vh !important;
+        }
+        
+        .fullscreen-mode .editor-toolbar {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10000 !important;
+        }
+        
+        .fullscreen-mode .code-editor {
+            height: calc(100vh - 120px) !important;
+        }
+        
+        .output-panel {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid #34495e;
+        }
+        
+        .output-panel.success {
+            background-color: #27ae60;
+        }
+        
+        .output-panel.error {
+            background-color: #e74c3c;
+        }
+        
+        .status-indicator {
+            color: #95a5a6;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .shortcut-hint {
+            font-size: 11px;
+            color: #7f8c8d;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: help;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            white-space: nowrap;
+        }
+        
+        .shortcut-hint:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #95a5a6;
+        }
+        
+        .status.running {
+            color: #f39c12;
+        }
+        
+        .status.success {
+            color: #27ae60;
+        }
+        
+        .status.error {
+            color: #e74c3c;
+        }
+        
+        /* Mobile view styles */
+        .mobile-mode {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background-color: #2c3e50 !important;
+            overflow: auto !important;
+        }
+        
+        .mobile-mode .main-container {
+            flex-direction: column !important;
+            height: 100vh !important;
+        }
+        
+        .mobile-mode .problem-panel {
+            width: 100% !important;
+            height: 35% !important;
+            max-height: 35vh !important;
+            overflow-y: auto !important;
+            border-right: none !important;
+            border-bottom: 1px solid #ddd !important;
+        }
+        
+        .mobile-mode .editor-panel {
+            width: 100% !important;
+            height: 65% !important;
+            flex: 1 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        
+        .mobile-mode .code-editor {
+            flex: 1 !important;
+            min-height: 0 !important;
+        }
+        
+        .mobile-mode .editor-toolbar {
+            padding: 8px 15px !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+        }
+        
+        .mobile-mode .editor-buttons {
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+        }
+        
+        .mobile-mode .btn {
+            padding: 6px 10px !important;
+            font-size: 0.8em !important;
+        }
+        
+        .mobile-mode .language-selector {
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+        }
+        
+        .mobile-mode .language-selector select {
+            font-size: 12px !important;
+            padding: 3px 6px !important;
+        }
+        
+        .mobile-mode .language-selector label {
+            font-size: 0.8em !important;
+        }
+        
+        .mobile-mode .code-editor {
+            font-size: 12px !important;
+            overflow: auto !important;
+        }
+        
+        .mobile-mode .CodeMirror {
+            font-size: 12px !important;
+            height: 100% !important;
+            overflow: auto !important;
+        }
+        
+        .mobile-mode .CodeMirror-scroll {
+            overflow: auto !important;
+            height: 100% !important;
+        }
+        
+        .mobile-mode .output-panel {
+            max-height: 200px !important;
+            min-height: 120px !important;
+            font-size: 11px !important;
+            padding: 10px !important;
+            overflow-y: auto !important;
+            border-top: 2px solid #34495e !important;
+            background-color: #2c3e50 !important;
+            color: #ecf0f1 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .output-panel.hidden {
+            display: none !important;
+        }
+        
+        .output-panel.collapsed {
+            max-height: 40px !important;
+            min-height: 40px !important;
+            overflow: hidden !important;
+        }
+        
+        .output-panel.has-content {
+            border-left: 4px solid #3498db !important;
+        }
+        
+        .output-panel.success {
+            border-left: 4px solid #27ae60 !important;
+        }
+        
+        .output-panel.error {
+            border-left: 4px solid #e74c3c !important;
+        }
+        
+        .mobile-mode .header {
+            padding: 10px 15px !important;
+        }
+        
+        .mobile-mode .header h1 {
+            font-size: 1.2em !important;
+        }
+        
+        .mobile-mode .user-info {
+            gap: 8px !important;
+            font-size: 12px !important;
+        }
+        
+        .mobile-mode .user-avatar {
+            width: 24px !important;
+            height: 24px !important;
+        }
+        
+        .mobile-mode .user-info .username {
+            padding: 3px 8px !important;
+            font-size: 11px !important;
+        }
+        
+        .mobile-mode .user-info .auth-links a {
+            padding: 3px 6px !important;
+            font-size: 10px !important;
+        }
+        
+        .mobile-mode .question-selector {
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+        }
+        
+        .mobile-mode .question-btn {
+            padding: 5px 8px !important;
+            font-size: 0.7em !important;
+        }
+        
+        .mobile-mode .difficulty-badge {
+            font-size: 0.7em !important;
+            padding: 3px 8px !important;
+        }
+        
+        .mobile-mode .back-link {
+            font-size: 0.8em !important;
+            padding: 5px 10px !important;
+        }
+        
+        .mobile-mode .problem-section {
+            margin-bottom: 15px !important;
+        }
+        
+        .mobile-mode .problem-section h3 {
+            font-size: 1em !important;
+            margin-bottom: 8px !important;
+        }
+        
+        .mobile-mode .example {
+            padding: 10px !important;
+            margin: 8px 0 !important;
+        }
+        
+        .mobile-mode .example pre {
+            font-size: 0.8em !important;
+            padding: 8px !important;
+        }
+        
+        .mobile-mode .constraints ul {
+            padding-left: 15px !important;
+        }
+        
+        .mobile-mode .constraints li {
+            font-size: 0.9em !important;
+            margin-bottom: 3px !important;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                overflow: auto;
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .main-container {
+                flex-direction: column;
+                height: auto;
+                min-height: calc(100vh - 70px);
+            }
+            
+            .problem-panel {
+                width: 100%;
+                height: 40%;
+                max-height: 40vh;
+                overflow-y: auto;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .editor-panel {
+                width: 100%;
+                height: 60%;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            
+            .code-editor {
+                flex: 1;
+                min-height: 0;
+                font-size: 12px;
+                overflow: auto;
+            }
+            
+            .CodeMirror {
+                font-size: 12px;
+                height: 100%;
+                overflow: auto;
+            }
+            
+            .CodeMirror-scroll {
+                overflow: auto;
+                height: 100%;
+            }
+            
+            .output-panel {
+                max-height: 200px;
+                min-height: 120px;
+                font-size: 11px;
+                padding: 10px;
+                overflow-y: auto;
+                border-top: 2px solid #34495e;
+                background-color: #2c3e50;
+                color: #ecf0f1;
+                transition: all 0.3s ease;
+                position: relative;
+                z-index: 10;
+            }
+            
+            /* Ensure output panel is always visible on mobile */
+            .output-panel::before {
+                content: "📋 Output";
+                position: absolute;
+                top: -25px;
+                left: 10px;
+                background-color: #34495e;
+                color: #ecf0f1;
+                padding: 2px 8px;
+                font-size: 10px;
+                border-radius: 3px 3px 0 0;
+                z-index: 11;
+            }
+            
+            .output-panel.has-content {
+                border-left: 4px solid #3498db;
+            }
+            
+            .output-panel.success {
+                border-left: 4px solid #27ae60;
+            }
+            
+            .output-panel.error {
+                border-left: 4px solid #e74c3c;
+            }
+            
+            .editor-toolbar {
+                padding: 8px 15px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .editor-buttons {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+            
+            .language-selector {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .language-selector select {
+                font-size: 12px;
+                padding: 3px 6px;
+            }
+            
+            .language-selector label {
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <h1 id="problem-title">Code Editor</h1>
+            <span id="difficulty-badge" class="difficulty-badge">Easy</span>
+            <!-- <div class="question-selector">
+                <button class="question-btn active" onclick="switchQuestion('1')">Two Sum</button>
+                <button class="question-btn" onclick="switchQuestion('2')">Add Two Numbers</button>
+                <button class="question-btn" onclick="switchQuestion('3')">Longest Substring</button>
+            </div> -->
+        </div>
+        
+        <!-- User Info Section -->
+        <div class="user-info">
+            {% if user.is_authenticated %}
+                {% load static %}
+                <a href="{% url 'profile' %}" class="user-link">
+                    <img src="{{ user.userprofile.get_profile_image_url }}?v={{ user.userprofile.updated_at|date:'U' }}" alt="Profile" class="user-avatar">
+                    <div class="username">{{ user.username }}</div>
+                </a>
+                <div class="auth-links">
+                    <a href="{% url 'logout' %}" class="logout">Logout</a>
+                </div>
+            {% else %}
+                <div class="auth-links">
+                    <a href="{% url 'login' %}" class="login">Login</a>
+                    <a href="{% url 'register' %}" class="register">Register</a>
+                </div>
+            {% endif %}
+        </div>
+        <a href="{% url 'leetcode:question_selection' %}" class="back-link">← Back to Problems</a>
+    </div>
+    
+    <div class="main-container">
+        <div class="problem-panel">
+            <div class="problem-section">
+                <h3>Problem Description</h3>
+                <p id="problem-description">Loading...</p>
+            </div>
+            
+            <div class="problem-section">
+                <h3>Examples</h3>
+                <div id="problem-examples">Loading...</div>
+            </div>
+            
+            <div class="problem-section constraints">
+                <h3>Constraints</h3>
+                <ul id="problem-constraints">Loading...</ul>
+            </div>
+        </div>
+        
+        <div class="editor-panel">
+            {% csrf_token %}
+            <div class="editor-toolbar">
+                <div class="language-selector">
+                    <label for="languageSelect">Language:</label>
+                    <select id="languageSelect" onchange="changeLanguage()">
+                        <option value="cpp">C++</option>
+                        <option value="python3">Python 3</option>
+<!--                        <option value="java">Java</option>
+                        <option value="javascript">JavaScript</option> -->
+                    </select>
+                    
+                    <label for="themeSelect">Theme:</label>
+                    <select id="themeSelect" onchange="changeTheme()">
+                        <option value="default">Default</option>
+                        <option value="monokai">Monokai</option>
+                        <option value="material">Material</option>
+                        <option value="dracula">Dracula</option>
+                    </select>
+                </div>
+                <div class="editor-buttons">
+                    <!-- <button class="btn btn-warning" onclick="resetCode()">Reset</button> -->
+                    <button class="btn btn-primary" onclick="runCode()">Run Code</button>
+                    <!-- <button class="btn btn-success" onclick="submitCode()">Submit</button> -->
+                    <!-- <button class="btn btn-info" onclick="fetchCppTemplateFromLeetCode(currentQuestionId)" id="fetchCppBtn" title="Fetch C++ template from LeetCode">🔧 Get C++ Template</button> -->
+                    <button class="btn btn-info" onclick="toggleMobileView()" id="mobileBtn">📱 Mobile</button>
+                    <button class="btn btn-info" onclick="toggleFullscreen()" id="fullscreenBtn">⛶ Full Screen</button>
+                    <button class="btn btn-info" onclick="toggleOutputPanel()" id="outputToggleBtn" title="Toggle Output Panel">📋 Output</button>
+                </div>
+                <div class="status-indicator">
+                    <span id="status">Ready to code</span>
+                    <span class="shortcut-hint" title="Keyboard shortcuts: Ctrl+/ to comment, Ctrl+Enter for new line">⌨️ Ctrl+/</span>
+                </div>
+            </div>
+            
+            <div id="codeEditor" class="code-editor">{{ current_problem.template }}</div>
+<!--           
+            <div class="input-section">
+                <label for="inputField">Input (optional):</label>
+                <textarea id="inputField" class="input-field" placeholder="Enter test input here..."></textarea>
+            </div>
+-->            
+            <div id="outputPanel" class="output-panel">
+                <div>Output will appear here...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Check if we have daily question data from sessionStorage
+        let dailyQuestionData = null;
+        try {
+            const stored = sessionStorage.getItem('dailyQuestionData');
+            if (stored) {
+                dailyQuestionData = JSON.parse(stored);
+                // Clear the stored data after reading
+                sessionStorage.removeItem('dailyQuestionData');
+            }
+        } catch (e) {
+            console.log('No daily question data found');
+        }
+        
+        // Current language and question tracking
+        let currentLanguage = 'cpp';
+        let currentTheme = 'default';
+        
+        // Problem data from Django
+        /* eslint-disable no-undef, no-redeclare, no-unused-vars */
+        const problemsData = JSON.parse('{{ problems|escapejs }}');
+        /* eslint-enable */
+        
+        let currentQuestionId = '{{ current_question_id }}';
+        let currentTitleSlug = '{{ current_title_slug|default_if_none:"" }}';
+        
+        // Initialize CodeMirror
+        let codeEditor = null;
+        const outputPanel = document.getElementById('outputPanel');
+        const statusIndicator = document.getElementById('status');
+        
+        // Initialize CodeMirror
+        function initializeCodeMirror() {
+            const editorElement = document.getElementById('codeEditor');
+            const initialContent = editorElement.textContent;
+            
+            // Clear the div content
+            editorElement.innerHTML = '';
+            
+            // Initialize CodeMirror
+            codeEditor = CodeMirror(editorElement, {
+                value: initialContent,
+                mode: getCodeMirrorMode(currentLanguage),
+                theme: getCodeMirrorTheme(currentTheme),
+                lineNumbers: true,
+                indentUnit: 4,
+                tabSize: 4,
+                indentWithTabs: false,
+                lineWrapping: true,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                highlightSelectionMatches: {showToken: /\w/},
+                scrollbarStyle: "native",
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    "Ctrl-/": "toggleComment",
+                    "Ctrl-Enter": function(cm) {
+                        // Add a new line and indent
+                        cm.replaceSelection("\n");
+                        cm.execCommand("indentAuto");
+                    },
+                    "Tab": function(cm) {
+                        if (cm.getMode().name === "null") {
+                            cm.execCommand("insertTab");
+                        } else {
+                            if (cm.somethingSelected()) {
+                                cm.execCommand("indentMore");
+                            } else {
+                                cm.execCommand("insertSoftTab");
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Register custom commands
+            codeEditor.setOption("extraKeys", {
+                ...codeEditor.getOption("extraKeys"),
+                "Ctrl-/": function(cm) {
+                    toggleComment(cm);
+                }
+            });
+            /*
+            // Ensure bracket matching is properly initialized
+            setTimeout(function() {
+                if (codeEditor) {
+                    codeEditor.refresh();
+                    // Force bracket matching to initialize
+                    codeEditor.execCommand("goToNextBracket");
+                    codeEditor.execCommand("goToPrevBracket");
+                }
+            }, 100);
+            
+            // Add cursor activity listener to trigger bracket matching
+            codeEditor.on('cursorActivity', function(cm) {
+                // Trigger bracket matching update
+                setTimeout(function() {
+                    cm.operation(function() {
+                        cm.execCommand('goToNextBracket');
+                        cm.execCommand('goToPrevBracket');
+                    });
+                }, 10);
+            });
+            */
+        }
+        
+        // Get CodeMirror mode for language
+        function getCodeMirrorMode(language) {
+            const modeMap = {
+                'cpp': 'text/x-c++src',
+                'python3': 'python',
+                'python': 'python',
+                'java': 'text/x-java',
+                'javascript': 'javascript'
+            };
+            return modeMap[language] || 'text/plain';
+        }
+        
+        // Get CodeMirror theme
+        function getCodeMirrorTheme(theme) {
+            const themeMap = {
+                'default': 'default',
+                'monokai': 'monokai',
+                'material': 'material',
+                'dracula': 'dracula'
+            };
+            return themeMap[theme] || 'default';
+        }
+        
+        // Change theme function
+        function changeTheme() {
+            const themeSelect = document.getElementById('themeSelect');
+            currentTheme = themeSelect.value;
+            
+            if (codeEditor) {
+                codeEditor.setOption('theme', getCodeMirrorTheme(currentTheme));
+            }
+        }
+        
+        // Custom comment toggle function
+        function toggleComment(cm) {
+            const ranges = cm.listSelections();
+            const commentTokens = getCommentTokens(cm.getMode().name);
+            
+            // If no selection, toggle comment on current line
+            if (ranges.length === 1 && ranges[0].empty()) {
+                const line = cm.getCursor().line;
+                const lineText = cm.getLine(line);
+                const startOfLine = { line: line, ch: 0 };
+                const endOfLine = { line: line, ch: lineText.length };
+                
+                if (isLineCommented(lineText, commentTokens)) {
+                    // Uncomment the line
+                    uncommentLine(cm, startOfLine, endOfLine, commentTokens);
+                } else {
+                    // Comment the line
+                    commentLine(cm, startOfLine, endOfLine, commentTokens);
+                }
+            } else {
+                // Handle multiple selections or multiline selection
+                for (let i = ranges.length - 1; i >= 0; i--) {
+                    const range = ranges[i];
+                    const start = range.from();
+                    const end = range.to();
+                    
+                    if (range.empty()) {
+                        // Single cursor - toggle current line
+                        const line = start.line;
+                        const lineText = cm.getLine(line);
+                        const lineStart = { line: line, ch: 0 };
+                        const lineEnd = { line: line, ch: lineText.length };
+                        
+                        if (isLineCommented(lineText, commentTokens)) {
+                            uncommentLine(cm, lineStart, lineEnd, commentTokens);
+                        } else {
+                            commentLine(cm, lineStart, lineEnd, commentTokens);
+                        }
+                    } else {
+                        // Selection - check if all lines are commented
+                        const allCommented = areAllLinesCommented(cm, start, end, commentTokens);
+                        
+                        if (allCommented) {
+                            // Uncomment all lines in selection
+                            uncommentLines(cm, start, end, commentTokens);
+                        } else {
+                            // Comment all lines in selection
+                            commentLines(cm, start, end, commentTokens);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Get comment tokens for different languages
+        function getCommentTokens(modeName) {
+            const tokens = {
+                'clike': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'cpp': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'java': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'javascript': { single: '//', multiStart: '/*', multiEnd: '*/' },
+                'python': { single: '#', multiStart: null, multiEnd: null },
+                'default': { single: '//', multiStart: '/*', multiEnd: '*/' }
+            };
+            
+            return tokens[modeName] || tokens['default'];
+        }
+        
+        // Check if a line is commented
+        function isLineCommented(lineText, tokens) {
+            const trimmed = lineText.trim();
+            return trimmed.startsWith(tokens.single) || 
+                   (tokens.multiStart && trimmed.startsWith(tokens.multiStart));
+        }
+        
+        // Check if all lines in selection are commented
+        function areAllLinesCommented(cm, start, end, tokens) {
+            const startLine = Math.min(start.line, end.line);
+            const endLine = Math.max(start.line, end.line);
+            
+            for (let line = startLine; line <= endLine; line++) {
+                const lineText = cm.getLine(line);
+                if (lineText.trim() && !isLineCommented(lineText, tokens)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Comment a single line
+        function commentLine(cm, start, end, tokens) {
+            const lineText = cm.getLine(start.line);
+            const indent = lineText.match(/^\s*/)[0];
+            const content = lineText.substring(indent.length);
+            
+            cm.replaceRange(
+                indent + tokens.single + ' ' + content,
+                start,
+                end
+            );
+        }
+        
+        // Uncomment a single line
+        function uncommentLine(cm, start, end, tokens) {
+            const lineText = cm.getLine(start.line);
+            const trimmed = lineText.trim();
+            
+            if (trimmed.startsWith(tokens.single)) {
+                // Remove single line comment
+                const commentIndex = lineText.indexOf(tokens.single);
+                const beforeComment = lineText.substring(0, commentIndex);
+                const afterComment = lineText.substring(commentIndex + tokens.single.length);
+                
+                // Remove extra space after comment token if present
+                const cleanedAfter = afterComment.startsWith(' ') ? afterComment.substring(1) : afterComment;
+                
+                cm.replaceRange(
+                    beforeComment + cleanedAfter,
+                    start,
+                    end
+                );
+            } else if (tokens.multiStart && trimmed.startsWith(tokens.multiStart)) {
+                // Remove multi-line comment start
+                const startIndex = lineText.indexOf(tokens.multiStart);
+                const endIndex = lineText.indexOf(tokens.multiEnd);
+                
+                if (endIndex !== -1) {
+                    // Single line multi-line comment
+                    const beforeStart = lineText.substring(0, startIndex);
+                    const afterEnd = lineText.substring(endIndex + tokens.multiEnd.length);
+                    cm.replaceRange(beforeStart + afterEnd, start, end);
+                }
+            }
+        }
+        
+        // Comment multiple lines
+        function commentLines(cm, start, end, tokens) {
+            const startLine = Math.min(start.line, end.line);
+            const endLine = Math.max(start.line, end.line);
+            
+            for (let line = startLine; line <= endLine; line++) {
+                const lineText = cm.getLine(line);
+                if (lineText.trim()) {
+                    const indent = lineText.match(/^\s*/)[0];
+                    const content = lineText.substring(indent.length);
+                    
+                    cm.replaceRange(
+                        indent + tokens.single + ' ' + content,
+                        { line: line, ch: 0 },
+                        { line: line, ch: lineText.length }
+                    );
+                }
+            }
+        }
+        
+        // Uncomment multiple lines
+        function uncommentLines(cm, start, end, tokens) {
+            const startLine = Math.min(start.line, end.line);
+            const endLine = Math.max(start.line, end.line);
+            
+            for (let line = startLine; line <= endLine; line++) {
+                const lineText = cm.getLine(line);
+                if (lineText.trim()) {
+                    uncommentLine(cm, 
+                        { line: line, ch: 0 }, 
+                        { line: line, ch: lineText.length }, 
+                        tokens
+                    );
+                }
+            }
+        }
+        
+        // Check if device is mobile
+        function isMobileDevice() {
+            return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        // Auto-apply mobile styles on mobile devices
+        function applyMobileStyles() {
+            if (isMobileDevice()) {
+                document.body.classList.add('mobile-device');
+                // Ensure output panel is visible
+                const outputPanel = document.getElementById('outputPanel');
+                if (outputPanel) {
+                    outputPanel.style.display = 'block';
+                    outputPanel.style.visibility = 'visible';
+                }
+            }
+        }
+        
+        // Initialize with current question
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply mobile styles if needed
+            applyMobileStyles();
+            
+            // Initialize CodeMirror first
+            initializeCodeMirror();
+            
+            // If we have daily question data, load it instead
+            if (dailyQuestionData) {
+                currentQuestionId = dailyQuestionData.frontend_id || '1'; // Use actual daily question ID
+                currentTitleSlug = dailyQuestionData.title_slug || '';
+                loadQuestion(currentQuestionId);
+            } else {
+                loadQuestion(currentQuestionId);
+            }
+        });
+        
+        // Handle window resize (orientation changes on mobile)
+        window.addEventListener('resize', function() {
+            applyMobileStyles();
+            if (codeEditor) {
+                setTimeout(() => {
+                    codeEditor.refresh();
+                }, 100);
+            }
+        });
+        
+        function switchQuestion(questionId) {
+            currentQuestionId = questionId;
+            loadQuestion(questionId);
+            
+            // Update active button
+            document.querySelectorAll('.question-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        function loadQuestion(questionId) {
+            let problem;
+            
+            // Check if we have daily question data
+            if (dailyQuestionData && (questionId === dailyQuestionData.frontend_id || questionId === '1')) {
+                problem = {
+                    title: dailyQuestionData.title,
+                    difficulty: dailyQuestionData.difficulty,
+                    description: dailyQuestionData.description,
+                    examples: dailyQuestionData.examples,
+                    constraints: dailyQuestionData.constraints,
+                    template: dailyQuestionData.template,
+                    cppTemplate: dailyQuestionData.cppTemplate || dailyQuestionData.template
+                };
+                
+                // Update header to show it's a daily question
+                document.getElementById('problem-title').textContent = dailyQuestionData.title + ' (Daily Challenge)';
+            } else {
+                problem = problemsData[questionId];
+            }
+            
+            if (!problem) return;
+            
+            // Update header (title already set for daily questions)
+            if (!dailyQuestionData || (questionId !== dailyQuestionData.frontend_id && questionId !== '1')) {
+                document.getElementById('problem-title').textContent = problem.title;
+            }
+            const difficultyBadge = document.getElementById('difficulty-badge');
+            difficultyBadge.textContent = problem.difficulty;
+            difficultyBadge.className = `difficulty-badge difficulty-${problem.difficulty.toLowerCase()}`;
+            
+            // Update problem description (handle HTML content)
+            const descriptionElement = document.getElementById('problem-description');
+            if (problem.description.includes('<')) {
+                descriptionElement.innerHTML = problem.description;
+            } else {
+                descriptionElement.textContent = problem.description;
+            }
+            
+            // Update examples
+            const examplesHtml = problem.examples.map((example, index) => `
+                <div class="example">
+                    <strong>Example ${index + 1}:</strong>
+                    <pre><strong>Input:</strong> ${example.input}
+<strong>Output:</strong> ${example.output}
+${example.explanation ? `<strong>Explanation:</strong> ${example.explanation}` : ''}</pre>
+                </div>
+            `).join('');
+            document.getElementById('problem-examples').innerHTML = examplesHtml;
+            
+            // Update constraints
+            const constraintsHtml = problem.constraints.map(constraint => `<li>${constraint}</li>`).join('');
+            document.getElementById('problem-constraints').innerHTML = constraintsHtml;
+            
+            // Update code editor with appropriate template based on current language
+            if (codeEditor) {
+                if (currentLanguage === 'cpp' && problem.cppTemplate) {
+                    codeEditor.setValue(problem.cppTemplate);
+                } else {
+                    codeEditor.setValue(problem.template);
+                }
+            }
+            
+            // If current language is C++ and we don't have a proper C++ template, fetch it from LeetCode
+            if (currentLanguage === 'cpp' && (!problem.cppTemplate || problem.cppTemplate.includes('// Your code here'))) {
+                fetchCppTemplateFromLeetCode(questionId);
+            }
+            
+            // Reset output
+            outputPanel.innerHTML = '<div>Output will appear here...</div>';
+            outputPanel.className = 'output-panel';
+            statusIndicator.textContent = 'Ready to code';
+        }
+        
+        // function resetCode() {
+        //     const problem = problems[currentQuestionId];
+        //     updateCodeTemplate(problem);
+        //     outputPanel.innerHTML = '<div>Output will appear here...</div>';
+        //     outputPanel.className = 'output-panel';
+        //     statusIndicator.textContent = 'Code reset';
+        //     setTimeout(() => {
+        //         statusIndicator.textContent = 'Ready to code';
+        //     }, 2000);
+        // }
+        
+        function changeLanguage() {
+            const languageSelect = document.getElementById('languageSelect');
+            currentLanguage = languageSelect.value;
+            console.log('Language changed to:', currentLanguage);
+            
+            // Update CodeMirror mode
+            if (codeEditor) {
+                codeEditor.setOption('mode', getCodeMirrorMode(currentLanguage));
+            }
+            
+            // Check if we have daily question data
+            let problem;
+            if (dailyQuestionData && (currentQuestionId === dailyQuestionData.frontend_id || currentQuestionId === '1')) {
+                problem = {
+                    title: dailyQuestionData.title,
+                    difficulty: dailyQuestionData.difficulty,
+                    description: dailyQuestionData.description,
+                    examples: dailyQuestionData.examples,
+                    constraints: dailyQuestionData.constraints,
+                    template: dailyQuestionData.template,
+                    cppTemplate: dailyQuestionData.cppTemplate || dailyQuestionData.template
+                };
+            } else {
+                problem = problemsData[currentQuestionId];
+            }
+            
+            if (problem) {
+                updateCodeTemplate(problem);
+            }
+            
+            // If switching to C++ and we don't have a C++ template, try to fetch it from LeetCode
+            if (currentLanguage === 'cpp' && problem && (!problem.cppTemplate || problem.cppTemplate.includes('// Your code here'))) {
+                fetchCppTemplateFromLeetCode(currentQuestionId);
+            }
+        }
+        
+        function fetchCppTemplateFromLeetCode(questionId, titleSlug = null) {
+            console.log(`Fetching C++ template for question ${questionId} from LeetCode...`);
+            statusIndicator.textContent = 'Fetching C++ template from LeetCode...';
+            statusIndicator.className = 'status running';
+            
+            const requestData = {
+                question_id: questionId
+            };
+            
+            // Use title_slug if available for more efficient fetching
+            if (titleSlug || currentTitleSlug || (dailyQuestionData && dailyQuestionData.title_slug)) {
+                requestData.title_slug = titleSlug || currentTitleSlug || dailyQuestionData.title_slug;
+            }
+            
+            fetch('{% url "leetcode:fetch_cpp_template" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    console.log('Successfully fetched C++ template from LeetCode');
+                    
+                    // Update the problem data with the fetched C++ template
+                    if (problemsData[questionId]) {
+                        problemsData[questionId].cppTemplate = result.cpp_template;
+                    }
+                    
+                    // If current language is C++, update the editor
+                    if (currentLanguage === 'cpp' && codeEditor) {
+                        codeEditor.setValue(result.cpp_template);
+                    }
+                    
+                    // Show appropriate success message
+                    if (result.is_generic) {
+                        statusIndicator.textContent = 'Generic C++ template created (LeetCode template not available)';
+                        console.log('Generic template created:', result.message);
+                    } else {
+                        statusIndicator.textContent = 'C++ template loaded from LeetCode';
+                    }
+                    statusIndicator.className = 'status success';
+                    
+                    // Reset status after 4 seconds (longer for generic template message)
+                    setTimeout(() => {
+                        statusIndicator.textContent = 'Ready to code';
+                        statusIndicator.className = '';
+                    }, 4000);
+                } else {
+                    console.log('Failed to fetch C++ template:', result.error);
+                    statusIndicator.textContent = 'Could not fetch C++ template from LeetCode';
+                    statusIndicator.className = 'status error';
+                    
+                    // Reset status after 3 seconds
+                    setTimeout(() => {
+                        statusIndicator.textContent = 'Ready to code';
+                        statusIndicator.className = '';
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching C++ template:', error);
+                statusIndicator.textContent = 'Error fetching C++ template';
+                statusIndicator.className = 'status error';
+                
+                // Reset status after 3 seconds
+                setTimeout(() => {
+                    statusIndicator.textContent = 'Ready to code';
+                    statusIndicator.className = '';
+                }, 3000);
+            });
+        }
+        
+        function updateCodeTemplate(problem) {
+            if (codeEditor) {
+                if (currentLanguage === 'cpp' && problem.cppTemplate && !problem.cppTemplate.includes('// Your code here')) {
+                    codeEditor.setValue(problem.cppTemplate);
+                } else {
+                    codeEditor.setValue(problem.template);
+                }
+            }
+        }
+        
+        function runCode() {
+            const code = codeEditor ? codeEditor.getValue() : '';
+            const language = document.getElementById('languageSelect').value;
+            console.log('Running code with language:', language);
+            console.log('Code preview:', code.substring(0, 200) + '...');
+//            const input = document.getElementById('inputField').value;
+            const input = '';
+            
+            if (!code.trim()) {
+                outputPanel.innerHTML = '<div style="color: #e74c3c;">Please enter some code to run</div>';
+                outputPanel.className = 'output-panel error has-content';
+                return;
+            }
+            
+            statusIndicator.textContent = 'Running...';
+            statusIndicator.className = 'status running';
+            
+            // Make AJAX request to compile endpoint
+            fetch('{% url "leetcode:compile_code" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    code: code,
+                    language: language,
+                    input: input,
+                    question_id: currentQuestionId,
+                    title_slug: dailyQuestionData ? dailyQuestionData.title_slug : currentTitleSlug
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    let output = '';
+                    if (result.output) {
+                        output += `<div style="color: #27ae60;"><strong>Output:</strong><br><pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; white-space: pre-wrap;">${result.output}</pre></div>`;
+                    }
+                    if (result.memory || result.cpuTime) {
+                        output += `<div style="color: #7f8c8d; font-size: 0.9em;"><strong>Stats:</strong> Memory: ${result.memory || 'N/A'}, CPU Time: ${result.cpuTime || 'N/A'}</div>`;
+                    }
+                    outputPanel.innerHTML = output || '<div>Code executed successfully (no output)</div>';
+                    outputPanel.className = 'output-panel success has-content';
+                    statusIndicator.textContent = 'Success';
+                    statusIndicator.className = 'status success';
+                } else {
+                    let errorMessage = result.error;
+                    if (result.error_type === 'compilation_error') {
+                        errorMessage = `<strong>Compilation Error:</strong><br>${result.error}`;
+                    } else if (result.error_type === 'runtime_error') {
+                        errorMessage = `<strong>Runtime Error:</strong><br>${result.error}`;
+                    } else if (result.error_type === 'api_error') {
+                        errorMessage = `<strong>API Error:</strong><br>${result.error}`;
+                    }
+                    outputPanel.innerHTML = `<div style="color: #e74c3c;">${errorMessage}</div>`;
+                    outputPanel.className = 'output-panel error has-content';
+                    statusIndicator.textContent = 'Error';
+                    statusIndicator.className = 'status error';
+                }
+            })
+            .catch(error => {
+                outputPanel.innerHTML = `<div style="color: #e74c3c;"><strong>Network Error:</strong> ${error.message}</div>`;
+                outputPanel.className = 'output-panel error has-content';
+                statusIndicator.textContent = 'Error';
+                statusIndicator.className = 'status error';
+            });
+        }
+        
+        // function submitCode() {
+        //     const code = codeEditor ? codeEditor.getValue() : '';
+        //     statusIndicator.textContent = 'Submitting...';
+            
+        //     // Simulate submission
+        //     setTimeout(() => {
+        //         const result = simulateSubmission(code);
+        //         if (result.passed) {
+        //             outputPanel.innerHTML = `<div>✅ All test cases passed!<br>Time: ${result.time}ms<br>Memory: ${result.memory}MB</div>`;
+        //             outputPanel.className = 'output-panel success';
+        //             statusIndicator.textContent = 'Solution accepted!';
+        //         } else {
+        //             outputPanel.innerHTML = `<div>❌ Test case failed:<br>${result.error}</div>`;
+        //             outputPanel.className = 'output-panel error';
+        //             statusIndicator.textContent = 'Solution rejected';
+        //         }
+        //     }, 1500);
+        // }
+        
+        function simulateCodeExecution(code) {
+            // Simple simulation - in reality, this would be handled by a backend
+            if (code.includes('twoSum')) {
+                return '[0,1]\n[1,2]';
+            } else if (code.includes('addTwoNumbers')) {
+                return '[7,0,8]';
+            } else if (code.includes('lengthOfLongestSubstring')) {
+                return '3\n1';
+            }
+            return 'Code executed successfully';
+        }
+        
+        function simulateSubmission(code) {
+            // Simulate test case results
+            const testCases = {
+                '1': { // Two Sum
+                    passed: code.includes('return') && code.includes('['),
+                    time: Math.floor(Math.random() * 50) + 20,
+                    memory: (Math.random() * 2 + 1).toFixed(1),
+                    error: 'Expected [0,1] but got [1,0]'
+                },
+                '2': { // Add Two Numbers
+                    passed: code.includes('ListNode') && code.includes('return'),
+                    time: Math.floor(Math.random() * 100) + 30,
+                    memory: (Math.random() * 3 + 2).toFixed(1),
+                    error: 'Expected [7,0,8] but got [8,0,7]'
+                },
+                '3': { // Longest Substring
+                    passed: code.includes('return') && code.includes('max'),
+                    time: Math.floor(Math.random() * 80) + 25,
+                    memory: (Math.random() * 2.5 + 1.5).toFixed(1),
+                    error: 'Expected 3 but got 2'
+                }
+            };
+            
+            return testCases['{{ current_question_id }}'] || { passed: false, error: 'Unknown problem' };
+        }
+        
+        function toggleMobileView() {
+            const body = document.body;
+            const mobileBtn = document.getElementById('mobileBtn');
+            const isMobileMode = body.classList.contains('mobile-mode');
+            
+            if (isMobileMode) {
+                // Exit mobile mode
+                body.classList.remove('mobile-mode');
+                mobileBtn.innerHTML = '📱 Mobile';
+                mobileBtn.title = 'Switch to Mobile View';
+            } else {
+                // Enter mobile mode
+                body.classList.add('mobile-mode');
+                mobileBtn.innerHTML = '💻 Desktop';
+                mobileBtn.title = 'Switch to Desktop View';
+            }
+            
+            // Refresh CodeMirror to ensure proper scrolling in mobile mode
+            if (codeEditor) {
+                setTimeout(() => {
+                    codeEditor.refresh();
+                    codeEditor.focus();
+                }, 100);
+            }
+        }
+        
+        function toggleFullscreen() {
+            const mainContainer = document.querySelector('.main-container');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const isFullscreen = mainContainer.classList.contains('fullscreen-mode');
+            
+            if (isFullscreen) {
+                // Exit fullscreen
+                mainContainer.classList.remove('fullscreen-mode');
+                fullscreenBtn.innerHTML = '⛶ Full Screen';
+                fullscreenBtn.title = 'Enter Full Screen';
+            } else {
+                // Enter fullscreen
+                mainContainer.classList.add('fullscreen-mode');
+                fullscreenBtn.innerHTML = '⛷ Exit Full Screen';
+                fullscreenBtn.title = 'Exit Full Screen';
+            }
+        }
+        
+        function toggleOutputPanel() {
+            const outputPanel = document.getElementById('outputPanel');
+            const outputBtn = document.getElementById('outputToggleBtn');
+            const isHidden = outputPanel.classList.contains('hidden');
+            const isCollapsed = outputPanel.classList.contains('collapsed');
+            
+            if (isHidden) {
+                // Show output panel
+                outputPanel.classList.remove('hidden');
+                outputBtn.innerHTML = '📋 Hide Output';
+                outputBtn.title = 'Hide Output Panel';
+            } else if (isCollapsed) {
+                // Expand output panel
+                outputPanel.classList.remove('collapsed');
+                outputBtn.innerHTML = '📋 Hide Output';
+                outputBtn.title = 'Hide Output Panel';
+            } else {
+                // Collapse output panel
+                outputPanel.classList.add('collapsed');
+                outputBtn.innerHTML = '📋 Show Output';
+                outputBtn.title = 'Show Output Panel';
+            }
+        }
+    </script>
+</body>
+</html>
