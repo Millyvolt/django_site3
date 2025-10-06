@@ -135,7 +135,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Additional locations of static files
 STATICFILES_DIRS = [
     BASE_DIR / "polls" / "static",
+    BASE_DIR / "leetcode" / "static",
 ]
+
+# WhiteNoise configuration for serving static files with ASGI servers
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files configuration
 MEDIA_URL = '/media/'

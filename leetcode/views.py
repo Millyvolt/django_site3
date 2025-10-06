@@ -282,7 +282,7 @@ def question_editor(request: HttpRequest, question_id: str | None = None) -> Htt
     if not problem:
         # Try to fetch the problem dynamically from LeetCode API
         print(f"Problem {question_id} not found in hardcoded list, fetching from LeetCode API...")
-        problem = fetch_problem_from_leetcode_api(question_id)
+        problem = fetch_problem_from_leetcode_api(question_id, title_slug)
         if not problem:
             print(f"Failed to fetch problem {question_id} from API, creating fallback...")
             # Create a basic fallback problem
@@ -427,7 +427,7 @@ def fetch_cpp_template(request: HttpRequest) -> HttpResponse:
     if count >= 20:
         return JsonResponse({'success': False, 'error': 'Rate limit exceeded. Try again later.'}, status=429)
     cache.set(user_key, count + 1, timeout=300)
-    
+
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
     
@@ -509,33 +509,62 @@ def save_user_code(request: HttpRequest) -> HttpResponse:
 # Problem cache for dynamic fetching
 _problem_cache = {}
 
-def fetch_problem_from_leetcode_api(question_id):
+def fetch_problem_from_leetcode_api(question_id, title_slug=None):
     """Fetch problem data from LeetCode API dynamically"""
     # Check cache first
-    if question_id in _problem_cache:
-        print(f"Using cached problem {question_id}")
-        return _problem_cache[question_id]
+    cache_key = f"{question_id}_{title_slug}" if title_slug else question_id
+    if cache_key in _problem_cache:
+        print(f"Using cached problem {cache_key}")
+        return _problem_cache[cache_key]
     
     try:
         api = LeetCodeAPI()
-        # Try to fetch by question ID first
-        problem_data = api.fetch_problem_by_id(question_id)
         
-        if problem_data:
-            problem = {
-                'title': problem_data.get('title', f'Problem {question_id}'),
-                'difficulty': problem_data.get('difficulty', 'Medium'),
-                'description': problem_data.get('content', f'Problem {question_id} from LeetCode'),
-                'examples': problem_data.get('exampleTestcaseList', []),
-                'constraints': problem_data.get('constraints', []),
-                'template': problem_data.get('codeSnippets', {}).get('python3', ''),
-                'cppTemplate': problem_data.get('codeSnippets', {}).get('cpp', ''),
-                'title_slug': problem_data.get('titleSlug', '')
-            }
+        # If we have a title_slug, use it to fetch problem details
+        if title_slug:
+            print(f"Fetching problem details for title_slug: {title_slug}")
+            resp = api.fetch_problem_details(title_slug)
+            if resp.ok and resp.data:
+                question_data = resp.data.get('data', {}).get('question', {})
+                if question_data:
+                    # Process examples from LeetCode API format
+                    examples = []
+                    example_testcases = question_data.get('exampleTestcaseList', [])
+                    if example_testcases:
+                        for i, testcase in enumerate(example_testcases):
+                            # LeetCode testcases are usually in format like "nums = [2,7,11,15], target = 9"
+                            # We'll create a basic example structure
+                            examples.append({
+                                'input': testcase if isinstance(testcase, str) else str(testcase),
+                                'output': 'Expected output (see LeetCode for details)',
+                                'explanation': 'See the full problem on LeetCode for detailed examples and explanations.'
+                            })
+                    
+                    # If no examples from API, create a placeholder
+                    if not examples:
+                        examples = [{
+                            'input': 'See LeetCode for input examples',
+                            'output': 'See LeetCode for expected output',
+                            'explanation': 'Visit LeetCode to see detailed examples and explanations.'
+                        }]
+                    
+                    problem = {
+                        'title': question_data.get('title', f'Problem {question_id}'),
+                        'difficulty': question_data.get('difficulty', 'Medium'),
+                        'description': question_data.get('content', f'Problem {question_id} from LeetCode'),
+                        'examples': examples,
+                        'constraints': [f'Visit LeetCode for full constraints for {question_data.get("title", f"Problem {question_id}")}'],  # LeetCode API doesn't provide constraints in this endpoint
+                        'template': '',  # Will be fetched separately if needed
+                        'cppTemplate': '',  # Will be fetched separately if needed
+                        'title_slug': question_data.get('titleSlug', title_slug)
+                    }
+                    
+                    # Cache the result
+                    _problem_cache[cache_key] = problem
+                    return problem
+        else:
+            print(f"No title_slug provided for question {question_id}, cannot fetch from API")
             
-            # Cache the result
-            _problem_cache[question_id] = problem
-            return problem
     except Exception as e:
         print(f"Error fetching problem {question_id}: {e}")
     
@@ -555,7 +584,7 @@ def fetch_cpp_template_from_leetcode(question_id, title_slug=None):
         if not title_slug:
             # This is a simplified approach - in practice you might want to cache question_id -> title_slug mapping
             pass
-        
+
         if title_slug:
             query = {
                 'query': '''
@@ -713,7 +742,7 @@ def execute_code_jdoodle(code, language, question_id='1', title_slug=None):
             
             if 'output' in result:
                 return {
-                    'success': True,
+        'success': True,
                     'output': result['output'],
                     'memory': result.get('memory', ''),
                     'cpuTime': result.get('cpuTime', '')

@@ -141,7 +141,7 @@
 
     <script>
         function solveQuestion(questionId, titleSlug = null) {
-            let url = `/editor/?q=${questionId}`;
+            let url = `/leetcode/editor/?q=${questionId}`;
             if (titleSlug) { url += `&slug=${titleSlug}`; }
             window.location.href = url;
         }
