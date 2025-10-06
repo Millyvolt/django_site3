@@ -17,7 +17,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
@@ -25,17 +26,18 @@ from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path("leetcode-home/", views.leetcode_home, name="leetcode_home"),
-    path("daily-question/", views.daily_question, name="daily_question"),
+    path("leetcode/", include(("leetcode.urls", "leetcode"), namespace="leetcode")),
+    # Legacy root endpoints redirect to new /leetcode/ paths
+    path("leetcode-home/", RedirectView.as_view(url="/leetcode/leetcode-home/", permanent=False), name="leetcode_home"),
+    path("pick-question/", RedirectView.as_view(url="/leetcode/pick-question/", permanent=False)),
+    path("editor/", RedirectView.as_view(url="/leetcode/editor/", permanent=False)),
+    path("editor/<str:question_id>/", RedirectView.as_view(url="/leetcode/editor/", permanent=False)),
+    path("daily-question/", RedirectView.as_view(url="/leetcode/daily-question/", permanent=False)),
     path("test-html/", views.test_html, name="test_html"),
     path("test-network/", views.test_network_connectivity, name="test_network"),
     path("test-functionality/", views.test_site_functionality, name="test_functionality"),
     path("test-buttons/", views.test_button_functionality, name="test_buttons"),
-    path("pick-question/", views.question_selection, name="question_selection"),
-    path("editor/", views.question_editor, name="question_editor"),
-    path("editor/<str:question_id>/", views.question_editor, name="question_editor_with_id"),
-    path("compile/", views.compile_code, name="compile_code"),
-    path("fetch-cpp-template/", views.fetch_cpp_template, name="fetch_cpp_template"),
+    # Legacy endpoints removed; app namespace owns these routes
     
     # Authentication URLs
     path("accounts/login/", auth_views.LoginView.as_view(), name="login"),

@@ -41,6 +41,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 INSTALLED_APPS = [
     'polls.apps.PollsConfig',
+    'leetcode.apps.LeetcodeConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -72,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'mysite.context_processors.leetcode_flags',
             ],
         },
     },
@@ -181,3 +183,13 @@ if not TESTING:
         "debug_toolbar.middleware.DebugToolbarMiddleware",
         *MIDDLEWARE,
     ]
+
+# LeetCode API configuration
+LEETCODE_GRAPHQL_URL = os.getenv("LEETCODE_GRAPHQL_URL", "https://leetcode.com/graphql")
+LEETCODE_REFERER = os.getenv("LEETCODE_REFERER", "https://leetcode.com")
+LEETCODE_TIMEOUT_SECONDS = int(os.getenv("LEETCODE_TIMEOUT_SECONDS", "15"))
+LEETCODE_RETRY_COUNT = int(os.getenv("LEETCODE_RETRY_COUNT", "2"))
+LEETCODE_CACHE_TTL_SECONDS = int(os.getenv("LEETCODE_CACHE_TTL_SECONDS", "300"))
+
+# Feature flags
+LEETCODE_ENABLED = os.getenv("LEETCODE_ENABLED", "true").lower() in ("1", "true", "yes", "on")

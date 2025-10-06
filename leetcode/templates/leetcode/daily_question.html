@@ -79,25 +79,11 @@
             margin-top: 10px;
         }
         
-        .difficulty-easy {
-            background-color: #27ae60;
-            color: white;
-        }
+        .difficulty-easy { background-color: #27ae60; color: white; }
+        .difficulty-medium { background-color: #f39c12; color: white; }
+        .difficulty-hard { background-color: #e74c3c; color: white; }
         
-        .difficulty-medium {
-            background-color: #f39c12;
-            color: white;
-        }
-        
-        .difficulty-hard {
-            background-color: #e74c3c;
-            color: white;
-        }
-        
-        .main-content {
-            display: block;
-            margin-bottom: 30px;
-        }
+        .main-content { display: block; margin-bottom: 30px; }
         
         .problem-panel {
             background: rgba(255, 255, 255, 0.95);
@@ -108,163 +94,37 @@
             margin: 0 auto;
         }
         
-        .section {
-            margin-bottom: 25px;
-        }
+        .section { margin-bottom: 25px; }
+        .section h3 { color: #2c3e50; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 8px; font-size: 1.3em; }
+        .section p { line-height: 1.6; color: #555; margin-bottom: 15px; }
         
-        .section h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 8px;
-            font-size: 1.3em;
-        }
+        .problem-description { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #3498db; line-height: 1.6; max-height: 500px; overflow-y: auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .problem-description p { margin-bottom: 15px; }
+        .problem-description strong, .problem-description b { color: #2c3e50; font-weight: 600; }
+        .problem-description code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em; color: #e74c3c; }
+        .problem-description pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 15px 0; }
+        .problem-description pre code { background: none; color: inherit; padding: 0; }
+        .problem-description ul, .problem-description ol { margin: 15px 0; padding-left: 25px; }
+        .problem-description li { margin-bottom: 8px; }
         
-        .section p {
-            line-height: 1.6;
-            color: #555;
-            margin-bottom: 15px;
-        }
+        .example { background-color: #f8f9fa; border-left: 4px solid #3498db; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+        .example strong { color: #2c3e50; font-size: 1.1em; }
+        .example pre { background-color: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; margin: 10px 0; overflow-x: auto; font-size: 0.9em; }
         
-        /* Style HTML content in problem description */
-        .problem-description {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-            line-height: 1.6;
-            max-height: 500px;
-            overflow-y: auto;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        .constraints ul { padding-left: 20px; }
+        .constraints li { margin-bottom: 8px; color: #555; line-height: 1.5; }
         
-        .problem-description p {
-            margin-bottom: 15px;
-        }
+        .editor-btn { display: inline-block; padding: 15px 30px; background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; text-decoration: none; border-radius: 25px; font-size: 1.2em; font-weight: bold; transition: all 0.3s; box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3); margin: 20px 0; }
+        .editor-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4); background: linear-gradient(45deg, #2ecc71, #27ae60); }
         
-        .problem-description strong, .problem-description b {
-            color: #2c3e50;
-            font-weight: 600;
-        }
-        
-        .problem-description code {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            color: #e74c3c;
-        }
-        
-        .problem-description pre {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 15px;
-            border-radius: 6px;
-            overflow-x: auto;
-            margin: 15px 0;
-        }
-        
-        .problem-description pre code {
-            background: none;
-            color: inherit;
-            padding: 0;
-        }
-        
-        .problem-description ul, .problem-description ol {
-            margin: 15px 0;
-            padding-left: 25px;
-        }
-        
-        .problem-description li {
-            margin-bottom: 8px;
-        }
-        
-        .example {
-            background-color: #f8f9fa;
-            border-left: 4px solid #3498db;
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 0 8px 8px 0;
-        }
-        
-        .example strong {
-            color: #2c3e50;
-            font-size: 1.1em;
-        }
-        
-        .example pre {
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            overflow-x: auto;
-            font-size: 0.9em;
-        }
-        
-        .constraints ul {
-            padding-left: 20px;
-        }
-        
-        .constraints li {
-            margin-bottom: 8px;
-            color: #555;
-            line-height: 1.5;
-        }
-        
-        .editor-btn {
-            display: inline-block;
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
-            text-decoration: none;
-            border-radius: 25px;
-            font-size: 1.2em;
-            font-weight: bold;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
-            margin: 20px 0;
-        }
-        
-        .editor-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.4);
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
-        }
-        
-        .daily-tip {
-            background: linear-gradient(45deg, #ff6b35, #f7931e);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 30px;
-            text-align: center;
-        }
-        
-        .daily-tip h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.3em;
-        }
-        
-        .daily-tip p {
-            margin: 0;
-            opacity: 0.9;
-        }
+        .daily-tip { background: linear-gradient(45deg, #ff6b35, #f7931e); color: white; padding: 20px; border-radius: 15px; margin-top: 30px; text-align: center; }
+        .daily-tip h3 { margin: 0 0 10px 0; font-size: 1.3em; }
+        .daily-tip p { margin: 0; opacity: 0.9; }
         
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .problem-panel {
-                padding: 20px;
-            }
-            
-            .editor-btn {
-                padding: 12px 24px;
-                font-size: 1.1em;
-            }
+            .header h1 { font-size: 2em; }
+            .problem-panel { padding: 20px; }
+            .editor-btn { padding: 12px 24px; font-size: 1.1em; }
         }
     </style>
 </head>
@@ -409,3 +269,4 @@
     
 </body>
 </html>
+

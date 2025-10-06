@@ -176,9 +176,11 @@
         </p>
         
         <div class="nav-links">
-            <a href="/leetcode-home/" class="nav-link leetcode">
+            {% if LEETCODE_ENABLED %}
+            <a href="{% url 'leetcode:home' %}" class="nav-link leetcode">
                 💻 LeetCode
             </a>
+            {% endif %}
             <a href="/polls/" class="nav-link">
                 📊 Polls & Voting
             </a>
