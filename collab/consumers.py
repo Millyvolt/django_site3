@@ -46,7 +46,7 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
         """
         Receive message from WebSocket and broadcast to room.
         
-        Simple text synchronization for Phase 1.
+        Supports both text (Simple Sync) and binary (Y.js) messages.
         """
         if text_data:
             # Text message - broadcast to all room members
@@ -58,6 +58,16 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
                     'text_data': text_data
                 }
             )
+        elif bytes_data:
+            # Binary Y.js update - broadcast to all room members
+            print(f"Received Y.js binary update in room {self.room_name}, size: {len(bytes_data)} bytes")
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'collaboration_message',
+                    'bytes_data': bytes_data
+                }
+            )
     
     async def collaboration_message(self, event):
         """
@@ -66,4 +76,7 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
         if 'text_data' in event:
             # Send text message
             await self.send(text_data=event['text_data'])
+        elif 'bytes_data' in event:
+            # Send binary Y.js update
+            await self.send(bytes_data=event['bytes_data'])
 

@@ -12,10 +12,21 @@ def collab_home(request):
 
 def collab_room(request, room_name):
     """
-    Collaborative editor room.
+    Collaborative editor room (Simple Sync).
     Users can join a room by name and collaborate in real-time.
     """
     return render(request, 'collab/room_simple.html', {
+        'room_name': room_name,
+        'username': request.user.username if request.user.is_authenticated else 'Anonymous'
+    })
+
+
+def collab_room_yjs(request, room_name):
+    """
+    Collaborative editor room with Y.js CRDT support.
+    Uses Y.js for conflict-free replicated data type synchronization.
+    """
+    return render(request, 'collab/room_yjs.html', {
         'room_name': room_name,
         'username': request.user.username if request.user.is_authenticated else 'Anonymous'
     })
