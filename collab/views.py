@@ -17,7 +17,8 @@ def collab_room(request, room_name):
     """
     return render(request, 'collab/room_simple.html', {
         'room_name': room_name,
-        'username': request.user.username if request.user.is_authenticated else 'Anonymous'
+        'username': request.user.username if request.user.is_authenticated else 'Anonymous',
+        'user': request.user
     })
 
 
@@ -28,5 +29,6 @@ def collab_room_yjs(request, room_name):
     """
     return render(request, 'collab/room_yjs.html', {
         'room_name': room_name,
-        'username': request.user.username if request.user.is_authenticated else 'Anonymous'
+        'username': request.user.username if request.user.is_authenticated else 'Anonymous',
+        'user': request.user
     })

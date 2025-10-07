@@ -111,6 +111,82 @@
             font-size: 0.9em;
         }
         
+        /* Profile Badge Styles */
+        .profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .profile-badge:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+        
+        .username {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .auth-links {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 10px;
+        }
+        
+        .auth-links a {
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-links .logout {
+            background: #ef4444;
+        }
+        
+        .auth-links .logout:hover {
+            background: #dc2626;
+            text-decoration: none;
+        }
+        
+        .auth-links .login, .auth-links .register {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .auth-links .login:hover, .auth-links .register:hover {
+            background: rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+        }
+        
+        .badges {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
         #editor {
             flex: 1;
             background: white;
@@ -161,7 +237,25 @@
     <div class="editor-container">
         <div class="editor-header">
             <div class="editor-title">Collaborative Text Editor (Simple Sync)</div>
-            <div class="user-badge">👤 {{ username }}</div>
+            <div class="badges">
+                <!-- User Profile Badge -->
+                {% if user.is_authenticated %}
+                    {% load static %}
+                    <a href="{% url 'profile' %}" class="profile-badge">
+                        <img src="{{ user.userprofile.get_profile_image_url }}?v={{ user.userprofile.updated_at|date:'U' }}" alt="Profile" class="user-avatar">
+                        <div class="username">{{ user.username }}</div>
+                    </a>
+                    <div class="auth-links">
+                        <a href="{% url 'logout' %}" class="logout">Logout</a>
+                    </div>
+                {% else %}
+                    <div class="user-badge">👤 {{ username }}</div>
+                    <div class="auth-links">
+                        <a href="{% url 'login' %}" class="login">Login</a>
+                        <a href="{% url 'register' %}" class="register">Register</a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
         <textarea id="editor" placeholder="Start typing... Your changes will sync in real-time!"></textarea>
         
