@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room: {{ room_name }} - Collaborative Editor</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+        }
+        
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.disconnected {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .back-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid white;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .back-link:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .editor-header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .editor-title {
+            font-size: 1.1em;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .user-badge {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        #editor {
+            flex: 1;
+            background: white;
+            border: none;
+            border-radius: 0 0 10px 10px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            outline: none;
+        }
+        
+        .info-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-panel h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .info-panel p {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="room-info">
+            <h1>📝 Room: {{ room_name }}</h1>
+            <div class="status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+        <a href="/collab/" class="back-link">← Back to Rooms</a>
+    </div>
+    
+    <div class="editor-container">
+        <div class="editor-header">
+            <div class="editor-title">Collaborative Text Editor (Simple Sync)</div>
+            <div class="user-badge">👤 {{ username }}</div>
+        </div>
+        <textarea id="editor" placeholder="Start typing... Your changes will sync in real-time!"></textarea>
+        
+        <div class="info-panel">
+            <h3>💡 Tips:</h3>
+            <p>
+                • Open this room in multiple browser tabs or share the URL with others to collaborate<br>
+                • All changes sync automatically in real-time<br>
+                • Room name: <strong>{{ room_name }}</strong>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        const roomName = '{{ room_name }}';
+        const username = '{{ username }}';
+        
+        // WebSocket setup
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/collab/${roomName}/`;
+        
+        console.log('Connecting to WebSocket:', wsUrl);
+        
+        const editor = document.getElementById('editor');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        
+        let ws = null;
+        let isReceiving = false;
+        
+        function connect() {
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('✓ WebSocket connected');
+                statusDot.classList.remove('disconnected');
+                statusText.textContent = 'Connected';
+            };
+            
+            ws.onclose = () => {
+                console.log('✗ WebSocket disconnected');
+                statusDot.classList.add('disconnected');
+                statusText.textContent = 'Disconnected - Reconnecting...';
+                setTimeout(connect, 2000); // Reconnect after 2 seconds
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                statusDot.classList.add('disconnected');
+                statusText.textContent = 'Connection Error';
+            };
+            
+            ws.onmessage = (event) => {
+                console.log('Received message');
+                isReceiving = true;
+                
+                // Simple text sync
+                if (typeof event.data === 'string') {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.text !== undefined) {
+                            editor.value = data.text;
+                            console.log('✓ Text updated from remote');
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse message:', e);
+                    }
+                }
+                
+                setTimeout(() => { isReceiving = false; }, 50);
+            };
+        }
+        
+        // Send text updates
+        let sendTimeout = null;
+        editor.addEventListener('input', () => {
+            if (isReceiving) return;
+            
+            // Debounce sending (wait 300ms after last keystroke)
+            clearTimeout(sendTimeout);
+            sendTimeout = setTimeout(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    const message = JSON.stringify({
+                        text: editor.value
+                    });
+                    ws.send(message);
+                    console.log('✓ Sent update to server');
+                }
+            }, 300);
+        });
+        
+        // Initialize connection
+        connect();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (ws) ws.close();
+        });
+    </script>
+</body>
+</html>
+

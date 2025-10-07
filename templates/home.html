@@ -48,6 +48,14 @@
         .nav-link.leetcode:hover {
             background-color: #e55a2b;
         }
+        .nav-link.collab {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .nav-link.collab:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #643a8a 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
         .description {
             text-align: center;
             color: #7f8c8d;
@@ -181,6 +189,9 @@
                 💻 LeetCode
             </a>
             {% endif %}
+            <a href="/collab/" class="nav-link collab">
+                🤝 Collab
+            </a>
             <a href="/polls/" class="nav-link">
                 📊 Polls & Voting
             </a>

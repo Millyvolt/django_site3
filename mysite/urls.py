@@ -26,6 +26,7 @@ from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("collab/", include("collab.urls")),
     path("leetcode/", include(("leetcode.urls", "leetcode"), namespace="leetcode")),
     # Legacy root endpoints redirect to new /leetcode/ paths
     path("leetcode-home/", RedirectView.as_view(url="/leetcode/leetcode-home/", permanent=False), name="leetcode_home"),

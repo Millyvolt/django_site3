@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Editor - Home</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .info {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+        }
+        
+        .info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .info ul {
+            margin-left: 20px;
+            color: #555;
+        }
+        
+        .info li {
+            margin-bottom: 5px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+        
+        <h1>🤝 Collaborative Editor</h1>
+        <p class="subtitle">Real-time collaborative text editing</p>
+        
+        <form id="roomForm">
+            <div class="form-group">
+                <label for="roomName">Enter Room Name:</label>
+                <input 
+                    type="text" 
+                    id="roomName" 
+                    name="room_name" 
+                    placeholder="e.g., my-project, team-meeting" 
+                    required
+                    pattern="[a-zA-Z0-9_-]+"
+                    title="Room name can only contain letters, numbers, hyphens, and underscores"
+                >
+            </div>
+            <button type="submit">Join / Create Room</button>
+        </form>
+        
+        <div class="info">
+            <h3>How it works:</h3>
+            <ul>
+                <li>Enter a room name to create or join a room</li>
+                <li>Share the room name with collaborators</li>
+                <li>All changes sync in real-time</li>
+                <li>Multiple users can edit simultaneously</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('roomForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const roomName = document.getElementById('roomName').value.trim();
+            if (roomName) {
+                window.location.href = `/collab/${roomName}/`;
+            }
+        });
+    </script>
+</body>
+</html>
+

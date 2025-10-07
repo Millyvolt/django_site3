@@ -40,14 +40,17 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',  # Must be first for Channels
     'polls.apps.PollsConfig',
     'leetcode.apps.LeetcodeConfig',
+    'collab',  # Collaborative editor app
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -80,6 +83,26 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
+ASGI_APPLICATION = 'mysite.asgi.application'
+
+# Channels configuration
+# For development/testing: Use in-memory channel layer (single server only)
+# For production: Use Redis channel layer for multi-server support
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+# Production Redis configuration (uncomment when Redis is available):
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+# }
 
 
 # Database
@@ -136,6 +159,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / "polls" / "static",
     BASE_DIR / "leetcode" / "static",
+    BASE_DIR / "collab" / "static",
 ]
 
 # WhiteNoise configuration for serving static files with ASGI servers
