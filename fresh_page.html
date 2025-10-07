@@ -145,21 +145,6 @@
                     title="Room name can only contain letters, numbers, hyphens, and underscores"
                 >
             </div>
-            
-            <div class="form-group">
-                <label>Choose Synchronization Method:</label>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
-                        <input type="radio" name="sync_method" value="simple" checked style="margin-right: 8px; width: auto;">
-                        <span style="font-weight: normal;">Simple Sync</span>
-                    </label>
-                    <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
-                        <input type="radio" name="sync_method" value="yjs" style="margin-right: 8px; width: auto;">
-                        <span style="font-weight: normal;">Y.js CRDT ⭐</span>
-                    </label>
-                </div>
-            </div>
-            
             <button type="submit">Join / Create Room</button>
         </form>
         
@@ -171,12 +156,6 @@
                 <li>All changes sync in real-time</li>
                 <li>Multiple users can edit simultaneously</li>
             </ul>
-            
-            <h3 style="margin-top: 20px;">Sync Methods:</h3>
-            <ul>
-                <li><strong>Simple Sync:</strong> Easy, fast, last-write-wins</li>
-                <li><strong>Y.js CRDT:</strong> Advanced conflict-free merging, character-level sync</li>
-            </ul>
         </div>
     </div>
     
@@ -184,16 +163,11 @@
         document.getElementById('roomForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const roomName = document.getElementById('roomName').value.trim();
-            const syncMethod = document.querySelector('input[name="sync_method"]:checked').value;
-            
             if (roomName) {
-                if (syncMethod === 'yjs') {
-                    window.location.href = `/collab/yjs/${roomName}/`;
-                } else {
-                    window.location.href = `/collab/${roomName}/`;
-                }
+                window.location.href = `/collab/${roomName}/`;
             }
         });
     </script>
 </body>
 </html>
+
