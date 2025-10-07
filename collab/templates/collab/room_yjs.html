@@ -177,7 +177,6 @@
         <div class="editor-header">
             <div class="editor-title">Collaborative Text Editor</div>
             <div class="badges">
-                <div class="yjs-badge">Y.js CRDT ⭐</div>
                 <div class="user-badge">👤 {{ username }}</div>
             </div>
         </div>
@@ -318,12 +317,37 @@
                     console.log('✓ Sent Y.js update to server, size:', update.length, 'bytes');
                 }
             });
+            
+            // Periodically save complete state snapshot for persistence
+            setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN && ytext.toString().length > 0) {
+                    const state = Y.encodeStateAsUpdate(ydoc);
+                    const base64State = btoa(String.fromCharCode(...state));
+                    const snapshot = JSON.stringify({
+                        type: 'snapshot',
+                        state: base64State
+                    });
+                    ws.send(snapshot);
+                    console.log('✓ Sent state snapshot for persistence, size:', state.length, 'bytes');
+                }
+            }, 5000); // Save snapshot every 5 seconds
         
             // Initialize connection
             connect();
             
-            // Cleanup on page unload
+            // Cleanup on page unload and save final state
             window.addEventListener('beforeunload', () => {
+                // Save final state snapshot before leaving
+                if (ws && ws.readyState === WebSocket.OPEN && ytext.toString().length > 0) {
+                    const state = Y.encodeStateAsUpdate(ydoc);
+                    const base64State = btoa(String.fromCharCode(...state));
+                    const snapshot = JSON.stringify({
+                        type: 'snapshot',
+                        state: base64State
+                    });
+                    ws.send(snapshot);
+                    console.log('✓ Sent final state snapshot before closing');
+                }
                 if (ws) ws.close();
             });
             

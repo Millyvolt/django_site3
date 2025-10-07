@@ -24,6 +24,7 @@ pip install -r requirements.txt
 
 
 ***To Do:***
+- admin functioning for leetcode app
 - check reset password via email functionality
 - static files attach to amvera data storage
 - newer C++ version (check that 17 using)

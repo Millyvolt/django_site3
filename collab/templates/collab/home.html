@@ -130,7 +130,7 @@
         <a href="/" class="back-link">← Back to Home</a>
         
         <h1>🤝 Collaborative Editor</h1>
-        <p class="subtitle">Real-time collaborative text editing</p>
+        <p class="subtitle">Real-time collaborative text editing with Y.js CRDT ⭐</p>
         
         <form id="roomForm">
             <div class="form-group">
@@ -146,20 +146,6 @@
                 >
             </div>
             
-            <div class="form-group">
-                <label>Choose Synchronization Method:</label>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
-                        <input type="radio" name="sync_method" value="simple" checked style="margin-right: 8px; width: auto;">
-                        <span style="font-weight: normal;">Simple Sync</span>
-                    </label>
-                    <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
-                        <input type="radio" name="sync_method" value="yjs" style="margin-right: 8px; width: auto;">
-                        <span style="font-weight: normal;">Y.js CRDT ⭐</span>
-                    </label>
-                </div>
-            </div>
-            
             <button type="submit">Join / Create Room</button>
         </form>
         
@@ -172,10 +158,11 @@
                 <li>Multiple users can edit simultaneously</li>
             </ul>
             
-            <h3 style="margin-top: 20px;">Sync Methods:</h3>
+            <h3 style="margin-top: 20px;">Features:</h3>
             <ul>
-                <li><strong>Simple Sync:</strong> Easy, fast, last-write-wins</li>
-                <li><strong>Y.js CRDT:</strong> Advanced conflict-free merging, character-level sync</li>
+                <li><strong>Y.js CRDT:</strong> Conflict-free replicated data type</li>
+                <li><strong>Character-level sync:</strong> Precise editing without conflicts</li>
+                <li><strong>Real-time:</strong> Changes appear instantly</li>
             </ul>
         </div>
     </div>
@@ -184,14 +171,10 @@
         document.getElementById('roomForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const roomName = document.getElementById('roomName').value.trim();
-            const syncMethod = document.querySelector('input[name="sync_method"]:checked').value;
             
             if (roomName) {
-                if (syncMethod === 'yjs') {
-                    window.location.href = `/collab/yjs/${roomName}/`;
-                } else {
-                    window.location.href = `/collab/${roomName}/`;
-                }
+                // Always use Y.js CRDT version
+                window.location.href = `/collab/yjs/${roomName}/`;
             }
         });
     </script>
