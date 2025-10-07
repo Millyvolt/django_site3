@@ -220,6 +220,120 @@
             font-size: 0.9em;
             line-height: 1.4;
         }
+        
+        /* Mobile View Toggle Button */
+        .mobile-toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 15px;
+        }
+        
+        .mobile-toggle-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .mobile-toggle-btn.active {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        
+        /* Mobile View Styles */
+        body.mobile-view .header {
+            padding: 10px 15px;
+            flex-wrap: wrap;
+        }
+        
+        body.mobile-view .header h1 {
+            font-size: 1.1em;
+        }
+        
+        body.mobile-view .room-info {
+            gap: 10px;
+        }
+        
+        body.mobile-view .status {
+            font-size: 0.75em;
+        }
+        
+        body.mobile-view .back-link {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        body.mobile-view .mobile-toggle-btn {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        body.mobile-view .editor-container {
+            padding: 10px;
+        }
+        
+        body.mobile-view .editor-header {
+            padding: 10px 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        body.mobile-view .editor-title {
+            font-size: 0.95em;
+            width: 100%;
+        }
+        
+        body.mobile-view .badges {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        body.mobile-view .profile-badge {
+            padding: 6px 12px;
+            font-size: 0.8em;
+        }
+        
+        body.mobile-view .user-avatar {
+            width: 20px;
+            height: 20px;
+        }
+        
+        body.mobile-view .auth-links a {
+            padding: 4px 10px;
+            font-size: 0.75em;
+        }
+        
+        body.mobile-view #editor {
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        body.mobile-view .info-panel {
+            margin-top: 10px;
+            padding: 12px;
+        }
+        
+        body.mobile-view .info-panel h3 {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        body.mobile-view .info-panel p {
+            font-size: 0.8em;
+        }
+        
+        body.mobile-view .user-badge {
+            padding: 4px 10px;
+            font-size: 0.8em;
+        }
     </style>
 </head>
 <body>
@@ -231,7 +345,13 @@
                 <span id="statusText">Connecting...</span>
             </div>
         </div>
-        <a href="/collab/" class="back-link">← Back to Rooms</a>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="mobile-toggle-btn" id="mobileToggleBtn" onclick="toggleMobileView()">
+                <span id="mobileIcon">📱</span>
+                <span id="mobileText">Mobile View</span>
+            </button>
+            <a href="/collab/" class="back-link">← Back to Rooms</a>
+        </div>
     </div>
     
     <div class="editor-container">
@@ -270,6 +390,36 @@
     </div>
     
     <script>
+        // Mobile View Toggle Function (must be global for onclick)
+        function toggleMobileView() {
+            const body = document.body;
+            const btn = document.getElementById('mobileToggleBtn');
+            const icon = document.getElementById('mobileIcon');
+            const text = document.getElementById('mobileText');
+            
+            body.classList.toggle('mobile-view');
+            
+            if (body.classList.contains('mobile-view')) {
+                btn.classList.add('active');
+                icon.textContent = '💻';
+                text.textContent = 'Desktop View';
+                localStorage.setItem('mobileViewEnabled', 'true');
+            } else {
+                btn.classList.remove('active');
+                icon.textContent = '📱';
+                text.textContent = 'Mobile View';
+                localStorage.setItem('mobileViewEnabled', 'false');
+            }
+        }
+        
+        // Restore mobile view preference on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileViewEnabled = localStorage.getItem('mobileViewEnabled') === 'true';
+            if (mobileViewEnabled) {
+                toggleMobileView();
+            }
+        });
+        
         const roomName = '{{ room_name }}';
         const username = '{{ username }}';
         
