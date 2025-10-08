@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room: {{ room_name }} - Y.js CRDT Editor</title>
+    <title>Room: {{ room_name }} - Y.js Collaborative Editor</title>
     
     <style>
         * {
@@ -103,15 +103,6 @@
             font-weight: 600;
         }
         
-        .yjs-badge {
-            background: #10b981;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-        
         .user-badge {
             background: #667eea;
             color: white;
@@ -141,6 +132,27 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
             text-decoration: none;
             color: white;
+        }
+        
+        /* Standalone circular avatar to sit left of name badge */
+        .avatar-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #eef2ff; /* fallback bg */
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            margin-right: 10px; /* ensure visible separation from name pill */
+        }
+        
+        .avatar-circle .user-avatar {
+            width: 100%;
+            height: 100%;
+            border: 0; /* border handled by avatar-circle */
         }
         
         .user-avatar {
@@ -219,7 +231,7 @@
         }
         
         .info-panel h3 {
-            color: #10b981;
+            color: #667eea;
             margin-bottom: 10px;
             font-size: 1em;
         }
@@ -229,124 +241,16 @@
             font-size: 0.9em;
             line-height: 1.4;
         }
-        
-        /* Mobile View Toggle Button */
-        .mobile-toggle-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-left: 15px;
-        }
-        
-        .mobile-toggle-btn:hover {
-            background: white;
-            color: #667eea;
-        }
-        
-        .mobile-toggle-btn.active {
+
+        .tech-badge {
+            display: inline-block;
             background: #10b981;
-            border-color: #10b981;
-        }
-        
-        /* Mobile View Styles */
-        body.mobile-view .header {
-            padding: 10px 15px;
-            flex-wrap: wrap;
-        }
-        
-        body.mobile-view .header h1 {
-            font-size: 1.1em;
-        }
-        
-        body.mobile-view .room-info {
-            gap: 10px;
-        }
-        
-        body.mobile-view .status {
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-size: 0.75em;
-        }
-        
-        body.mobile-view .back-link {
-            padding: 6px 12px;
-            font-size: 0.85em;
-        }
-        
-        body.mobile-view .mobile-toggle-btn {
-            padding: 6px 12px;
-            font-size: 0.85em;
-        }
-        
-        body.mobile-view .editor-container {
-            padding: 10px;
-        }
-        
-        body.mobile-view .editor-header {
-            padding: 10px 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        body.mobile-view .editor-title {
-            font-size: 0.95em;
-            width: 100%;
-        }
-        
-        body.mobile-view .badges {
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        body.mobile-view .profile-badge {
-            padding: 6px 12px;
-            font-size: 0.8em;
-        }
-        
-        body.mobile-view .user-avatar {
-            width: 20px;
-            height: 20px;
-        }
-        
-        body.mobile-view .auth-links a {
-            padding: 4px 10px;
-            font-size: 0.75em;
-        }
-        
-        body.mobile-view #editor {
-            padding: 12px;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-        
-        body.mobile-view .info-panel {
-            margin-top: 10px;
-            padding: 12px;
-        }
-        
-        body.mobile-view .info-panel h3 {
-            font-size: 0.9em;
-            margin-bottom: 8px;
-        }
-        
-        body.mobile-view .info-panel p {
-            font-size: 0.8em;
-        }
-        
-        body.mobile-view .yjs-badge {
-            padding: 4px 10px;
-            font-size: 0.75em;
-        }
-        
-        body.mobile-view .user-badge {
-            padding: 4px 10px;
-            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 8px;
         }
     </style>
 </head>
@@ -359,24 +263,22 @@
                 <span id="statusText">Connecting...</span>
             </div>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="mobile-toggle-btn" id="mobileToggleBtn" onclick="toggleMobileView()">
-                <span id="mobileIcon">📱</span>
-                <span id="mobileText">Mobile View</span>
-            </button>
-            <a href="/collab/" class="back-link">← Back to Rooms</a>
-        </div>
+        <a href="/collab/" class="back-link">← Back to Rooms</a>
     </div>
     
     <div class="editor-container">
         <div class="editor-header">
-            <div class="editor-title">Collaborative Text Editor</div>
+            <div class="editor-title">
+                Collaborative Text Editor
+            </div>
             <div class="badges">
                 <!-- User Profile Badge -->
                 {% if user.is_authenticated %}
                     {% load static %}
-                    <a href="{% url 'profile' %}" class="profile-badge">
+                    <a href="{% url 'profile' %}" class="avatar-circle" aria-label="Profile">
                         <img src="{{ user.userprofile.get_profile_image_url }}?v={{ user.userprofile.updated_at|date:'U' }}" alt="Profile" class="user-avatar">
+                    </a>
+                    <a href="{% url 'profile' %}" class="profile-badge">
                         <div class="username">{{ user.username }}</div>
                     </a>
                     <div class="auth-links">
@@ -396,210 +298,143 @@
         <div class="info-panel">
             <h3>💡 Enhanced with Y.js CRDT:</h3>
             <p>
-                • Character-level synchronization for precision editing<br>
+                • Character-level synchronization with conflict-free merging<br>
                 • Perfect handling of simultaneous edits from multiple users<br>
-                • Conflict-free replicated data type (CRDT) technology<br>
+                • Minimal bandwidth usage (only sends changes, not full text)<br>
                 • Room name: <strong>{{ room_name }}</strong>
             </p>
         </div>
     </div>
     
     {% load static %}
-    <script>
-        // Mobile View Toggle Function (must be global for onclick)
-        function toggleMobileView() {
-            const body = document.body;
-            const btn = document.getElementById('mobileToggleBtn');
-            const icon = document.getElementById('mobileIcon');
-            const text = document.getElementById('mobileText');
-            
-            body.classList.toggle('mobile-view');
-            
-            if (body.classList.contains('mobile-view')) {
-                btn.classList.add('active');
-                icon.textContent = '💻';
-                text.textContent = 'Desktop View';
-                localStorage.setItem('mobileViewEnabled', 'true');
-            } else {
-                btn.classList.remove('active');
-                icon.textContent = '📱';
-                text.textContent = 'Mobile View';
-                localStorage.setItem('mobileViewEnabled', 'false');
-            }
-        }
+    <script type="module">
+        // Import Y.js from local static file
+        import * as Y from '{% static "collab/js/yjs.mjs" %}';
         
-        // Restore mobile view preference on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            const mobileViewEnabled = localStorage.getItem('mobileViewEnabled') === 'true';
-            if (mobileViewEnabled) {
-                toggleMobileView();
+        const roomName = '{{ room_name }}';
+        const username = '{{ username }}';
+        
+        // Create Y.js document and shared text type
+        const ydoc = new Y.Doc();
+        const ytext = ydoc.getText('shared');
+        
+        console.log('Y.js initialized:', Y);
+        console.log('Y.Doc created:', ydoc);
+        
+        // WebSocket setup
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/collab/${roomName}/`;
+        
+        console.log('Connecting to WebSocket:', wsUrl);
+        
+        const editor = document.getElementById('editor');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        
+        let ws = null;
+        let isUpdatingFromYjs = false;
+        
+        // Bind Y.Text to textarea
+        ytext.observe((event, transaction) => {
+            if (transaction.local) {
+                return; // Ignore local changes
+            }
+            
+            // Update textarea from Y.js
+            isUpdatingFromYjs = true;
+            const currentCursorPos = editor.selectionStart;
+            editor.value = ytext.toString();
+            
+            // Try to maintain cursor position
+            if (currentCursorPos <= editor.value.length) {
+                editor.setSelectionRange(currentCursorPos, currentCursorPos);
+            }
+            isUpdatingFromYjs = false;
+            
+            console.log('✓ Updated from Y.js:', ytext.toString().substring(0, 50) + '...');
+        });
+        
+        // Listen for Y.js updates to send over WebSocket
+        ydoc.on('update', (update, origin, doc, transaction) => {
+            if (ws && ws.readyState === WebSocket.OPEN && origin !== 'remote') {
+                // Send binary Y.js update
+                ws.send(update);
+                console.log('✓ Sent Y.js update to server, size:', update.length, 'bytes');
             }
         });
-    </script>
-    
-    <script type="module">
-        // Import Y.js from local build (ES Module version with lib0 bundled)
-        import * as Y from "{% static 'collab/js/yjs-bundled.mjs' %}";
         
-        // Make Y available globally for compatibility
-        window.Y = Y;
-        console.log('✓ Y.js loaded from local build (v13.6.27):', Y);
-        
-        // Wait for Y.js to load
-        async function initializeYjs() {
-            // Y.js is already loaded as ES module
+        function connect() {
+            ws = new WebSocket(wsUrl);
+            ws.binaryType = 'arraybuffer';
             
-            // Y.js is now available globally as window.Y
-            console.log('Y.js initialized:', Y);
+            ws.onopen = () => {
+                console.log('✓ WebSocket connected');
+                statusDot.classList.remove('disconnected');
+                statusText.textContent = 'Connected';
+            };
             
-            const roomName = '{{ room_name }}';
-            const username = '{{ username }}';
+            ws.onclose = () => {
+                console.log('✗ WebSocket disconnected');
+                statusDot.classList.add('disconnected');
+                statusText.textContent = 'Disconnected - Reconnecting...';
+                setTimeout(connect, 2000); // Reconnect after 2 seconds
+            };
             
-            // Create Y.js document and shared text
-            const ydoc = new Y.Doc();
-            const ytext = ydoc.getText('content');
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                statusDot.classList.add('disconnected');
+                statusText.textContent = 'Connection Error';
+            };
             
-            // Expose to window for debugging
-            window.ydoc = ydoc;
-            window.ytext = ytext;
-            console.log('Y.Doc created:', ydoc);
-            
-            // WebSocket setup
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/collab/${roomName}/`;
-            
-            console.log('Connecting to WebSocket:', wsUrl);
-            
-            const editor = document.getElementById('editor');
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
-            
-            let ws = null;
-            let isApplyingRemoteUpdate = false;
-            
-            function connect() {
-                ws = new WebSocket(wsUrl);
-                ws.binaryType = 'arraybuffer';  // Important for Y.js binary updates
-                
-                ws.onopen = () => {
-                    console.log('✓ WebSocket connected');
-                    statusDot.classList.remove('disconnected');
-                    statusText.textContent = 'Connected';
-                };
-                
-                ws.onclose = () => {
-                    console.log('✗ WebSocket disconnected');
-                    statusDot.classList.add('disconnected');
-                    statusText.textContent = 'Disconnected - Reconnecting...';
-                    setTimeout(connect, 2000);
-                };
-                
-                ws.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    statusDot.classList.add('disconnected');
-                    statusText.textContent = 'Connection Error';
-                };
-                
-                ws.onmessage = (event) => {
-                    if (event.data instanceof ArrayBuffer) {
-                        // Binary Y.js update
-                        const update = new Uint8Array(event.data);
-                        console.log('Received Y.js update, size:', update.length, 'bytes');
-                        
-                        isApplyingRemoteUpdate = true;
-                        Y.applyUpdate(ydoc, update);
-                        console.log('✓ Applied Y.js update');
-                        isApplyingRemoteUpdate = false;
-                    }
-                };
-            }
-            
-            // Sync Y.js text to textarea
-            ytext.observe(() => {
-                if (!isApplyingRemoteUpdate) return;
-                
-                const currentText = ytext.toString();
-                const cursorPos = editor.selectionStart;
-                const scrollPos = editor.scrollTop;
-                
-                editor.value = currentText;
-                
-                // Restore cursor position
-                editor.setSelectionRange(cursorPos, cursorPos);
-                editor.scrollTop = scrollPos;
-                
-                console.log('✓ Updated editor from Y.js');
-            });
-            
-            // Sync textarea to Y.js
-            let updateTimeout = null;
-            editor.addEventListener('input', () => {
-                // Debounce to avoid too many updates
-                clearTimeout(updateTimeout);
-                updateTimeout = setTimeout(() => {
-                    const editorText = editor.value;
+            ws.onmessage = (event) => {
+                if (event.data instanceof ArrayBuffer) {
+                    // Binary Y.js update
+                    const update = new Uint8Array(event.data);
+                    console.log('Received Y.js update, size:', update.length, 'bytes');
                     
-                    ydoc.transact(() => {
-                        const ytextContent = ytext.toString();
-                        if (ytextContent !== editorText) {
-                            // Delete all and insert new (simple approach)
-                            // For production, you'd want a smarter diff algorithm
-                            ytext.delete(0, ytextContent.length);
-                            ytext.insert(0, editorText);
-                        }
-                    });
-                    
-                    console.log('✓ Updated Y.js from textarea');
-                }, 100);
-            });
-            
-            // Send Y.js updates via WebSocket
-            ydoc.on('update', (update, origin) => {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(update);
-                    console.log('✓ Sent Y.js update to server, size:', update.length, 'bytes');
+                    // Apply update with 'remote' origin to prevent echo
+                    Y.applyUpdate(ydoc, update, 'remote');
+                    console.log('✓ Applied Y.js update');
+                } else {
+                    // Fallback: text message (for compatibility)
+                    console.log('Received text message:', event.data);
                 }
-            });
-            
-            // Periodically save complete state snapshot for persistence
-            setInterval(() => {
-                if (ws && ws.readyState === WebSocket.OPEN && ytext.toString().length > 0) {
-                    const state = Y.encodeStateAsUpdate(ydoc);
-                    const base64State = btoa(String.fromCharCode(...state));
-                    const snapshot = JSON.stringify({
-                        type: 'snapshot',
-                        state: base64State
-                    });
-                    ws.send(snapshot);
-                    console.log('✓ Sent state snapshot for persistence, size:', state.length, 'bytes');
-                }
-            }, 5000); // Save snapshot every 5 seconds
-        
-            // Initialize connection
-            connect();
-            
-            // Cleanup on page unload and save final state
-            window.addEventListener('beforeunload', () => {
-                // Save final state snapshot before leaving
-                if (ws && ws.readyState === WebSocket.OPEN && ytext.toString().length > 0) {
-                    const state = Y.encodeStateAsUpdate(ydoc);
-                    const base64State = btoa(String.fromCharCode(...state));
-                    const snapshot = JSON.stringify({
-                        type: 'snapshot',
-                        state: base64State
-                    });
-                    ws.send(snapshot);
-                    console.log('✓ Sent final state snapshot before closing');
-                }
-                if (ws) ws.close();
-            });
-            
-            // Initial sync from Y.js
-            editor.value = ytext.toString();
+            };
         }
         
-        // Start initialization immediately
-        initializeYjs();
+        // Update Y.js when textarea changes
+        editor.addEventListener('input', (e) => {
+            if (isUpdatingFromYjs) {
+                return; // Don't update Y.js when we're updating from Y.js
+            }
+            
+            // Update Y.Text to match textarea
+            const currentText = ytext.toString();
+            const newText = editor.value;
+            
+            if (currentText !== newText) {
+                ydoc.transact(() => {
+                    // Clear and insert new text
+                    ytext.delete(0, currentText.length);
+                    ytext.insert(0, newText);
+                });
+                console.log('✓ Updated Y.js from textarea');
+            }
+        });
+        
+        // Initialize connection
+        connect();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (ws) ws.close();
+        });
+        
+        // Debug: Make Y.js available in console
+        window.Y = Y;
+        window.ydoc = ydoc;
+        window.ytext = ytext;
+        console.log('Debug: Y.js objects available in console (Y, ydoc, ytext)');
     </script>
 </body>
 </html>
