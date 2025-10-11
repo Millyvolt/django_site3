@@ -315,12 +315,31 @@
     
     <div id="editor-container"></div>
     
-    <!-- Monaco Editor from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs/loader.js"></script>
+    <!-- Monaco Editor from CDN with local fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs/loader.js"
+            onerror="loadLocalMonaco()"></script>
     <script>
         const roomName = '{{ room_name }}';
         const username = '{{ username }}';
         const initialLanguage = '{{ language }}';
+        
+        // Flag to track if local loader was used
+        let usingLocalFiles = false;
+        
+        // Fallback to local loader if CDN fails
+        function loadLocalMonaco() {
+            console.warn('⚠️  CDN loader failed, trying local files...');
+            usingLocalFiles = true;
+            const script = document.createElement('script');
+            script.src = '/static/collab/monaco/vs/loader.js';
+            script.onerror = function() {
+                console.error('❌ Local Monaco files not found!');
+                document.getElementById('loading').innerHTML = 
+                    '<div style="color: #ef4444;"><h2>Failed to Load Monaco Editor</h2>' +
+                    '<p>Please check your internet connection or contact support.</p></div>';
+            };
+            document.head.appendChild(script);
+        }
         
         // Configure Monaco loader
         require.config({ 
@@ -329,9 +348,44 @@
             }
         });
         
-        // Load Monaco Editor
-        require(['vs/editor/editor.main'], function() {
-            console.log('✓ Monaco Editor loaded');
+        // Load Monaco Editor with fallback
+        require(['vs/editor/editor.main'], 
+            function() {
+                // Success with CDN
+                console.log('✓ Monaco Editor loaded from CDN');
+                initializeMonacoEditor();
+            },
+            function(err) {
+                // CDN failed, try local files
+                console.warn('✗ CDN failed, trying local files...', err);
+                
+                // Reconfigure for local files
+                require.config({ 
+                    paths: { 
+                        vs: '/static/collab/monaco/vs'
+                    }
+                });
+                
+                // Try loading from local files
+                require(['vs/editor/editor.main'], 
+                    function() {
+                        console.log('✓ Monaco Editor loaded from local files');
+                        initializeMonacoEditor();
+                    },
+                    function(err) {
+                        console.error('✗ Monaco failed to load from both CDN and local files', err);
+                        document.getElementById('loading').innerHTML = 
+                            '<div style="color: #ef4444;"><h2>Failed to Load Monaco Editor</h2>' +
+                            '<p>Monaco could not be loaded from CDN or local files.</p>' +
+                            '<p>Please refresh the page or contact support.</p></div>';
+                    }
+                );
+            }
+        );
+        
+        // Initialize editor (called after Monaco loads successfully)
+        function initializeMonacoEditor() {
+            console.log('✓ Initializing Monaco Editor...');
             
             // Hide loading indicator
             document.getElementById('loading').classList.add('hidden');
@@ -494,7 +548,7 @@
             // Make editor available in console for debugging
             window.monacoEditor = editor;
             console.log('Debug: Monaco editor available as window.monacoEditor');
-        });
+        }
     </script>
 </body>
 </html>
