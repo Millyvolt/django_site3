@@ -53,18 +53,27 @@
             font-weight: 600;
         }
         
-        input[type="text"] {
+        input[type="text"],
+        select {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
+            background-color: white;
         }
         
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        select:focus {
             outline: none;
             border-color: #667eea;
+        }
+        
+        select:disabled {
+            background-color: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
         }
         
         button {
@@ -146,6 +155,34 @@
                 >
             </div>
             
+            <div class="form-group">
+                <label for="editorType">Select Editor Type:</label>
+                <select id="editorType" name="editor_type">
+                    <option value="simple">Simple Textarea</option>
+                    <option value="yjs" selected>Y.js Textarea (CRDT)</option>
+                    <option value="monaco">Monaco Editor (IDE)</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="languageGroup">
+                <label for="language">Programming Language:</label>
+                <select id="language" name="language" disabled>
+                    <option value="cpp" selected>C++</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="python">Python</option>
+                    <option value="java">Java</option>
+                    <option value="csharp">C#</option>
+                    <option value="c">C</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                    <option value="php">PHP</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="sql">SQL</option>
+                </select>
+            </div>
+            
             <button type="submit">Join / Create Room</button>
         </form>
         
@@ -168,13 +205,43 @@
     </div>
     
     <script>
+        const editorTypeSelect = document.getElementById('editorType');
+        const languageSelect = document.getElementById('language');
+        
+        // Enable/disable language dropdown based on editor type
+        editorTypeSelect.addEventListener('change', function() {
+            if (this.value === 'monaco') {
+                languageSelect.disabled = false;
+            } else {
+                languageSelect.disabled = true;
+            }
+        });
+        
+        // Handle form submission with routing logic
         document.getElementById('roomForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const roomName = document.getElementById('roomName').value.trim();
+            const editorType = editorTypeSelect.value;
+            const language = languageSelect.value;
             
             if (roomName) {
-                // Always use Y.js CRDT version
-                window.location.href = `/collab/yjs/${roomName}/`;
+                let url = '';
+                
+                switch (editorType) {
+                    case 'simple':
+                        url = `/collab/${roomName}/`;
+                        break;
+                    case 'yjs':
+                        url = `/collab/yjs/${roomName}/`;
+                        break;
+                    case 'monaco':
+                        url = `/collab/monaco/${roomName}/?lang=${language}`;
+                        break;
+                    default:
+                        url = `/collab/yjs/${roomName}/`;
+                }
+                
+                window.location.href = url;
             }
         });
     </script>

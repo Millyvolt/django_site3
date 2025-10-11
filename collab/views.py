@@ -32,3 +32,20 @@ def collab_room_yjs(request, room_name):
         'username': request.user.username if request.user.is_authenticated else 'Anonymous',
         'user': request.user
     })
+
+
+def collab_room_monaco(request, room_name):
+    """
+    Collaborative editor room with Monaco Editor (IDE).
+    Full-featured IDE experience with IntelliSense and advanced features.
+    Supports multiple programming languages.
+    """
+    # Get language from query parameter, default to C++
+    language = request.GET.get('lang', 'cpp')
+    
+    return render(request, 'collab/room_monaco.html', {
+        'room_name': room_name,
+        'username': request.user.username if request.user.is_authenticated else 'Anonymous',
+        'user': request.user,
+        'language': language
+    })

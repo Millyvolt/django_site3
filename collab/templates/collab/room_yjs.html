@@ -309,7 +309,7 @@
     {% load static %}
     <script type="module">
         // Import Y.js from local static file
-        import * as Y from '{% static "collab/js/yjs.mjs" %}';
+        import * as Y from '{% static "collab/js/yjs-bundled.mjs" %}';
         
         const roomName = '{{ room_name }}';
         const username = '{{ username }}';
