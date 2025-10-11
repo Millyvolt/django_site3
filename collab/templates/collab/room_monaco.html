@@ -13,169 +13,489 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            color: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            gap: 10px;
         }
         
-        .container {
-            background: white;
-            padding: 60px 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 700px;
-            width: 100%;
-            text-align: center;
-        }
-        
-        .emoji {
-            font-size: 80px;
-            margin-bottom: 20px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 2.2em;
-        }
-        
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.2em;
-        }
-        
-        .info-box {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 30px 0;
-            text-align: left;
-        }
-        
-        .info-box h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-        }
-        
-        .info-box ul {
-            margin-left: 20px;
-            color: #555;
-            line-height: 1.8;
-        }
-        
-        .info-box li {
-            margin-bottom: 8px;
-        }
-        
-        .button-group {
+        .room-info {
             display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 30px;
+            align-items: center;
+            gap: 20px;
         }
         
-        .btn {
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.disconnected {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .back-link {
+            color: white;
             text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: inline-block;
+            padding: 8px 16px;
+            border: 2px solid white;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 0.9em;
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .back-link:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .toolbar {
+            background: #2d2d30;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-shrink: 0;
+            border-bottom: 1px solid #3e3e42;
+        }
+        
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .toolbar label {
+            font-size: 0.9em;
+            color: #cccccc;
+        }
+        
+        .toolbar select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #3c3c3c;
+            color: white;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .toolbar select:hover {
+            background: #4a4a4a;
+            border-color: #667eea;
+        }
+        
+        .toolbar select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        .user-info {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #667eea;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .profile-badge:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+            text-decoration: none;
             color: white;
         }
         
-        .btn-secondary {
-            background: white;
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+        
+        .username {
+            font-weight: 600;
+        }
+        
+        .auth-links {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .auth-links a {
+            color: white;
+            text-decoration: none;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-links .logout {
+            background: #ef4444;
+        }
+        
+        .auth-links .logout:hover {
+            background: #dc2626;
+        }
+        
+        .auth-links .login,
+        .auth-links .register {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .auth-links .login:hover,
+        .auth-links .register:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        #editor-container {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
             color: #667eea;
-            border: 2px solid #667eea;
+            font-size: 1.2em;
+            z-index: 1000;
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        #loading.hidden {
+            display: none;
         }
         
-        .details {
-            background: #fff9e6;
-            border-left: 4px solid #ffc107;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: left;
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
         }
         
-        .details strong {
-            color: #f57c00;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
-        code {
-            background: #e8e8e8;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
+        .tech-badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="emoji">🚧</div>
-        <h1>Monaco Editor - Coming Soon!</h1>
-        <p class="subtitle">Phase 2 Implementation in Progress</p>
-        
-        <div class="details">
-            <strong>✓ Route Configured Successfully!</strong><br>
-            Room: <code>{{ room_name }}</code><br>
-            Language: <code>{{ language }}</code><br>
-            User: <code>{{ username }}</code>
+    <div class="header">
+        <div class="room-info">
+            <h1>
+                🚀 Monaco Editor
+                <span class="tech-badge">VS Code</span>
+            </h1>
+            <div class="status">
+                <span class="status-dot disconnected" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+        <a href="/collab/" class="back-link">← Back to Rooms</a>
+    </div>
+    
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <label for="languageSelector">Language:</label>
+            <select id="languageSelector">
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="csharp">C#</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="sql">SQL</option>
+                <option value="json">JSON</option>
+            </select>
         </div>
         
-        <div class="info-box">
-            <h3>What's Monaco Editor?</h3>
-            <ul>
-                <li><strong>VS Code's Editor:</strong> The same powerful editor used in Visual Studio Code</li>
-                <li><strong>IntelliSense:</strong> Intelligent code completion and suggestions</li>
-                <li><strong>Syntax Highlighting:</strong> Beautiful syntax highlighting for 50+ languages</li>
-                <li><strong>Advanced Features:</strong> Minimap, multi-cursor editing, code folding, and more</li>
-                <li><strong>Professional Experience:</strong> Full IDE-like editing experience in the browser</li>
-            </ul>
+        <div class="toolbar-group">
+            <label for="themeSelector">Theme:</label>
+            <select id="themeSelector">
+                <option value="vs-dark">Dark</option>
+                <option value="vs">Light</option>
+                <option value="hc-black">High Contrast</option>
+            </select>
         </div>
         
-        <div class="info-box">
-            <h3>Implementation Status:</h3>
-            <ul>
-                <li>✅ Editor selection and language picker - <strong>Complete</strong></li>
-                <li>✅ URL routing and view function - <strong>Complete</strong></li>
-                <li>⏳ Monaco Editor download and setup - <strong>Pending</strong></li>
-                <li>⏳ WebSocket integration - <strong>Pending</strong></li>
-                <li>⏳ Real-time collaboration sync - <strong>Pending</strong></li>
-            </ul>
-        </div>
-        
-        <div class="info-box">
-            <h3>Ready to Use:</h3>
-            <p style="margin-bottom: 10px;">While Monaco is being implemented, you can use these working editors:</p>
-            <ul>
-                <li><strong>Y.js Textarea:</strong> Full CRDT-based real-time collaboration (recommended)</li>
-                <li><strong>Simple Textarea:</strong> Basic real-time collaboration</li>
-            </ul>
-        </div>
-        
-        <div class="button-group">
-            <a href="/collab/" class="btn btn-primary">← Back to Editor Selection</a>
-            <a href="/collab/yjs/{{ room_name }}/" class="btn btn-secondary">Use Y.js Instead</a>
+        <div class="user-info">
+            {% if user.is_authenticated %}
+                {% load static %}
+                <a href="{% url 'profile' %}" class="profile-badge">
+                    <img src="{{ user.userprofile.get_profile_image_url }}?v={{ user.userprofile.updated_at|date:'U' }}" 
+                         alt="Profile" class="user-avatar">
+                    <span class="username">{{ user.username }}</span>
+                </a>
+                <div class="auth-links">
+                    <a href="{% url 'logout' %}" class="logout">Logout</a>
+                </div>
+            {% else %}
+                <span style="color: #cccccc; font-size: 0.9em;">👤 {{ username }}</span>
+                <div class="auth-links">
+                    <a href="{% url 'login' %}" class="login">Login</a>
+                    <a href="{% url 'register' %}" class="register">Register</a>
+                </div>
+            {% endif %}
         </div>
     </div>
+    
+    <div id="loading">
+        <div class="spinner"></div>
+        <div>Loading Monaco Editor...</div>
+    </div>
+    
+    <div id="editor-container"></div>
+    
+    <!-- Monaco Editor from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs/loader.js"></script>
+    <script>
+        const roomName = '{{ room_name }}';
+        const username = '{{ username }}';
+        const initialLanguage = '{{ language }}';
+        
+        // Configure Monaco loader
+        require.config({ 
+            paths: { 
+                vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs'
+            }
+        });
+        
+        // Load Monaco Editor
+        require(['vs/editor/editor.main'], function() {
+            console.log('✓ Monaco Editor loaded');
+            
+            // Hide loading indicator
+            document.getElementById('loading').classList.add('hidden');
+            
+            // Restore saved theme or use default
+            const savedTheme = localStorage.getItem('monacoTheme') || 'vs-dark';
+            const themeSelector = document.getElementById('themeSelector');
+            themeSelector.value = savedTheme;
+            
+            // Set language from URL parameter or default to C++
+            const languageSelector = document.getElementById('languageSelector');
+            languageSelector.value = initialLanguage || 'cpp';
+            
+            // Create Monaco editor instance
+            const editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: `// Welcome to Monaco Editor - Room: ${roomName}\n// Start coding in ${languageSelector.value}...\n\n`,
+                language: languageSelector.value,
+                theme: savedTheme,
+                automaticLayout: true,
+                fontSize: 14,
+                minimap: { enabled: true },
+                quickSuggestions: true,
+                suggestOnTriggerCharacters: true,
+                folding: true,
+                lineNumbers: 'on',
+                wordWrap: 'on',
+                mouseWheelZoom: true,
+                scrollBeyondLastLine: false,
+                smoothScrolling: true,
+                cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: 'on',
+                renderWhitespace: 'selection',
+                bracketPairColorization: { enabled: true },
+            });
+            
+            console.log('✓ Monaco Editor created');
+            editor.focus();
+            
+            // WebSocket setup
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/collab/${roomName}/`;
+            let ws = null;
+            let isReceivingUpdate = false;
+            let sendTimeout = null;
+            
+            function connect() {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('✓ WebSocket connected');
+                    document.getElementById('statusDot').classList.remove('disconnected');
+                    document.getElementById('statusText').textContent = `Connected - Room: ${roomName}`;
+                };
+                
+                ws.onclose = () => {
+                    console.log('✗ WebSocket disconnected');
+                    document.getElementById('statusDot').classList.add('disconnected');
+                    document.getElementById('statusText').textContent = 'Disconnected - Reconnecting...';
+                    setTimeout(connect, 2000);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Don't update if we're the sender or currently updating
+                        if (isReceivingUpdate) return;
+                        
+                        isReceivingUpdate = true;
+                        
+                        // Save cursor position and selection
+                        const position = editor.getPosition();
+                        const selection = editor.getSelection();
+                        
+                        // Update content only if it changed
+                        if (data.text !== undefined && data.text !== editor.getValue()) {
+                            editor.setValue(data.text);
+                            
+                            // Restore cursor position
+                            if (position) {
+                                editor.setPosition(position);
+                            }
+                            if (selection) {
+                                editor.setSelection(selection);
+                            }
+                            
+                            console.log('✓ Received update from server');
+                        }
+                        
+                        // Update language if changed
+                        if (data.language && data.language !== editor.getModel().getLanguageId()) {
+                            monaco.editor.setModelLanguage(editor.getModel(), data.language);
+                            languageSelector.value = data.language;
+                            console.log('✓ Language synced:', data.language);
+                        }
+                        
+                        setTimeout(() => { isReceivingUpdate = false; }, 50);
+                    } catch (e) {
+                        console.error('Error processing message:', e);
+                        isReceivingUpdate = false;
+                    }
+                };
+            }
+            
+            // Listen for content changes
+            editor.onDidChangeModelContent((event) => {
+                if (isReceivingUpdate) return;
+                
+                // Debounce sends to reduce traffic
+                clearTimeout(sendTimeout);
+                sendTimeout = setTimeout(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        const message = JSON.stringify({
+                            text: editor.getValue(),
+                            language: editor.getModel().getLanguageId()
+                        });
+                        ws.send(message);
+                        console.log('✓ Sent update to server');
+                    }
+                }, 300);
+            });
+            
+            // Language selector
+            languageSelector.addEventListener('change', (e) => {
+                const language = e.target.value;
+                monaco.editor.setModelLanguage(editor.getModel(), language);
+                
+                // Broadcast language change
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    const message = JSON.stringify({
+                        language: language,
+                        text: editor.getValue()
+                    });
+                    ws.send(message);
+                    console.log('✓ Language changed to:', language);
+                }
+            });
+            
+            // Theme selector
+            themeSelector.addEventListener('change', (e) => {
+                const theme = e.target.value;
+                monaco.editor.setTheme(theme);
+                localStorage.setItem('monacoTheme', theme);
+                console.log('✓ Theme changed to:', theme);
+            });
+            
+            // Connect WebSocket
+            connect();
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (ws) ws.close();
+                editor.dispose();
+            });
+            
+            // Make editor available in console for debugging
+            window.monacoEditor = editor;
+            console.log('Debug: Monaco editor available as window.monacoEditor');
+        });
+    </script>
 </body>
 </html>
 
