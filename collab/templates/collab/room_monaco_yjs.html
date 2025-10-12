@@ -1133,18 +1133,13 @@
                     document.getElementById('statusDot').classList.remove('disconnected');
                     document.getElementById('statusText').textContent = `Connected (Y.js CRDT) - Room: ${roomName}`;
                     
-                    // Request sync after a short delay to ensure we get room state
+                    // Request full state from existing clients
                     setTimeout(() => {
-                        console.log('✓ Requesting room state sync...');
-                        const currentContent = ytext.toString();
-                        if (currentContent) {
-                            console.log('✓ Y.js has content:', currentContent.length, 'chars');
-                            if (editor.getValue() !== currentContent) {
-                                editor.setValue(currentContent);
-                                console.log('✓ Synced Y.js content to editor');
-                            }
-                        }
-                    }, 500);
+                        console.log('✓ Requesting state from existing clients...');
+                        ws.send(JSON.stringify({
+                            type: 'request_state'
+                        }));
+                    }, 300);
                 };
                 
                 ws.onclose = () => {
@@ -1198,6 +1193,37 @@
                             handleUserLeft(data);
                         } else if (data.type === 'awareness_update') {
                             handleAwarenessUpdate(data, editor);
+                        } else if (data.type === 'state_request') {
+                            // Someone is requesting full state - send ours
+                            console.log('✓ Received state request, sending our state...');
+                            const stateVector = Y.encodeStateAsUpdate(ydoc);
+                            const stateBase64 = btoa(String.fromCharCode.apply(null, stateVector));
+                            
+                            ws.send(JSON.stringify({
+                                type: 'full_state',
+                                state_vector: stateBase64,
+                                target_channel: data.requester_channel
+                            }));
+                            console.log('✓ Sent state vector:', stateVector.length, 'bytes');
+                        } else if (data.type === 'state_sync') {
+                            // Received full state from existing client
+                            console.log('✓ Received state sync from existing client');
+                            try {
+                                const stateVector = Uint8Array.from(atob(data.state_vector), c => c.charCodeAt(0));
+                                Y.applyUpdate(ydoc, stateVector);
+                                console.log('✓ Applied state vector, Y.js length:', ytext.length);
+                                
+                                // Sync to editor
+                                const content = ytext.toString();
+                                if (content && content !== editor.getValue()) {
+                                    isUpdatingMonaco = true;
+                                    editor.setValue(content);
+                                    setTimeout(() => { isUpdatingMonaco = false; }, 100);
+                                    console.log('✓ Synced state to editor:', content.length, 'chars');
+                                }
+                            } catch (e) {
+                                console.error('Error applying state vector:', e);
+                            }
                         }
                     } catch (e) {
                         console.log('✓ Received non-JSON text message');

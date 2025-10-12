@@ -117,6 +117,33 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
                     )
                     return
                 
+                # State sync request from new client
+                elif data.get('type') == 'request_state':
+                    print(f"✓ [Room: {self.room_name}] State sync request from {self.username}")
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {
+                            'type': 'state_request',
+                            'requester_channel': self.channel_name
+                        }
+                    )
+                    return
+                
+                # Full state response from existing client
+                elif data.get('type') == 'full_state' and 'state_vector' in data:
+                    print(f"✓ [Room: {self.room_name}] Received full state from {self.username}")
+                    # Broadcast to the requester
+                    target_channel = data.get('target_channel')
+                    if target_channel:
+                        await self.channel_layer.send(
+                            target_channel,
+                            {
+                                'type': 'state_sync',
+                                'state_vector': data['state_vector']
+                            }
+                        )
+                    return
+                
                 # State snapshot - save but don't broadcast
                 elif data.get('type') == 'snapshot' and 'state' in data:
                     import base64
@@ -223,6 +250,28 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=message)
         # Debug logging removed to reduce noise
     
+    async def state_request(self, event):
+        """Handle state sync request from new client."""
+        # Don't send to requester
+        if event.get('requester_channel') == self.channel_name:
+            return
+        
+        message = json.dumps({
+            'type': 'state_request',
+            'requester_channel': event['requester_channel']
+        })
+        await self.send(text_data=message)
+        print(f"✓ [Room: {self.room_name}] Forwarded state request to {self.username}")
+    
+    async def state_sync(self, event):
+        """Send full state to requesting client."""
+        message = json.dumps({
+            'type': 'state_sync',
+            'state_vector': event['state_vector']
+        })
+        await self.send(text_data=message)
+        print(f"✓ [Room: {self.room_name}] Sent state sync to client")
+    
     # Database operations (async wrappers)
     
     @database_sync_to_async
@@ -237,20 +286,16 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def save_yjs_state(self, update_bytes):
         """
-        Save Y.js binary state to database by merging with existing state.
-        Y.js updates are incremental, so we need to apply them to get the full state.
+        Save Y.js binary state to database.
+        Stores the latest update - new clients will request full state from connected peers.
         """
         try:
             from .models import CollabRoom
-            # Import Y.js server-side (we'll need to handle this differently)
-            # For now, we'll just store the latest update and rely on client-side state
             room, created = CollabRoom.objects.get_or_create(
                 room_name=self.room_name
             )
             
-            # Store the update (in production, you'd merge this with existing state)
-            # For simplicity, we're storing the raw update
-            # The client will handle state reconstruction
+            # Store the latest update
             room.yjs_state = bytes(update_bytes)
             room.save(update_fields=['yjs_state', 'updated_at'])
             print(f"✓ Saved Y.js update for room {self.room_name} ({len(update_bytes)} bytes)")
