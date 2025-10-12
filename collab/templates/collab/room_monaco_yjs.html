@@ -379,6 +379,226 @@
             font-size: 0.7em;
             padding: 3px 8px;
         }
+        
+        /* User Awareness Features */
+        
+        /* User List Panel */
+        .user-list-panel {
+            position: fixed;
+            right: 0;
+            top: 130px;
+            width: 280px;
+            height: calc(100vh - 130px);
+            background: #2d2d30;
+            border-left: 1px solid #3e3e42;
+            padding: 15px;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+        
+        .user-list-panel.hidden {
+            transform: translateX(100%);
+        }
+        
+        .user-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #3e3e42;
+        }
+        
+        .user-list-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+        
+        .user-count {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.85em;
+        }
+        
+        .close-user-list {
+            background: transparent;
+            border: none;
+            color: #cccccc;
+            font-size: 1.3em;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .close-user-list:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .user-list-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #3c3c3c;
+            border-radius: 8px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .user-list-item:hover {
+            background: #4a4a4a;
+        }
+        
+        .user-list-item.current-user {
+            background: rgba(102, 126, 234, 0.15);
+            border-left-color: #667eea;
+        }
+        
+        .user-color-indicator {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+        
+        .user-color-indicator img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .user-name {
+            font-weight: 500;
+            color: #e0e0e0;
+            font-size: 0.95em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-status {
+            font-size: 0.8em;
+            color: #4ade80;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .user-status-dot {
+            width: 6px;
+            height: 6px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .toggle-users-btn {
+            position: fixed;
+            right: 15px;
+            top: 140px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            z-index: 99;
+        }
+        
+        .toggle-users-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .toggle-users-btn.panel-open {
+            right: 295px;
+        }
+        
+        /* Remote Cursor Styles */
+        .remote-cursor {
+            border-left: 2px solid;
+            border-left-width: 2px !important;
+            pointer-events: none;
+        }
+        
+        .remote-cursor-widget {
+            position: absolute;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .remote-cursor-label {
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2px;
+        }
+        
+        /* Remote Selection Styles */
+        .remote-selection {
+            background: inherit;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        
+        /* Mobile Adjustments for User Panel */
+        body.mobile-view .user-list-panel {
+            width: 100%;
+            top: auto;
+            bottom: 0;
+            height: 50vh;
+            border-left: none;
+            border-top: 1px solid #3e3e42;
+        }
+        
+        body.mobile-view .user-list-panel.hidden {
+            transform: translateY(100%);
+        }
+        
+        body.mobile-view .toggle-users-btn {
+            bottom: 15px;
+            top: auto;
+            right: 15px;
+        }
+        
+        body.mobile-view .toggle-users-btn.panel-open {
+            bottom: calc(50vh + 15px);
+            right: 15px;
+        }
     </style>
 </head>
 <body>
@@ -460,6 +680,25 @@
     
     <div id="editor-container"></div>
     
+    <!-- User Presence Panel -->
+    <button class="toggle-users-btn" id="toggleUsersBtn" onclick="toggleUserList()">
+        <span>👥</span>
+        <span id="userCountBadge">0</span>
+    </button>
+    
+    <div class="user-list-panel hidden" id="userListPanel">
+        <div class="user-list-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="user-list-title">Online Users</span>
+                <span class="user-count" id="userCountDisplay">0</span>
+            </div>
+            <button class="close-user-list" onclick="toggleUserList()">✕</button>
+        </div>
+        <div id="userListContainer">
+            <!-- User list items will be added dynamically -->
+        </div>
+    </div>
+    
     <!-- Monaco Editor from CDN with local fallback -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs/loader.js"
             onerror="loadLocalMonaco()"></script>
@@ -467,6 +706,40 @@
         const roomName = '{{ room_name }}';
         const username = '{{ username }}';
         const initialLanguage = '{{ language }}';
+        
+        // User information for awareness
+        const userId = {% if user.is_authenticated %}{{ user.id }}{% else %}null{% endif %};
+        const userAvatar = {% if user.is_authenticated %}'{{ user.userprofile.get_profile_image_url }}'{% else %}null{% endif %};
+        const isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+        
+        // Color palette for user identification
+        const USER_COLORS = [
+            '#FF6B6B', // Red
+            '#4ECDC4', // Cyan
+            '#45B7D1', // Blue
+            '#FFA07A', // Orange
+            '#98D8C8', // Mint
+            '#F7DC6F', // Yellow
+            '#BB8FCE', // Purple
+            '#85C1E2', // Sky Blue
+            '#F8B88B', // Peach
+            '#ABEBC6'  // Light Green
+        ];
+        
+        // Get user color based on user ID
+        function getUserColor(uid) {
+            if (!uid) return USER_COLORS[0];
+            return USER_COLORS[uid % USER_COLORS.length];
+        }
+        
+        // Current user's color
+        const myColor = getUserColor(userId);
+        
+        // Track remote users and their awareness states
+        const remoteUsers = new Map();
+        const cursorDecorations = new Map();
+        const selectionDecorations = new Map();
+        const cursorWidgets = new Map();
         
         // Flag to track if local loader was used
         let usingLocalFiles = false;
@@ -859,6 +1132,19 @@
                     wsConnected = true;
                     document.getElementById('statusDot').classList.remove('disconnected');
                     document.getElementById('statusText').textContent = `Connected (Y.js CRDT) - Room: ${roomName}`;
+                    
+                    // Request sync after a short delay to ensure we get room state
+                    setTimeout(() => {
+                        console.log('✓ Requesting room state sync...');
+                        const currentContent = ytext.toString();
+                        if (currentContent) {
+                            console.log('✓ Y.js has content:', currentContent.length, 'chars');
+                            if (editor.getValue() !== currentContent) {
+                                editor.setValue(currentContent);
+                                console.log('✓ Synced Y.js content to editor');
+                            }
+                        }
+                    }, 500);
                 };
                 
                 ws.onclose = () => {
@@ -874,13 +1160,47 @@
                 };
                 
                 ws.onmessage = (event) => {
+                    // Handle binary Y.js updates
                     if (event.data instanceof ArrayBuffer) {
                         console.log('✓ Received Y.js update from server:', event.data.byteLength, 'bytes');
                         const update = new Uint8Array(event.data);
                         
                         // Apply the update to our Y.Doc
                         Y.applyUpdate(ydoc, update);
-                        console.log('✓ Applied update to Y.Doc');
+                        console.log('✓ Applied update to Y.Doc, current length:', ytext.length);
+                        
+                        // Force sync Y.js content to Monaco editor immediately
+                        // This is critical for initial load
+                        setTimeout(() => {
+                            const yjsContent = ytext.toString();
+                            const monacoContent = editor.getValue();
+                            
+                            console.log('Y.js content length:', yjsContent.length);
+                            console.log('Monaco content length:', monacoContent.length);
+                            
+                            if (yjsContent && yjsContent !== monacoContent) {
+                                console.log('✓ Syncing content to editor:', yjsContent.length, 'chars');
+                                isUpdatingMonaco = true;
+                                editor.setValue(yjsContent);
+                                setTimeout(() => { isUpdatingMonaco = false; }, 100);
+                            }
+                        }, 50);
+                        return;
+                    }
+                    
+                    // Handle text messages (awareness, user events)
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'user_joined') {
+                            handleUserJoined(data);
+                        } else if (data.type === 'user_left') {
+                            handleUserLeft(data);
+                        } else if (data.type === 'awareness_update') {
+                            handleAwarenessUpdate(data, editor);
+                        }
+                    } catch (e) {
+                        console.log('✓ Received non-JSON text message');
                     }
                 };
             }
@@ -928,8 +1248,6 @@
                 console.log('✓ ytext.observe fired!');
                 console.log('  - Transaction origin:', event.transaction.origin);
                 console.log('  - Y.Text length:', ytext.length);
-                console.log('  - Y.Text content:', ytext.toString());
-                console.log('  - Event changes:', event.changes);
                 
                 // Check if this change came from our local Monaco editor
                 if (event.transaction.origin === LOCAL_ORIGIN) {
@@ -939,40 +1257,59 @@
                 
                 // This is a remote change, update Monaco
                 if (isUpdatingMonaco) {
-                    console.log('⚠️ Already updating Monaco, skip');
+                    console.log('⚠️ Already updating Monaco, queueing...');
+                    setTimeout(() => {
+                        updateMonacoFromYjs();
+                    }, 50);
                     return;
                 }
                 
-                isUpdatingMonaco = true;
-                const content = ytext.toString();
-                const currentContent = editor.getValue();
-                
-                console.log('✓ Remote Y.js content (length=' + content.length + '):', JSON.stringify(content.substring(0, 50)));
-                console.log('✓ Current Monaco content (length=' + currentContent.length + '):', JSON.stringify(currentContent.substring(0, 50)));
-                
-                if (content !== currentContent) {
-                    // Save cursor position
-                    const position = editor.getPosition();
-                    const selection = editor.getSelection();
-                    
-                    // Update editor content
-                    editor.setValue(content);
-                    
-                    // Restore cursor position if possible
-                    if (position) {
-                        editor.setPosition(position);
-                    }
-                    if (selection) {
-                        editor.setSelection(selection);
-                    }
-                    
-                    console.log('✓ Applied remote change to Monaco:', content.substring(0, 50));
-                } else {
-                    console.log('⚠️ Content already matches, no update needed');
-                }
-                
-                isUpdatingMonaco = false;
+                updateMonacoFromYjs();
             });
+            
+            // Helper function to update Monaco from Y.js
+            function updateMonacoFromYjs() {
+                isUpdatingMonaco = true;
+                
+                try {
+                    const content = ytext.toString();
+                    const currentContent = editor.getValue();
+                    
+                    console.log('✓ Remote Y.js content (length=' + content.length + ')');
+                    console.log('✓ Current Monaco content (length=' + currentContent.length + ')');
+                    
+                    if (content !== currentContent) {
+                        // Save cursor position
+                        const position = editor.getPosition();
+                        const selection = editor.getSelection();
+                        
+                        // Update editor content
+                        editor.setValue(content);
+                        
+                        // Restore cursor position if possible
+                        if (position && content.length > 0) {
+                            // Ensure position is valid
+                            const maxLine = editor.getModel().getLineCount();
+                            const validLine = Math.min(position.lineNumber, maxLine);
+                            const lineLength = editor.getModel().getLineMaxColumn(validLine);
+                            const validColumn = Math.min(position.column, lineLength);
+                            
+                            editor.setPosition({
+                                lineNumber: validLine,
+                                column: validColumn
+                            });
+                        }
+                        
+                        console.log('✓ Applied remote change to Monaco');
+                    }
+                } catch (e) {
+                    console.error('Error updating Monaco from Y.js:', e);
+                } finally {
+                    setTimeout(() => {
+                        isUpdatingMonaco = false;
+                    }, 100);
+                }
+            }
             
             // Monaco -> Y.js: Send local changes to Y.js (incremental updates)
             editor.onDidChangeModelContent(event => {
@@ -1008,6 +1345,65 @@
             });
             
             console.log('✓ Custom Monaco-Y.js binding created');
+            
+            // Initialize user list
+            updateUserList();
+            
+            // Track cursor position changes (with debouncing)
+            let cursorUpdateTimeout = null;
+            if (isAuthenticated) {
+                editor.onDidChangeCursorPosition((e) => {
+                    clearTimeout(cursorUpdateTimeout);
+                    cursorUpdateTimeout = setTimeout(() => {
+                        const position = e.position;
+                        const awarenessData = {
+                            cursor: {
+                                line: position.lineNumber,
+                                column: position.column
+                            }
+                        };
+                        
+                        // Send awareness update via WebSocket
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                                type: 'awareness',
+                                data: awarenessData
+                            }));
+                        }
+                    }, 100); // 100ms debounce
+                });
+            }
+            
+            // Track selection changes (with debouncing)
+            let selectionUpdateTimeout = null;
+            if (isAuthenticated) {
+                editor.onDidChangeCursorSelection((e) => {
+                    clearTimeout(selectionUpdateTimeout);
+                    selectionUpdateTimeout = setTimeout(() => {
+                        const selection = e.selection;
+                        
+                        // Only send if there's an actual selection (not just cursor)
+                        if (!selection.isEmpty()) {
+                            const awarenessData = {
+                                selection: {
+                                    startLine: selection.startLineNumber,
+                                    startColumn: selection.startColumn,
+                                    endLine: selection.endLineNumber,
+                                    endColumn: selection.endColumn
+                                }
+                            };
+                            
+                            // Send awareness update via WebSocket
+                            if (ws && ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({
+                                    type: 'awareness',
+                                    data: awarenessData
+                                }));
+                            }
+                        }
+                    }, 100); // 100ms debounce
+                });
+            }
             
             // Language selector
             languageSelector.addEventListener('change', (e) => {
@@ -1071,6 +1467,340 @@
                 toggleMobileView();
             }
         });
+        
+        // User List Toggle Function
+        function toggleUserList() {
+            const panel = document.getElementById('userListPanel');
+            const btn = document.getElementById('toggleUsersBtn');
+            
+            panel.classList.toggle('hidden');
+            btn.classList.toggle('panel-open');
+        }
+        
+        // Update user list display
+        function updateUserList() {
+            const container = document.getElementById('userListContainer');
+            const countDisplay = document.getElementById('userCountDisplay');
+            const countBadge = document.getElementById('userCountBadge');
+            
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            // Add current user first
+            if (isAuthenticated) {
+                const userItem = createUserListItem({
+                    id: userId,
+                    name: username,
+                    avatar: userAvatar,
+                    color: myColor,
+                    isCurrent: true
+                });
+                container.appendChild(userItem);
+            }
+            
+            // Add remote users
+            remoteUsers.forEach((user, uid) => {
+                const userItem = createUserListItem({
+                    id: uid,
+                    name: user.name,
+                    avatar: user.avatar,
+                    color: user.color,
+                    isCurrent: false
+                });
+                container.appendChild(userItem);
+            });
+            
+            // Update counts
+            const totalUsers = (isAuthenticated ? 1 : 0) + remoteUsers.size;
+            countDisplay.textContent = totalUsers;
+            countBadge.textContent = totalUsers;
+        }
+        
+        // Create user list item element
+        function createUserListItem(user) {
+            const item = document.createElement('div');
+            item.className = 'user-list-item' + (user.isCurrent ? ' current-user' : '');
+            
+            const colorIndicator = document.createElement('div');
+            colorIndicator.className = 'user-color-indicator';
+            colorIndicator.style.backgroundColor = user.color;
+            
+            if (user.avatar) {
+                const img = document.createElement('img');
+                img.src = user.avatar;
+                img.alt = user.name;
+                colorIndicator.appendChild(img);
+            } else {
+                colorIndicator.textContent = user.name.charAt(0).toUpperCase();
+                colorIndicator.style.color = 'white';
+                colorIndicator.style.fontWeight = 'bold';
+            }
+            
+            const details = document.createElement('div');
+            details.className = 'user-details';
+            
+            const name = document.createElement('div');
+            name.className = 'user-name';
+            name.textContent = user.name + (user.isCurrent ? ' (You)' : '');
+            
+            const status = document.createElement('div');
+            status.className = 'user-status';
+            status.innerHTML = '<span class="user-status-dot"></span>Online';
+            
+            details.appendChild(name);
+            details.appendChild(status);
+            
+            item.appendChild(colorIndicator);
+            item.appendChild(details);
+            
+            return item;
+        }
+        
+        // Handle user joined event
+        function handleUserJoined(data) {
+            if (!data.user_id || data.user_id === userId) return;
+            
+            console.log('✓ User joined:', data.username);
+            
+            remoteUsers.set(data.user_id, {
+                id: data.user_id,
+                name: data.username,
+                avatar: data.avatar,
+                color: getUserColor(data.user_id)
+            });
+            
+            updateUserList();
+            
+            // Announce our presence back to the new user
+            if (window.ws && window.ws.readyState === WebSocket.OPEN && isAuthenticated && window.monacoEditor) {
+                const position = window.monacoEditor.getPosition();
+                const awarenessData = {
+                    cursor: position ? {
+                        line: position.lineNumber,
+                        column: position.column
+                    } : { line: 1, column: 1 }
+                };
+                
+                window.ws.send(JSON.stringify({
+                    type: 'awareness',
+                    data: awarenessData
+                }));
+                
+                console.log('✓ Announced presence to new user:', data.username);
+            }
+        }
+        
+        // Handle user left event
+        function handleUserLeft(data) {
+            if (!data.user_id) return;
+            
+            console.log('✓ User left:', data.username);
+            
+            remoteUsers.delete(data.user_id);
+            
+            // Remove their cursor and selection decorations
+            if (window.monacoEditor) {
+                removeCursorDecoration(data.user_id);
+                removeSelectionDecoration(data.user_id);
+            }
+            
+            updateUserList();
+        }
+        
+        // Handle awareness update
+        function handleAwarenessUpdate(data, editor) {
+            if (!data.user_id || data.user_id === userId) return;
+            
+            const awarenessData = data.data;
+            if (!awarenessData) return;
+            
+            // Update or create remote user
+            if (!remoteUsers.has(data.user_id)) {
+                remoteUsers.set(data.user_id, {
+                    id: data.user_id,
+                    name: data.username,
+                    avatar: data.avatar,
+                    color: getUserColor(data.user_id)
+                });
+                updateUserList();
+            }
+            
+            const user = remoteUsers.get(data.user_id);
+            
+            // Update cursor position
+            if (awarenessData.cursor) {
+                updateCursorDecoration(editor, data.user_id, user, awarenessData.cursor);
+            }
+            
+            // Update selection
+            if (awarenessData.selection) {
+                updateSelectionDecoration(editor, data.user_id, user, awarenessData.selection);
+            }
+        }
+        
+        // Update cursor decoration
+        function updateCursorDecoration(editor, userId, user, cursorData) {
+            if (!cursorData.line || !cursorData.column) return;
+            
+            // Remove old cursor widget if exists
+            const oldWidget = cursorWidgets.get(userId);
+            if (oldWidget) {
+                editor.removeContentWidget(oldWidget);
+            }
+            
+            // Create cursor line decoration
+            const decorations = [{
+                range: new monaco.Range(
+                    cursorData.line,
+                    cursorData.column,
+                    cursorData.line,
+                    cursorData.column
+                ),
+                options: {
+                    className: `remote-cursor remote-cursor-${userId}`,
+                    stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+                }
+            }];
+            
+            const oldDecorations = cursorDecorations.get(userId) || [];
+            const newDecorations = editor.deltaDecorations(oldDecorations, decorations);
+            cursorDecorations.set(userId, newDecorations);
+            
+            // Create cursor label widget
+            const widgetDom = document.createElement('div');
+            widgetDom.className = 'remote-cursor-widget';
+            widgetDom.style.pointerEvents = 'none';
+            widgetDom.innerHTML = `<div class="remote-cursor-label" style="background-color: ${user.color}; color: white;">${user.name}</div>`;
+            
+            const cursorWidget = {
+                domNode: widgetDom,
+                getId: function() {
+                    return `cursor.widget.${userId}`;
+                },
+                getDomNode: function() {
+                    return this.domNode;
+                },
+                getPosition: function() {
+                    return {
+                        position: {
+                            lineNumber: cursorData.line,
+                            column: cursorData.column
+                        },
+                        preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE, monaco.editor.ContentWidgetPositionPreference.BELOW]
+                    };
+                }
+            };
+            
+            editor.addContentWidget(cursorWidget);
+            cursorWidgets.set(userId, cursorWidget);
+            
+            console.log(`✓ Added cursor widget for ${user.name} at line ${cursorData.line}, col ${cursorData.column}`);
+            
+            // Add custom styling via CSS
+            addCursorStyle(userId, user.color);
+        }
+        
+        // Add cursor CSS style
+        function addCursorStyle(userId, color) {
+            const styleId = `cursor-style-${userId}`;
+            let style = document.getElementById(styleId);
+            
+            if (!style) {
+                style = document.createElement('style');
+                style.id = styleId;
+                document.head.appendChild(style);
+            }
+            
+            style.textContent = `
+                .remote-cursor-${userId} {
+                    border-left-color: ${color} !important;
+                }
+            `;
+        }
+        
+        // Remove cursor decoration
+        function removeCursorDecoration(userId) {
+            if (window.monacoEditor) {
+                // Remove decorations
+                if (cursorDecorations.has(userId)) {
+                    const decorations = cursorDecorations.get(userId);
+                    window.monacoEditor.deltaDecorations(decorations, []);
+                    cursorDecorations.delete(userId);
+                }
+                
+                // Remove widget
+                if (cursorWidgets.has(userId)) {
+                    const widget = cursorWidgets.get(userId);
+                    window.monacoEditor.removeContentWidget(widget);
+                    cursorWidgets.delete(userId);
+                }
+            }
+            
+            const styleId = `cursor-style-${userId}`;
+            const style = document.getElementById(styleId);
+            if (style) style.remove();
+        }
+        
+        // Update selection decoration
+        function updateSelectionDecoration(editor, userId, user, selectionData) {
+            if (!selectionData.startLine || !selectionData.endLine) {
+                removeSelectionDecoration(userId);
+                return;
+            }
+            
+            const decorations = [{
+                range: new monaco.Range(
+                    selectionData.startLine,
+                    selectionData.startColumn,
+                    selectionData.endLine,
+                    selectionData.endColumn
+                ),
+                options: {
+                    className: `remote-selection remote-selection-${userId}`,
+                    stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+                }
+            }];
+            
+            const oldDecorations = selectionDecorations.get(userId) || [];
+            const newDecorations = editor.deltaDecorations(oldDecorations, decorations);
+            selectionDecorations.set(userId, newDecorations);
+            
+            // Add custom styling via CSS
+            addSelectionStyle(userId, user.color);
+        }
+        
+        // Add selection CSS style
+        function addSelectionStyle(userId, color) {
+            const styleId = `selection-style-${userId}`;
+            let style = document.getElementById(styleId);
+            
+            if (!style) {
+                style = document.createElement('style');
+                style.id = styleId;
+                document.head.appendChild(style);
+            }
+            
+            style.textContent = `
+                .remote-selection-${userId} {
+                    background-color: ${color} !important;
+                    opacity: 0.3 !important;
+                }
+            `;
+        }
+        
+        // Remove selection decoration
+        function removeSelectionDecoration(userId) {
+            if (window.monacoEditor && selectionDecorations.has(userId)) {
+                const decorations = selectionDecorations.get(userId);
+                window.monacoEditor.deltaDecorations(decorations, []);
+                selectionDecorations.delete(userId);
+            }
+            
+            const styleId = `selection-style-${userId}`;
+            const style = document.getElementById(styleId);
+            if (style) style.remove();
+        }
     </script>
 </body>
 </html>
