@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monaco + Y.js CRDT - Room {{ room_name }}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🔄</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.disconnected {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .back-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid white;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .back-link:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .toolbar {
+            background: #2d2d30;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-shrink: 0;
+            border-bottom: 1px solid #3e3e42;
+        }
+        
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .toolbar label {
+            font-size: 0.9em;
+            color: #cccccc;
+        }
+        
+        .toolbar select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #3c3c3c;
+            color: white;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .toolbar select:hover {
+            background: #4a4a4a;
+            border-color: #667eea;
+        }
+        
+        .toolbar select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        .user-info {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* Standalone circular avatar to sit left of name badge */
+        .avatar-circle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #eef2ff;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .avatar-circle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .avatar-circle .user-avatar {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        
+        .profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #667eea;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .profile-badge:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+        
+        .username {
+            font-weight: 600;
+        }
+        
+        .auth-links {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .auth-links a {
+            color: white;
+            text-decoration: none;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-links .logout {
+            background: #ef4444;
+        }
+        
+        .auth-links .logout:hover {
+            background: #dc2626;
+        }
+        
+        .auth-links .login,
+        .auth-links .register {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .auth-links .login:hover,
+        .auth-links .register:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        #editor-container {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #667eea;
+            font-size: 1.2em;
+            z-index: 1000;
+        }
+        
+        #loading.hidden {
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .tech-badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Mobile View Toggle Button */
+        .mobile-toggle-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .mobile-toggle-btn:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .mobile-toggle-btn.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        /* Mobile View Styles */
+        body.mobile-view .header {
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px 15px;
+        }
+        
+        body.mobile-view .header h1 {
+            font-size: 1.2em;
+        }
+        
+        body.mobile-view .room-info {
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        body.mobile-view .status {
+            font-size: 0.8em;
+        }
+        
+        body.mobile-view .back-link {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        body.mobile-view .mobile-toggle-btn {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        body.mobile-view .toolbar {
+            flex-wrap: wrap;
+            padding: 8px 15px;
+            gap: 10px;
+        }
+        
+        body.mobile-view .toolbar-group {
+            flex: 1 1 auto;
+        }
+        
+        body.mobile-view .toolbar label {
+            font-size: 0.85em;
+        }
+        
+        body.mobile-view .toolbar select {
+            font-size: 0.85em;
+            padding: 4px 8px;
+        }
+        
+        body.mobile-view .user-info {
+            width: 100%;
+            margin-left: 0;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+        
+        body.mobile-view .avatar-circle {
+            width: 32px;
+            height: 32px;
+        }
+        
+        body.mobile-view .profile-badge {
+            padding: 5px 12px;
+            font-size: 0.8em;
+        }
+        
+        body.mobile-view .user-avatar {
+            width: 20px;
+            height: 20px;
+        }
+        
+        body.mobile-view .auth-links a {
+            padding: 4px 10px;
+            font-size: 0.75em;
+        }
+        
+        body.mobile-view #editor-container {
+            font-size: 12px;
+        }
+        
+        body.mobile-view .tech-badge {
+            font-size: 0.7em;
+            padding: 3px 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="room-info">
+            <h1>
+                🔄 Monaco + Y.js CRDT
+                <span class="tech-badge">Conflict-Free</span>
+            </h1>
+            <div class="status">
+                <span class="status-dot disconnected" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="mobile-toggle-btn" id="mobileToggleBtn" onclick="toggleMobileView()">
+                <span id="mobileIcon">📱</span>
+                <span id="mobileText">Mobile View</span>
+            </button>
+            <a href="/collab/" class="back-link">← Back to Rooms</a>
+        </div>
+    </div>
+    
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <label for="languageSelector">Language:</label>
+            <select id="languageSelector">
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="csharp">C#</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="sql">SQL</option>
+                <option value="json">JSON</option>
+            </select>
+        </div>
+        
+        <div class="toolbar-group">
+            <label for="themeSelector">Theme:</label>
+            <select id="themeSelector">
+                <option value="vs-dark">Dark</option>
+                <option value="vs">Light</option>
+                <option value="hc-black">High Contrast</option>
+            </select>
+        </div>
+        
+        <div class="user-info">
+            {% if user.is_authenticated %}
+                {% load static %}
+                <a href="{% url 'profile' %}" class="avatar-circle" aria-label="Profile">
+                    <img src="{{ user.userprofile.get_profile_image_url }}?v={{ user.userprofile.updated_at|date:'U' }}" 
+                         alt="Profile" class="user-avatar">
+                </a>
+                <a href="{% url 'profile' %}" class="profile-badge">
+                    <span class="username">{{ user.username }}</span>
+                </a>
+                <div class="auth-links">
+                    <a href="{% url 'logout' %}" class="logout">Logout</a>
+                </div>
+            {% else %}
+                <span style="color: #cccccc; font-size: 0.9em;">👤 {{ username }}</span>
+                <div class="auth-links">
+                    <a href="{% url 'login' %}" class="login">Login</a>
+                    <a href="{% url 'register' %}" class="register">Register</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div id="loading">
+        <div class="spinner"></div>
+        <div>Loading Monaco Editor + Y.js...</div>
+    </div>
+    
+    <div id="editor-container"></div>
+    
+    <!-- Monaco Editor from CDN with local fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs/loader.js"
+            onerror="loadLocalMonaco()"></script>
+    <script>
+        const roomName = '{{ room_name }}';
+        const username = '{{ username }}';
+        const initialLanguage = '{{ language }}';
+        
+        // Flag to track if local loader was used
+        let usingLocalFiles = false;
+        
+        // Fallback to local loader if CDN fails
+        function loadLocalMonaco() {
+            console.warn('⚠️  CDN loader failed, trying local files...');
+            usingLocalFiles = true;
+            const script = document.createElement('script');
+            script.src = '/static/collab/monaco/vs/loader.js';
+            script.onerror = function() {
+                console.error('❌ Local Monaco files not found!');
+                document.getElementById('loading').innerHTML = 
+                    '<div style="color: #ef4444;"><h2>Failed to Load Monaco Editor</h2>' +
+                    '<p>Please check your internet connection or contact support.</p></div>';
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Configure Monaco loader
+        require.config({ 
+            paths: { 
+                vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs'
+            }
+        });
+        
+        // Load Monaco Editor with fallback
+        require(['vs/editor/editor.main'], 
+            function() {
+                // Success with CDN
+                console.log('✓ Monaco Editor loaded from CDN');
+                loadYjsLibraries();
+            },
+            function(err) {
+                // CDN failed, try local files
+                console.warn('✗ CDN failed, trying local files...', err);
+                
+                // Reconfigure for local files
+                require.config({ 
+                    paths: { 
+                        vs: '/static/collab/monaco/vs'
+                    }
+                });
+                
+                // Try loading from local files
+                require(['vs/editor/editor.main'], 
+                    function() {
+                        console.log('✓ Monaco Editor loaded from local files');
+                        loadYjsLibraries();
+                    },
+                    function(err) {
+                        console.error('✗ Monaco failed to load from both CDN and local files', err);
+                        document.getElementById('loading').innerHTML = 
+                            '<div style="color: #ef4444;"><h2>Failed to Load Monaco Editor</h2>' +
+                            '<p>Monaco could not be loaded from CDN or local files.</p>' +
+                            '<p>Please refresh the page or contact support.</p></div>';
+                    }
+                );
+            }
+        );
+        
+        // Load Y.js libraries using jsdelivr with correct paths
+        function loadYjsLibraries() {
+            console.log('✓ Loading Y.js libraries...');
+            
+            // Use jsdelivr with the correct paths that actually exist
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.textContent = `
+                // Load Y.js and y-websocket from jsdelivr with correct paths
+                import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.6.18/+esm';
+                import { WebsocketProvider } from 'https://cdn.jsdelivr.net/npm/y-websocket@2.0.4/+esm';
+                
+                console.log('✓ Y.js loaded from jsdelivr CDN');
+                console.log('✓ y-websocket loaded from CDN');
+                console.log('✓ Y.js Doc constructor:', Y.Doc);
+                
+                // Make available globally
+                window.Y = Y;
+                window.WebsocketProvider = WebsocketProvider;
+                
+                // We'll use a custom Monaco binding to avoid monaco-editor import conflicts
+                console.log('✓ Using custom Monaco binding (no y-monaco package)');
+                
+                // Trigger initialization
+                window.dispatchEvent(new Event('yjs-loaded'));
+            `;
+            
+            script.onerror = (err) => {
+                console.error('✗ jsdelivr CDN failed for Y.js:', err);
+                console.log('⚠️ Falling back to simple WebSocket sync (no CRDT)');
+                initializeMonacoSimpleSync();
+            };
+            
+            document.head.appendChild(script);
+            
+            // Wait for modules to load
+            window.addEventListener('yjs-loaded', () => {
+                initializeMonacoWithYjs();
+            }, { once: true });
+        }
+        
+        // Load Y.js from local files (fallback)
+        function loadYjsLocal() {
+            console.log('✓ Loading Y.js from local files...');
+            
+            // Load local Y.js files using script tags
+            let scriptsLoaded = 0;
+            const totalScripts = 3;
+            
+            function onScriptLoad() {
+                scriptsLoaded++;
+                console.log(`✓ Loaded script ${scriptsLoaded}/${totalScripts}`);
+                if (scriptsLoaded === totalScripts) {
+                    console.log('✓ All local Y.js scripts loaded');
+                    initializeMonacoWithYjs();
+                }
+            }
+            
+            function onScriptError(err) {
+                console.error('✗ Failed to load local Y.js:', err);
+                document.getElementById('loading').innerHTML = 
+                    '<div style="color: #ef4444;"><h2>Failed to Load Y.js Libraries</h2>' +
+                    '<p>Could not load Y.js from CDN or local files.</p>' +
+                    '<p>Please run: <code>.\\.download_yjs_libs.ps1</code></p>' +
+                    '<p>Then refresh the page.</p></div>';
+            }
+            
+            // Load Y.js core library
+            const yjsScript = document.createElement('script');
+            yjsScript.src = '/static/collab/js/yjs/yjs.mjs';
+            yjsScript.type = 'module';
+            yjsScript.onload = onScriptLoad;
+            yjsScript.onerror = onScriptError;
+            document.head.appendChild(yjsScript);
+            
+            // Load y-websocket
+            const wsScript = document.createElement('script');
+            wsScript.src = '/static/collab/js/yjs/y-websocket.cjs';
+            wsScript.onload = onScriptLoad;
+            wsScript.onerror = onScriptError;
+            document.head.appendChild(wsScript);
+            
+            // Load lib0 (dependency)
+            const lib0Script = document.createElement('script');
+            lib0Script.src = '/static/collab/js/yjs/lib0.cjs';
+            lib0Script.onload = onScriptLoad;
+            lib0Script.onerror = onScriptError;
+            document.head.appendChild(lib0Script);
+            
+            // Set up global Y.js objects (will be available after scripts load)
+            window.addEventListener('load', () => {
+                if (window.Y && window.WebsocketProvider) {
+                    console.log('✓ Local Y.js objects ready');
+                }
+            });
+        }
+        
+        // Fallback: Initialize Monaco with simple WebSocket sync (no CRDT)
+        function initializeMonacoSimpleSync() {
+            console.log('✓ Initializing Monaco with Simple WebSocket Sync (fallback)...');
+            
+            // Hide loading indicator
+            document.getElementById('loading').classList.add('hidden');
+            
+            // Restore saved theme or use default
+            const savedTheme = localStorage.getItem('monacoTheme') || 'vs-dark';
+            const themeSelector = document.getElementById('themeSelector');
+            themeSelector.value = savedTheme;
+            
+            // Set language from URL parameter or default to C++
+            const languageSelector = document.getElementById('languageSelector');
+            const editorLanguage = initialLanguage || 'cpp';
+            languageSelector.value = editorLanguage;
+            
+            console.log('✓ Setting editor language to:', editorLanguage);
+            
+            // Create Monaco editor instance
+            const editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: '',
+                language: editorLanguage,
+                theme: savedTheme,
+                automaticLayout: true,
+                fontSize: 14,
+                minimap: { enabled: true },
+                quickSuggestions: true,
+                suggestOnTriggerCharacters: true,
+                folding: true,
+                lineNumbers: 'on',
+                wordWrap: 'on',
+                mouseWheelZoom: true,
+                scrollBeyondLastLine: false,
+                smoothScrolling: true,
+                cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: 'on',
+                renderWhitespace: 'selection',
+                bracketPairColorization: { enabled: true },
+            });
+            
+            console.log('✓ Monaco Editor created (Simple Sync Mode)');
+            
+            // WebSocket setup for simple sync
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/collab/${roomName}/`;
+            let ws = null;
+            let isReceivingUpdate = false;
+            let sendTimeout = null;
+            
+            function connect() {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('✓ WebSocket connected (Simple Sync)');
+                    document.getElementById('statusDot').classList.remove('disconnected');
+                    document.getElementById('statusText').textContent = `Connected (Simple Sync) - Room: ${roomName}`;
+                };
+                
+                ws.onclose = () => {
+                    console.log('✗ WebSocket disconnected');
+                    document.getElementById('statusDot').classList.add('disconnected');
+                    document.getElementById('statusText').textContent = 'Disconnected - Reconnecting...';
+                    setTimeout(connect, 2000);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (isReceivingUpdate) return;
+                        
+                        isReceivingUpdate = true;
+                        
+                        // Save cursor position and selection
+                        const position = editor.getPosition();
+                        const selection = editor.getSelection();
+                        
+                        // Update content only if it changed
+                        if (data.text !== undefined && data.text !== editor.getValue()) {
+                            editor.setValue(data.text);
+                            
+                            // Restore cursor position
+                            if (position) {
+                                editor.setPosition(position);
+                            }
+                            if (selection) {
+                                editor.setSelection(selection);
+                            }
+                            
+                            console.log('✓ Received update from server (Simple Sync)');
+                        }
+                        
+                        setTimeout(() => { isReceivingUpdate = false; }, 50);
+                    } catch (e) {
+                        console.error('Error processing message:', e);
+                        isReceivingUpdate = false;
+                    }
+                };
+            }
+            
+            // Listen for content changes
+            editor.onDidChangeModelContent((event) => {
+                if (isReceivingUpdate) return;
+                
+                // Debounce sends to reduce traffic
+                clearTimeout(sendTimeout);
+                sendTimeout = setTimeout(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        const message = JSON.stringify({
+                            text: editor.getValue(),
+                            language: editor.getModel().getLanguageId()
+                        });
+                        ws.send(message);
+                        console.log('✓ Sent update to server (Simple Sync)');
+                    }
+                }, 300);
+            });
+            
+            // Language selector
+            languageSelector.addEventListener('change', (e) => {
+                const language = e.target.value;
+                monaco.editor.setModelLanguage(editor.getModel(), language);
+                console.log('✓ Language changed to:', language);
+            });
+            
+            // Theme selector
+            themeSelector.addEventListener('change', (e) => {
+                const theme = e.target.value;
+                monaco.editor.setTheme(theme);
+                localStorage.setItem('monacoTheme', theme);
+                console.log('✓ Theme changed to:', theme);
+            });
+            
+            editor.focus();
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (ws) ws.close();
+                editor.dispose();
+            });
+            
+            // Make available in console for debugging
+            window.monacoEditor = editor;
+            console.log('Debug: Monaco editor available as window.monacoEditor (Simple Sync Mode)');
+        }
+        
+        // Initialize Monaco with Y.js (called after all libraries load)
+        function initializeMonacoWithYjs() {
+            console.log('✓ Initializing Monaco with Y.js CRDT...');
+            
+            // Hide loading indicator
+            document.getElementById('loading').classList.add('hidden');
+            
+            // Restore saved theme or use default
+            const savedTheme = localStorage.getItem('monacoTheme') || 'vs-dark';
+            const themeSelector = document.getElementById('themeSelector');
+            themeSelector.value = savedTheme;
+            
+            // Set language from URL parameter or default to C++
+            const languageSelector = document.getElementById('languageSelector');
+            const editorLanguage = initialLanguage || 'cpp';
+            languageSelector.value = editorLanguage;
+            
+            console.log('✓ Setting editor language to:', editorLanguage);
+            
+            // Create Monaco editor instance
+            const editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: '',
+                language: editorLanguage,
+                theme: savedTheme,
+                automaticLayout: true,
+                fontSize: 14,
+                minimap: { enabled: true },
+                quickSuggestions: true,
+                suggestOnTriggerCharacters: true,
+                folding: true,
+                lineNumbers: 'on',
+                wordWrap: 'on',
+                mouseWheelZoom: true,
+                scrollBeyondLastLine: false,
+                smoothScrolling: true,
+                cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: 'on',
+                renderWhitespace: 'selection',
+                bracketPairColorization: { enabled: true },
+            });
+            
+            console.log('✓ Monaco Editor created');
+            
+            // Check if Y.js modules are loaded
+            if (!window.Y || !window.WebsocketProvider) {
+                console.error('✗ Y.js modules not loaded!');
+                document.getElementById('statusText').textContent = 'Failed to initialize Y.js';
+                document.getElementById('statusDot').classList.add('disconnected');
+                return;
+            }
+            
+            console.log('✓ Y.js modules imported successfully');
+            
+            // Use the globally available Y.js objects
+            const Y = window.Y;
+            const WebsocketProvider = window.WebsocketProvider;
+            
+            // Initialize Y.js document with room-specific GUID
+            // This ensures all clients in the same room use the same document
+            const ydoc = new Y.Doc({
+                guid: roomName  // Use room name as GUID so all clients share the same document
+            });
+            
+            console.log('✓ Y.Doc created with GUID:', ydoc.guid);
+            
+            // WebSocket connection setup - Manual implementation
+            // We'll use raw WebSocket instead of WebsocketProvider to avoid protocol complexity
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/collab/${roomName}/`;
+            
+            let ws = null;
+            let wsConnected = false;
+            
+            function connectWebSocket() {
+                ws = new WebSocket(wsUrl);
+                
+                ws.binaryType = 'arraybuffer';
+                
+                ws.onopen = () => {
+                    console.log('✓ WebSocket connected (Manual Y.js)');
+                    wsConnected = true;
+                    document.getElementById('statusDot').classList.remove('disconnected');
+                    document.getElementById('statusText').textContent = `Connected (Y.js CRDT) - Room: ${roomName}`;
+                };
+                
+                ws.onclose = () => {
+                    console.log('✗ WebSocket disconnected, reconnecting...');
+                    wsConnected = false;
+                    document.getElementById('statusDot').classList.add('disconnected');
+                    document.getElementById('statusText').textContent = 'Disconnected - Reconnecting...';
+                    setTimeout(connectWebSocket, 2000);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+                
+                ws.onmessage = (event) => {
+                    if (event.data instanceof ArrayBuffer) {
+                        console.log('✓ Received Y.js update from server:', event.data.byteLength, 'bytes');
+                        const update = new Uint8Array(event.data);
+                        
+                        // Apply the update to our Y.Doc
+                        Y.applyUpdate(ydoc, update);
+                        console.log('✓ Applied update to Y.Doc');
+                    }
+                };
+            }
+            
+            connectWebSocket();
+            
+            console.log('✓ Manual WebSocket Y.js setup complete');
+            
+            // Get Y.js text type for Monaco binding
+            const ytext = ydoc.getText('monaco');
+            
+            console.log('✓ Y.js setup complete');
+            console.log('✓ Y.Doc text length:', ytext.length);
+            console.log('✓ Monaco model language:', editor.getModel().getLanguageId());
+            
+            // Custom Monaco <-> Y.js binding (fixed implementation)
+            let isUpdatingMonaco = false;
+            const LOCAL_ORIGIN = 'monaco-local';
+            
+            // Listen to Y.js document updates and send to WebSocket
+            ydoc.on('update', (update, origin) => {
+                console.log('✓ Y.Doc update event fired, origin:', origin === LOCAL_ORIGIN ? 'LOCAL' : 'REMOTE', 'update size:', update.length);
+                
+                // Debug: Show all shared types in the document
+                const sharedTypes = Array.from(ydoc.share.keys());
+                console.log('  - Shared types in Y.Doc:', sharedTypes);
+                if (sharedTypes.length > 0) {
+                    sharedTypes.forEach(key => {
+                        const type = ydoc.get(key);
+                        if (type && type.toString) {
+                            console.log(`    - "${key}": ${type.constructor.name} = "${type.toString().substring(0, 50)}"`);
+                        }
+                    });
+                }
+                
+                // Send local updates to other clients via WebSocket
+                if (origin === LOCAL_ORIGIN && wsConnected) {
+                    console.log('✓ Sending local update to WebSocket');
+                    ws.send(update);
+                }
+            });
+            
+            // Y.js -> Monaco: Apply remote changes to Monaco
+            ytext.observe(event => {
+                console.log('✓ ytext.observe fired!');
+                console.log('  - Transaction origin:', event.transaction.origin);
+                console.log('  - Y.Text length:', ytext.length);
+                console.log('  - Y.Text content:', ytext.toString());
+                console.log('  - Event changes:', event.changes);
+                
+                // Check if this change came from our local Monaco editor
+                if (event.transaction.origin === LOCAL_ORIGIN) {
+                    console.log('⚠️ Skipping observe (local change, origin=monaco-local)');
+                    return;
+                }
+                
+                // This is a remote change, update Monaco
+                if (isUpdatingMonaco) {
+                    console.log('⚠️ Already updating Monaco, skip');
+                    return;
+                }
+                
+                isUpdatingMonaco = true;
+                const content = ytext.toString();
+                const currentContent = editor.getValue();
+                
+                console.log('✓ Remote Y.js content (length=' + content.length + '):', JSON.stringify(content.substring(0, 50)));
+                console.log('✓ Current Monaco content (length=' + currentContent.length + '):', JSON.stringify(currentContent.substring(0, 50)));
+                
+                if (content !== currentContent) {
+                    // Save cursor position
+                    const position = editor.getPosition();
+                    const selection = editor.getSelection();
+                    
+                    // Update editor content
+                    editor.setValue(content);
+                    
+                    // Restore cursor position if possible
+                    if (position) {
+                        editor.setPosition(position);
+                    }
+                    if (selection) {
+                        editor.setSelection(selection);
+                    }
+                    
+                    console.log('✓ Applied remote change to Monaco:', content.substring(0, 50));
+                } else {
+                    console.log('⚠️ Content already matches, no update needed');
+                }
+                
+                isUpdatingMonaco = false;
+            });
+            
+            // Monaco -> Y.js: Send local changes to Y.js (incremental updates)
+            editor.onDidChangeModelContent(event => {
+                if (isUpdatingMonaco) {
+                    console.log('⚠️ Skipping Monaco change (currently updating from Y.js)');
+                    return;
+                }
+                
+                // Process each Monaco change event incrementally
+                ydoc.transact(() => {
+                    event.changes.forEach(change => {
+                        // Y.js uses 0-based indexing like Monaco
+                        const offset = change.rangeOffset;
+                        const removeLength = change.rangeLength;
+                        const insertText = change.text;
+                        
+                        console.log(`✓ Monaco change: offset=${offset}, remove=${removeLength}, insert="${insertText.substring(0, 20)}"`);
+                        
+                        // Remove deleted text
+                        if (removeLength > 0) {
+                            ytext.delete(offset, removeLength);
+                        }
+                        
+                        // Insert new text
+                        if (insertText) {
+                            ytext.insert(offset, insertText);
+                        }
+                    });
+                }, LOCAL_ORIGIN); // Mark this transaction as local
+                
+                const content = editor.getValue();
+                console.log('✓ Sent local change to Y.js (incremental):', content.substring(0, 50));
+            });
+            
+            console.log('✓ Custom Monaco-Y.js binding created');
+            
+            // Language selector
+            languageSelector.addEventListener('change', (e) => {
+                const language = e.target.value;
+                monaco.editor.setModelLanguage(editor.getModel(), language);
+                console.log('✓ Language changed to:', language);
+            });
+            
+            // Theme selector
+            themeSelector.addEventListener('change', (e) => {
+                const theme = e.target.value;
+                monaco.editor.setTheme(theme);
+                localStorage.setItem('monacoTheme', theme);
+                console.log('✓ Theme changed to:', theme);
+            });
+            
+            editor.focus();
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (ws) ws.close();
+                editor.dispose();
+            });
+            
+            // Make available in console for debugging
+            window.monacoEditor = editor;
+            window.ydoc = ydoc;
+            window.ytext = ytext;
+            window.ws = ws;
+            console.log('Debug: Objects available as window.monacoEditor, window.ydoc, window.ytext, window.ws');
+        }
+    </script>
+
+    <script>
+        // Mobile View Toggle Function (must be global for onclick)
+        function toggleMobileView() {
+            const body = document.body;
+            const btn = document.getElementById('mobileToggleBtn');
+            const icon = document.getElementById('mobileIcon');
+            const text = document.getElementById('mobileText');
+            
+            body.classList.toggle('mobile-view');
+            
+            if (body.classList.contains('mobile-view')) {
+                btn.classList.add('active');
+                icon.textContent = '💻';
+                text.textContent = 'Desktop View';
+                localStorage.setItem('mobileViewEnabled', 'true');
+            } else {
+                btn.classList.remove('active');
+                icon.textContent = '📱';
+                text.textContent = 'Mobile View';
+                localStorage.setItem('mobileViewEnabled', 'false');
+            }
+        }
+        
+        // Restore mobile view preference on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileViewEnabled = localStorage.getItem('mobileViewEnabled') === 'true';
+            if (mobileViewEnabled) {
+                toggleMobileView();
+            }
+        });
+    </script>
+</body>
+</html>
+

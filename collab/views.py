@@ -49,3 +49,20 @@ def collab_room_monaco(request, room_name):
         'user': request.user,
         'language': language
     })
+
+
+def collab_room_monaco_yjs(request, room_name):
+    """
+    Collaborative editor room with Monaco Editor + Y.js CRDT.
+    Provides conflict-free collaborative editing with Y.js operational transformation.
+    Perfect synchronization across multiple users without conflicts.
+    """
+    # Get language from query parameter, default to C++
+    language = request.GET.get('lang', 'cpp')
+    
+    return render(request, 'collab/room_monaco_yjs.html', {
+        'room_name': room_name,
+        'username': request.user.username if request.user.is_authenticated else 'Anonymous',
+        'user': request.user,
+        'language': language
+    })

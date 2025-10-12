@@ -161,7 +161,8 @@
                 <select id="editorType" name="editor_type">
                     <option value="simple">Simple Textarea</option>
                     <option value="yjs">Y.js Textarea (CRDT)</option>
-                    <option value="monaco" selected>Monaco Editor (IDE)</option>
+                    <option value="monaco">Monaco Editor (IDE)</option>
+                    <option value="monaco-yjs" selected>Monaco + Y.js (CRDT IDE)</option>
                 </select>
             </div>
             
@@ -211,7 +212,7 @@
         
         // Enable/disable language dropdown based on editor type
         editorTypeSelect.addEventListener('change', function() {
-            if (this.value === 'monaco') {
+            if (this.value === 'monaco' || this.value === 'monaco-yjs') {
                 languageSelect.disabled = false;
             } else {
                 languageSelect.disabled = true;
@@ -237,6 +238,9 @@
                         break;
                     case 'monaco':
                         url = `/collab/monaco/${roomName}/?lang=${language}`;
+                        break;
+                    case 'monaco-yjs':
+                        url = `/collab/monaco-yjs/${roomName}/?lang=${language}`;
                         break;
                     default:
                         url = `/collab/yjs/${roomName}/`;

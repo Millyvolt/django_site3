@@ -55,7 +55,7 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
         """
         if text_data:
             # Text message - could be command or content
-            print(f"Received text in room {self.room_name}, preview: {text_data[:50]}...")
+            print(f"✓ [Room: {self.room_name}] Received text message, size: {len(text_data)} bytes")
             
             # Check if it's a state snapshot command (don't broadcast these)
             try:
@@ -65,43 +65,59 @@ class CollaborationConsumer(AsyncWebsocketConsumer):
                     import base64
                     state_bytes = base64.b64decode(data['state'])
                     await self.save_yjs_state(state_bytes)
-                    print(f"✓ Received and saved state snapshot")
+                    print(f"✓ [Room: {self.room_name}] Received and saved state snapshot")
                     return
                 elif 'text' in data:
                     # Regular text content
                     await self.save_text_content(data['text'])
             except json.JSONDecodeError:
-                print(f"Warning: Could not parse text data as JSON")
+                print(f"⚠️  [Room: {self.room_name}] Could not parse text data as JSON")
             
+            print(f"✓ [Room: {self.room_name}] Broadcasting text message to room")
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'collaboration_message',
-                    'text_data': text_data
+                    'text_data': text_data,
+                    'sender_channel': self.channel_name
                 }
             )
         elif bytes_data:
-            # Binary Y.js update - broadcast to all room members
-            # We save snapshots separately via text messages to avoid storing every delta
-            print(f"Received Y.js binary update in room {self.room_name}, size: {len(bytes_data)} bytes")
+            # Binary Y.js update - broadcast to all room members (including sender for echo)
+            print(f"✓ [Room: {self.room_name}] Received Y.js binary update, size: {len(bytes_data)} bytes")
+            print(f"   First bytes (hex): {bytes_data[:min(20, len(bytes_data))].hex()}")
             
+            # Save Y.js state for persistence
+            await self.save_yjs_state(bytes_data)
+            
+            print(f"✓ [Room: {self.room_name}] Broadcasting binary message to room")
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'collaboration_message',
-                    'bytes_data': bytes_data
+                    'bytes_data': bytes_data,
+                    'sender_channel': self.channel_name
                 }
             )
+        else:
+            print(f"⚠️  [Room: {self.room_name}] Received empty message (no text_data or bytes_data)")
     
     async def collaboration_message(self, event):
         """
         Receive message from room group and send to WebSocket.
+        Excludes the sender to avoid echo (Y.js handles its own updates locally).
         """
+        # Don't echo back to sender - Y.js applies changes locally
+        if event.get('sender_channel') == self.channel_name:
+            print(f"✓ [Room: {self.room_name}] Skipping echo to sender")
+            return
+        
         if 'text_data' in event:
             # Send text message
             await self.send(text_data=event['text_data'])
         elif 'bytes_data' in event:
             # Send binary Y.js update
+            print(f"✓ [Room: {self.room_name}] Forwarding binary update to other client ({len(event['bytes_data'])} bytes)")
             await self.send(bytes_data=event['bytes_data'])
     
     # Database operations (async wrappers)
