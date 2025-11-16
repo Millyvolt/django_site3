@@ -241,33 +241,34 @@
             <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success" style="width:100%; text-align:center;">➕ Add Sets</a>
         </div>
         {% if sets_by_exercise %}
-        <!-- Mobile-only: Sets list immediately after Add Sets -->
+        <!-- Mobile-only: Sets list immediately after Add Sets (compact view with GIF on the right) -->
         <div class="mobile-only" style="margin-bottom: 1rem;">
             {% for exercise_name, sets in sets_by_exercise.items %}
-                <div class="exercise-group">
-                    <div class="exercise-header">{{ exercise_name }}</div>
-                    <table class="sets-table">
-                        <thead>
-                            <tr>
-                                <th>Set #</th>
-                                <th>Reps</th>
-                                <th>Weight</th>
-                                <th>Rest Time</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for set in sets %}
+                <div class="exercise-group" style="display:flex; gap:0.75rem; align-items:flex-start;">
+                    <div style="flex:1;">
+                        <div class="exercise-header">{{ exercise_name }}</div>
+                        <table class="sets-table">
+                            <thead>
                                 <tr>
-                                    <td>{{ set.set_number }}</td>
-                                    <td>{{ set.reps|default:"-" }}</td>
-                                    <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
-                                    <td>{{ set.rest_time|default:"-" }}{% if set.rest_time %} sec{% endif %}</td>
-                                    <td>{{ set.notes|default:"-" }}</td>
+                                    <th>Set #</th>
+                                    <th>Reps</th>
+                                    <th>Weight</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for set in sets %}
+                                    <tr>
+                                        <td>{{ set.set_number }}</td>
+                                        <td>{{ set.reps|default:"-" }}</td>
+                                        <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="flex:0 0 auto; padding:0.5rem 0.75rem 0.5rem 0;">
+                        {% include 'workout/partials/exercise_media.html' with exercise=sets.0.exercise size='small' %}
+                    </div>
                 </div>
             {% endfor %}
         </div>
