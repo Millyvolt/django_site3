@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 from .models import Exercise, WorkoutSession, WorkoutSet
 
 
@@ -11,9 +12,20 @@ class WorkoutSetInline(admin.TabularInline):
 
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
-    list_display = ['name', 'muscle_groups', 'equipment_needed', 'created_at']
+    list_display = ['name', 'muscle_groups', 'equipment_needed', 'image_thumb', 'created_at']
     search_fields = ['name', 'muscle_groups']
     list_filter = ['created_at']
+    fields = ['name', 'description', 'muscle_groups', 'equipment_needed', 'image', 'image_thumb']
+    readonly_fields = ['image_thumb']
+    
+    def image_thumb(self, obj):
+        if getattr(obj, 'image', None):
+            try:
+                return mark_safe(f'<img src="{obj.image.url}" style="height:60px;" />')
+            except Exception:
+                return "—"
+        return "—"
+    image_thumb.short_description = "Preview"
 
 
 @admin.register(WorkoutSession)

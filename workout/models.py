@@ -9,6 +9,7 @@ class Exercise(models.Model):
     description = models.TextField(blank=True, null=True, help_text="Exercise description")
     muscle_groups = models.CharField(max_length=200, blank=True, null=True, help_text="Target muscle groups")
     equipment_needed = models.CharField(max_length=200, blank=True, null=True, help_text="Required equipment")
+    image = models.ImageField(upload_to='exercises/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

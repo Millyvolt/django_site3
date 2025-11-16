@@ -352,6 +352,7 @@
                 {% for exercise_name, sets in sets_by_exercise.items %}
                     <div class="exercise-group">
                         <div class="exercise-header">{{ exercise_name }}</div>
+                        {% include 'workout/partials/exercise_media.html' with exercise=sets.0.exercise %}
                         <table class="sets-table">
                             <thead>
                                 <tr>

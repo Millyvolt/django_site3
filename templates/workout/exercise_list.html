@@ -227,6 +227,7 @@
                 {% for exercise in exercises %}
                     <div class="exercise-card">
                         <div class="exercise-name">{{ exercise.name }}</div>
+                        {% include 'workout/partials/exercise_media.html' with exercise=exercise %}
                         {% if exercise.muscle_groups %}
                             <div class="exercise-detail">
                                 <span class="detail-label">Muscle Groups:</span>
