@@ -28,6 +28,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("collab/", include("collab.urls")),
     path("leetcode/", include(("leetcode.urls", "leetcode"), namespace="leetcode")),
+    path("workout/", include(("workout.urls", "workout"), namespace="workout")),
     # Legacy root endpoints redirect to new /leetcode/ paths
     path("leetcode-home/", RedirectView.as_view(url="/leetcode/leetcode-home/", permanent=False), name="leetcode_home"),
     path("pick-question/", RedirectView.as_view(url="/leetcode/pick-question/", permanent=False)),

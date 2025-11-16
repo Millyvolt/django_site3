@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'polls.apps.PollsConfig',
     'leetcode.apps.LeetcodeConfig',
     'collab',  # Collaborative editor app
+    'workout.apps.WorkoutConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

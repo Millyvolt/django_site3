@@ -12,12 +12,12 @@ tutorial-env\Scripts\activate
 deactivate
 
 
-****Requirements****
+<!-- ****Requirements**** -->
 
     Creating requirements.txt
 
 pip freeze > requirements.txt
-
+<!--  -->
     Installing dependensies
 
 pip install -r requirements.txt
@@ -40,6 +40,7 @@ uvicorn mysite.asgi:application --host 127.0.0.1 --port 8000 --reload
 Uvicorn doesnt working with django debug toolbar
 
 admin   1q2w
+Millyvolt   1q2w3e4r
 
 PowerShell policy fix when .ps1 doesnt running
 ```

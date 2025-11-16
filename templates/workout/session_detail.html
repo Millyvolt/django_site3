@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Session Detail - Django Site</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .session-info {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+        }
+        .info-row {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            min-width: 120px;
+        }
+        .info-value {
+            color: #333;
+        }
+        .exercise-group {
+            margin-bottom: 2rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .exercise-header {
+            background-color: #007bff;
+            color: white;
+            padding: 1rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .sets-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .sets-table th {
+            background-color: #f8f9fa;
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+            color: #555;
+        }
+        .sets-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #eee;
+        }
+        .sets-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        .messages {
+            margin-bottom: 1rem;
+        }
+        .alert {
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        /* Mobile View Toggle Button */
+        .mobile-view-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+        .mobile-view-toggle:hover {
+            background-color: #8e44ad;
+        }
+        .mobile-view-toggle.active {
+            background-color: #27ae60;
+        }
+        .mobile-view-toggle.active:hover {
+            background-color: #229954;
+        }
+        .view-toggle-container {
+            text-align: center;
+        }
+        /* Mobile View Styles */
+        body.mobile-view {
+            padding: 0;
+            max-width: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        body.mobile-view .container {
+            max-width: 100%;
+            width: 100%;
+            padding: 15px;
+            margin: 0;
+            border-radius: 0;
+        }
+        body.mobile-view .header-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+        body.mobile-view .header-actions > div {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        body.mobile-view .btn {
+            width: 100%;
+            text-align: center;
+            max-width: 100%;
+        }
+        body.mobile-view .info-row {
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-bottom: 0.75rem;
+        }
+        body.mobile-view .info-label {
+            min-width: auto;
+        }
+        body.mobile-view .exercise-group {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        body.mobile-view .sets-table {
+            min-width: 100%;
+            font-size: 0.875rem;
+        }
+        body.mobile-view .sets-table th,
+        body.mobile-view .sets-table td {
+            padding: 0.5rem;
+        }
+        body.mobile-view h1 {
+            padding: 0 5px;
+        }
+        body.mobile-view .view-toggle-container {
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Workout Session Details</h1>
+        
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <div class="header-actions">
+            <a href="{% url 'workout:session_list' %}" class="btn btn-secondary">← Back to Sessions</a>
+            <div>
+                {% if is_active %}
+                    <a href="{% url 'workout:session_end' session.pk %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to end this workout session?');">⏹️ End Session</a>
+                {% endif %}
+                <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success">➕ Add Sets</a>
+                <a href="{% url 'workout:session_update' session.pk %}" class="btn btn-secondary">✏️ Edit Session</a>
+                <a href="{% url 'workout:session_delete' session.pk %}" class="btn btn-danger">🗑️ Delete</a>
+            </div>
+        </div>
+        
+        {% if is_active %}
+        <div class="session-info" style="background-color: #e7f3ff; border-left: 4px solid #007bff; margin-bottom: 2rem;">
+            <div class="info-row" style="align-items: center;">
+                <span class="info-label" style="font-size: 1.1rem; color: #007bff;">Status:</span>
+                <span class="info-value" style="font-size: 1.1rem; font-weight: bold; color: #007bff;">🟢 Active Session</span>
+            </div>
+            <div class="info-row" style="align-items: center; margin-top: 1rem;">
+                <span class="info-label" style="font-size: 1.2rem; font-weight: bold;">Elapsed Time:</span>
+                <span class="info-value" id="elapsed-timer" style="font-size: 1.5rem; font-weight: bold; color: #28a745; font-family: 'Courier New', monospace;">--:--:--</span>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="session-info">
+            <div class="info-row">
+                <span class="info-label">Date & Time:</span>
+                <span class="info-value">{{ session.date|date:"F d, Y g:i A" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Exercises:</span>
+                <span class="info-value">{{ session.total_exercises }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Total Sets:</span>
+                <span class="info-value">{{ session.total_sets }}</span>
+            </div>
+            {% if not is_active %}
+                {% if session.duration %}
+                <div class="info-row">
+                    <span class="info-label">Duration:</span>
+                    <span class="info-value">{{ session.duration }} minutes</span>
+                </div>
+                {% endif %}
+                {% if session.end_time %}
+                <div class="info-row">
+                    <span class="info-label">Ended:</span>
+                    <span class="info-value">{{ session.end_time|date:"F d, Y g:i A" }}</span>
+                </div>
+                {% endif %}
+            {% endif %}
+            <div class="info-row">
+                <span class="info-label">Created:</span>
+                <span class="info-value">{{ session.created_at|date:"F d, Y g:i A" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Last Updated:</span>
+                <span class="info-value">{{ session.updated_at|date:"F d, Y g:i A" }}</span>
+            </div>
+            {% if session.notes %}
+            <div class="info-row">
+                <span class="info-label">Notes:</span>
+                <span class="info-value" style="white-space: pre-wrap;">{{ session.notes }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if sets_by_exercise %}
+            {% for exercise_name, sets in sets_by_exercise.items %}
+                <div class="exercise-group">
+                    <div class="exercise-header">{{ exercise_name }}</div>
+                    <table class="sets-table">
+                        <thead>
+                            <tr>
+                                <th>Set #</th>
+                                <th>Reps</th>
+                                <th>Weight</th>
+                                <th>Rest Time</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for set in sets %}
+                                <tr>
+                                    <td>{{ set.set_number }}</td>
+                                    <td>{{ set.reps|default:"-" }}</td>
+                                    <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
+                                    <td>{{ set.rest_time|default:"-" }}{% if set.rest_time %} sec{% endif %}</td>
+                                    <td>{{ set.notes|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>No sets recorded yet for this workout session.</p>
+                <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success">Add Sets</a>
+            </div>
+        {% endif %}
+        
+        <!-- Mobile View Toggle Button -->
+        <div class="view-toggle-container" style="margin-top: 40px;">
+            <button class="mobile-view-toggle" id="mobileViewToggle" aria-label="Toggle mobile view">
+                <span id="viewIcon">📱</span>
+                <span id="viewText">Mobile View</span>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        {% if is_active %}
+        // Timer functionality for active sessions
+        (function() {
+            const sessionStartISO = '{{ session_start_iso }}';
+            const sessionStartTime = new Date(sessionStartISO);
+            const timerElement = document.getElementById('elapsed-timer');
+            
+            function updateTimer() {
+                const now = new Date();
+                const elapsedMs = now - sessionStartTime;
+                const totalSeconds = Math.floor(elapsedMs / 1000);
+                
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                
+                // Format as HH:MM:SS or MM:SS if less than an hour
+                let timeString;
+                if (hours > 0) {
+                    timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                } else {
+                    timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+                
+                if (timerElement) {
+                    timerElement.textContent = timeString;
+                }
+            }
+            
+            // Update timer immediately and then every second
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        })();
+        {% endif %}
+        
+        // Mobile device detection function
+        function isMobileDevice() {
+            // Check for touch support and screen width
+            const hasTouchScreen = ('ontouchstart' in window) || 
+                                   (navigator.maxTouchPoints > 0) || 
+                                   (navigator.msMaxTouchPoints > 0);
+            
+            // Check screen width (mobile typically <= 768px)
+            const isSmallScreen = window.innerWidth <= 768;
+            
+            // Check user agent for mobile devices
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+            
+            // Consider it mobile if any of these conditions are true
+            return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
+        }
+        
+        // Mobile view toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileViewToggle = document.getElementById('mobileViewToggle');
+            const viewIcon = document.getElementById('viewIcon');
+            const viewText = document.getElementById('viewText');
+            
+            if (mobileViewToggle) {
+                let isMobileView = false;
+                
+                // Check if user has explicitly saved a preference
+                const savedPreference = localStorage.getItem('mobileView');
+                
+                if (savedPreference !== null) {
+                    // User has a saved preference, use it
+                    isMobileView = savedPreference === 'true';
+                } else {
+                    // No saved preference, auto-detect mobile device
+                    isMobileView = isMobileDevice();
+                    // Save the auto-detection result
+                    localStorage.setItem('mobileView', isMobileView.toString());
+                }
+                
+                // Apply mobile view if needed
+                if (isMobileView) {
+                    document.body.classList.add('mobile-view');
+                    mobileViewToggle.classList.add('active');
+                    viewIcon.textContent = '💻';
+                    viewText.textContent = 'Desktop View';
+                }
+                
+                mobileViewToggle.addEventListener('click', function() {
+                    const isActive = document.body.classList.toggle('mobile-view');
+                    
+                    if (isActive) {
+                        // Mobile view active
+                        mobileViewToggle.classList.add('active');
+                        viewIcon.textContent = '💻';
+                        viewText.textContent = 'Desktop View';
+                        localStorage.setItem('mobileView', 'true');
+                    } else {
+                        // Desktop view active
+                        mobileViewToggle.classList.remove('active');
+                        viewIcon.textContent = '📱';
+                        viewText.textContent = 'Mobile View';
+                        localStorage.setItem('mobileView', 'false');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
+

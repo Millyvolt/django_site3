@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Django Site - Home</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -30,7 +33,9 @@
             margin-top: 30px;
         }
         .nav-link {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             padding: 15px 30px;
             background-color: #3498db;
             color: white;
@@ -38,6 +43,8 @@
             border-radius: 5px;
             transition: background-color 0.3s;
             font-weight: bold;
+            white-space: nowrap;
+            gap: 8px;
         }
         .nav-link:hover {
             background-color: #2980b9;
@@ -56,6 +63,14 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
+        .nav-link.workout {
+            background-color: #27ae60;
+        }
+        .nav-link.workout:hover {
+            background-color: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+        }
         .description {
             text-align: center;
             color: #7f8c8d;
@@ -70,7 +85,9 @@
             border-radius: 5px;
         }
         .auth-link {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             margin: 0 10px;
             padding: 8px 16px;
             background-color: #95a5a6;
@@ -79,6 +96,7 @@
             border-radius: 3px;
             font-size: 14px;
             transition: background-color 0.3s;
+            white-space: nowrap;
         }
         .auth-link:hover {
             background-color: #7f8c8d;
@@ -108,7 +126,9 @@
             font-weight: bold;
         }
         .user-profile-button {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             margin: 0 10px;
             width: 48px;
             height: 48px;
@@ -118,7 +138,7 @@
             transition: background-color 0.3s, transform 0.2s;
             border: 2px solid transparent;
             overflow: hidden;
-            vertical-align: middle;
+            flex-shrink: 0;
         }
         .user-profile-button:hover {
             background-color: #7f8c8d;
@@ -138,11 +158,99 @@
             justify-content: center;
             gap: 10px;
         }
+        /* Mobile View Toggle Button */
+        .mobile-view-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+        .mobile-view-toggle:hover {
+            background-color: #8e44ad;
+        }
+        .mobile-view-toggle.active {
+            background-color: #27ae60;
+        }
+        .mobile-view-toggle.active:hover {
+            background-color: #229954;
+        }
+        .view-toggle-container {
+            text-align: center;
+        }
+        /* Mobile View Styles */
+        body.mobile-view {
+            padding: 0;
+            max-width: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        body.mobile-view .container {
+            max-width: 100%;
+            width: 100%;
+            padding: 15px;
+            margin: 0;
+            border-radius: 0;
+        }
+        body.mobile-view .nav-links {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+            margin-top: 20px;
+            padding: 0;
+        }
+        body.mobile-view .nav-link {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 15px 20px;
+        }
+        body.mobile-view .auth-links {
+            padding: 15px;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        body.mobile-view .auth-link {
+            display: flex;
+            width: 100%;
+            max-width: 200px;
+            margin: 5px auto;
+        }
+        body.mobile-view .auth-button-container {
+            flex-direction: column;
+            width: 100%;
+            padding: 0;
+        }
+        body.mobile-view .auth-button-container .auth-link {
+            width: 100%;
+            max-width: 200px;
+        }
+        body.mobile-view .description {
+            text-align: left;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+        body.mobile-view h1 {
+            padding: 0 5px;
+        }
+        body.mobile-view .view-toggle-container {
+            padding: 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to My Django Site</h1>
+        <h1>Welcome!</h1>
         
         <!-- Messages -->
         {% if messages %}
@@ -179,7 +287,7 @@
         </div>
         
         <p class="description">
-            This is a Django web application featuring a polling system and coding resources. 
+            This is a Django web application featuring a polling system, coding resources, and workout tracking. 
             Explore the different sections using the navigation links below.
         </p>
         
@@ -192,17 +300,98 @@
             <a href="/collab/" class="nav-link collab">
                 🤝 Collab
             </a>
+            <a href="{% url 'workout:session_list' %}" class="nav-link workout">
+                💪 Workout
+            </a>
             <a href="/polls/" class="nav-link">
-                📊 Polls & Voting
+                📊 Polls
             </a>
             <a href="/test-html/" class="nav-link">
                 🧪 Test
             </a>
         </div>
         
-        <div style="margin-top: 40px; text-align: center; color: #95a5a6;">
+        <!-- Mobile View Toggle Button -->
+        <div class="view-toggle-container" style="margin-top: 40px;">
+            <button class="mobile-view-toggle" id="mobileViewToggle" aria-label="Toggle mobile view">
+                <span id="viewIcon">📱</span>
+                <span id="viewText">Mobile View</span>
+            </button>
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center; color: #95a5a6;">
             <p>Built with Django 5.2.5</p>
         </div>
     </div>
+    
+    <script>
+        // Mobile device detection function
+        function isMobileDevice() {
+            // Check for touch support and screen width
+            const hasTouchScreen = ('ontouchstart' in window) || 
+                                   (navigator.maxTouchPoints > 0) || 
+                                   (navigator.msMaxTouchPoints > 0);
+            
+            // Check screen width (mobile typically <= 768px)
+            const isSmallScreen = window.innerWidth <= 768;
+            
+            // Check user agent for mobile devices
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+            
+            // Consider it mobile if any of these conditions are true
+            return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
+        }
+        
+        // Mobile view toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileViewToggle = document.getElementById('mobileViewToggle');
+            const viewIcon = document.getElementById('viewIcon');
+            const viewText = document.getElementById('viewText');
+            
+            if (mobileViewToggle) {
+                let isMobileView = false;
+                
+                // Check if user has explicitly saved a preference
+                const savedPreference = localStorage.getItem('mobileView');
+                
+                if (savedPreference !== null) {
+                    // User has a saved preference, use it
+                    isMobileView = savedPreference === 'true';
+                } else {
+                    // No saved preference, auto-detect mobile device
+                    isMobileView = isMobileDevice();
+                    // Save the auto-detection result
+                    localStorage.setItem('mobileView', isMobileView.toString());
+                }
+                
+                // Apply mobile view if needed
+                if (isMobileView) {
+                    document.body.classList.add('mobile-view');
+                    mobileViewToggle.classList.add('active');
+                    viewIcon.textContent = '💻';
+                    viewText.textContent = 'Desktop View';
+                }
+                
+                mobileViewToggle.addEventListener('click', function() {
+                    const isActive = document.body.classList.toggle('mobile-view');
+                    
+                    if (isActive) {
+                        // Mobile view active
+                        mobileViewToggle.classList.add('active');
+                        viewIcon.textContent = '💻';
+                        viewText.textContent = 'Desktop View';
+                        localStorage.setItem('mobileView', 'true');
+                    } else {
+                        // Desktop view active
+                        mobileViewToggle.classList.remove('active');
+                        viewIcon.textContent = '📱';
+                        viewText.textContent = 'Mobile View';
+                        localStorage.setItem('mobileView', 'false');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

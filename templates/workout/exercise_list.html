@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Catalog - Django Site</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .search-form {
+            flex: 1;
+            max-width: 400px;
+        }
+        .search-form input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .search-form input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .exercises-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .exercise-card {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            transition: box-shadow 0.3s;
+        }
+        .exercise-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .exercise-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .exercise-detail {
+            margin: 0.5rem 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            margin-right: 0.25rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        .pagination a,
+        .pagination span {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        .pagination .current {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .pagination a:hover {
+            background-color: #f8f9fa;
+        }
+        /* Mobile View Toggle Button */
+        .mobile-view-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+        .mobile-view-toggle:hover {
+            background-color: #8e44ad;
+        }
+        .mobile-view-toggle.active {
+            background-color: #27ae60;
+        }
+        .mobile-view-toggle.active:hover {
+            background-color: #229954;
+        }
+        .view-toggle-container {
+            text-align: center;
+        }
+        /* Mobile View Styles */
+        body.mobile-view {
+            padding: 0;
+            max-width: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        body.mobile-view .container {
+            max-width: 100%;
+            width: 100%;
+            padding: 15px;
+            margin: 0;
+            border-radius: 0;
+        }
+        body.mobile-view .header-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+        body.mobile-view .search-form {
+            max-width: 100%;
+            width: 100%;
+        }
+        body.mobile-view .btn {
+            width: 100%;
+            text-align: center;
+            max-width: 100%;
+        }
+        body.mobile-view .exercises-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        body.mobile-view .exercise-card {
+            padding: 1rem;
+        }
+        body.mobile-view h1 {
+            padding: 0 5px;
+        }
+        body.mobile-view .view-toggle-container {
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Exercise Catalog</h1>
+        
+        <div class="header-actions">
+            <form method="get" action="{% url 'workout:exercise_list' %}" class="search-form">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Search exercises...">
+            </form>
+            <a href="{% url 'workout:session_list' %}" class="btn btn-secondary">← Back to Sessions</a>
+        </div>
+        
+        {% if exercises %}
+            <div class="exercises-grid">
+                {% for exercise in exercises %}
+                    <div class="exercise-card">
+                        <div class="exercise-name">{{ exercise.name }}</div>
+                        {% if exercise.muscle_groups %}
+                            <div class="exercise-detail">
+                                <span class="detail-label">Muscle Groups:</span>
+                                <span>{{ exercise.muscle_groups }}</span>
+                            </div>
+                        {% endif %}
+                        {% if exercise.equipment_needed %}
+                            <div class="exercise-detail">
+                                <span class="detail-label">Equipment:</span>
+                                <span>{{ exercise.equipment_needed }}</span>
+                            </div>
+                        {% endif %}
+                        {% if exercise.description %}
+                            <div class="exercise-detail" style="margin-top: 0.75rem;">
+                                <span>{{ exercise.description|truncatewords:20 }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if is_paginated %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">← Previous</a>
+                    {% endif %}
+                    
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next →</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <p>No exercises found{% if search_query %} matching "{{ search_query }}"{% endif %}.</p>
+                {% if search_query %}
+                    <a href="{% url 'workout:exercise_list' %}" class="btn btn-secondary">Clear Search</a>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <!-- Mobile View Toggle Button -->
+        <div class="view-toggle-container" style="margin-top: 40px;">
+            <button class="mobile-view-toggle" id="mobileViewToggle" aria-label="Toggle mobile view">
+                <span id="viewIcon">📱</span>
+                <span id="viewText">Mobile View</span>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Mobile device detection function
+        function isMobileDevice() {
+            // Check for touch support and screen width
+            const hasTouchScreen = ('ontouchstart' in window) || 
+                                   (navigator.maxTouchPoints > 0) || 
+                                   (navigator.msMaxTouchPoints > 0);
+            
+            // Check screen width (mobile typically <= 768px)
+            const isSmallScreen = window.innerWidth <= 768;
+            
+            // Check user agent for mobile devices
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+            
+            // Consider it mobile if any of these conditions are true
+            return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
+        }
+        
+        // Mobile view toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileViewToggle = document.getElementById('mobileViewToggle');
+            const viewIcon = document.getElementById('viewIcon');
+            const viewText = document.getElementById('viewText');
+            
+            if (mobileViewToggle) {
+                let isMobileView = false;
+                
+                // Check if user has explicitly saved a preference
+                const savedPreference = localStorage.getItem('mobileView');
+                
+                if (savedPreference !== null) {
+                    // User has a saved preference, use it
+                    isMobileView = savedPreference === 'true';
+                } else {
+                    // No saved preference, auto-detect mobile device
+                    isMobileView = isMobileDevice();
+                    // Save the auto-detection result
+                    localStorage.setItem('mobileView', isMobileView.toString());
+                }
+                
+                // Apply mobile view if needed
+                if (isMobileView) {
+                    document.body.classList.add('mobile-view');
+                    mobileViewToggle.classList.add('active');
+                    viewIcon.textContent = '💻';
+                    viewText.textContent = 'Desktop View';
+                }
+                
+                mobileViewToggle.addEventListener('click', function() {
+                    const isActive = document.body.classList.toggle('mobile-view');
+                    
+                    if (isActive) {
+                        // Mobile view active
+                        mobileViewToggle.classList.add('active');
+                        viewIcon.textContent = '💻';
+                        viewText.textContent = 'Desktop View';
+                        localStorage.setItem('mobileView', 'true');
+                    } else {
+                        // Desktop view active
+                        mobileViewToggle.classList.remove('active');
+                        viewIcon.textContent = '📱';
+                        viewText.textContent = 'Mobile View';
+                        localStorage.setItem('mobileView', 'false');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
+
