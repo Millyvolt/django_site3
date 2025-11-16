@@ -276,6 +276,28 @@
     </div>
     
     <script>
+        // Auto-increment set number based on selected exercise
+        (function() {
+            const nextByExercise = {{ exercise_next_map_json|default:"{}"|safe }};
+            document.addEventListener('DOMContentLoaded', function () {
+                const exerciseSelect = document.getElementById('{{ form.exercise.id_for_label }}') || document.querySelector('[name="{{ form.exercise.html_name }}"]');
+                const setNumberInput = document.getElementById('{{ form.set_number.id_for_label }}') || document.querySelector('[name="{{ form.set_number.html_name }}"]');
+                function updateSetNumber() {
+                    if (!exerciseSelect || !setNumberInput) return;
+                    const exId = exerciseSelect.value;
+                    const nextNum = nextByExercise[exId] || 1;
+                    setNumberInput.value = nextNum;
+                }
+                if (exerciseSelect) {
+                    // Initialize if pre-selected
+                    if (exerciseSelect.value) {
+                        updateSetNumber();
+                    }
+                    exerciseSelect.addEventListener('change', updateSetNumber);
+                }
+            });
+        })();
+        
         // Mobile device detection function
         function isMobileDevice() {
             // Check for touch support and screen width

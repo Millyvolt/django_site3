@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from django.db.models import Q
+from django.db.models import Q, Max
+import json
 from django.utils import timezone
 
 from .models import Exercise, WorkoutSession, WorkoutSet
@@ -69,8 +70,10 @@ class SessionDetailView(DetailView):
         if session.is_active:
             # Calculate elapsed time in seconds for active sessions
             elapsed = timezone.now() - session.date
-            context['elapsed_time_seconds'] = int(elapsed.total_seconds())
+            base_offset_seconds = int((session.duration or 0) * 60)
+            context['elapsed_time_seconds'] = base_offset_seconds + int(elapsed.total_seconds())
             context['session_start_iso'] = session.date.isoformat()
+            context['base_offset_seconds'] = base_offset_seconds
         else:
             # For ended sessions, use calculated duration
             if session.end_time:
@@ -197,17 +200,33 @@ def end_session(request, pk):
     session.is_active = False
     session.end_time = timezone.now()
     
-    # Calculate and save duration
-    duration = session.calculate_duration()
-    if duration:
-        session.duration = duration
-    else:
-        # Fallback calculation
-        delta = session.end_time - session.date
-        session.duration = int(delta.total_seconds() / 60)
+    # Calculate and accumulate duration (minutes)
+    delta = session.end_time - session.date
+    newly_elapsed_minutes = int(delta.total_seconds() / 60)
+    session.duration = (session.duration or 0) + newly_elapsed_minutes
     
     session.save()
     messages.success(request, f'Workout session ended. Duration: {session.duration} minutes.')
+    return redirect('workout:session_detail', pk=pk)
+
+@login_required
+def resume_session(request, pk):
+    """Resume a previously ended workout session (only if no other active session)."""
+    session = get_object_or_404(WorkoutSession, pk=pk, user=request.user)
+    if session.is_active:
+        messages.info(request, 'This session is already active.')
+        return redirect('workout:session_detail', pk=pk)
+    # Prevent multiple active sessions
+    other_active = WorkoutSession.objects.filter(user=request.user, is_active=True).exclude(pk=pk).first()
+    if other_active:
+        messages.warning(request, 'You already have an active session. Please end it before resuming another one.')
+        return redirect('workout:session_detail', pk=other_active.pk)
+    # Reactivate: continue timing from now, keep previous accumulated duration
+    session.is_active = True
+    session.end_time = None
+    session.date = timezone.now()
+    session.save(update_fields=['is_active', 'end_time', 'date'])
+    messages.success(request, 'Session resumed. Timer continues from previous duration.')
     return redirect('workout:session_detail', pk=pk)
 
 
@@ -221,15 +240,27 @@ def set_add(request, session_id):
         if form.is_valid():
             workout_set = form.save(commit=False)
             workout_set.workout_session = session
+            # If set_number not provided, auto-increment per exercise
+            if not workout_set.set_number:
+                next_num = session.workout_sets.filter(exercise=workout_set.exercise).aggregate(
+                    m=Max('set_number')
+                )['m'] or 0
+                workout_set.set_number = next_num + 1
             workout_set.save()
             messages.success(request, f'Set #{workout_set.set_number} for {workout_set.exercise.name} added successfully!')
             return redirect('workout:session_detail', pk=session_id)
     else:
-        form = WorkoutSetForm()
+        # Compute next set number per exercise within this session
+        per_ex_max = session.workout_sets.values('exercise').annotate(m=Max('set_number'))
+        next_by_exercise = {str(row['exercise']): (row['m'] or 0) + 1 for row in per_ex_max}
+        # Default initial number as next overall for UX fallback
+        overall_next = (session.workout_sets.aggregate(m=Max('set_number'))['m'] or 0) + 1
+        form = WorkoutSetForm(initial={'set_number': overall_next})
     
     context = {
         'form': form,
         'session': session,
+        'exercise_next_map_json': json.dumps(next_by_exercise),
     }
     return render(request, 'workout/set_form.html', context)
 

@@ -283,6 +283,9 @@
         
         <div class="header-actions">
             <div>
+                {% if not is_active %}
+                    <a href="{% url 'workout:session_resume' session.pk %}" class="btn btn-success desktop-only">▶️ Resume Session</a>
+                {% endif %}
                 <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success desktop-only">➕ Add Sets</a>
             </div>
         </div>
@@ -385,6 +388,8 @@
         <div class="mobile-only" style="margin-top: 1.5rem; display:flex; flex-direction:column; gap:10px;">
             {% if is_active %}
                 <a href="{% url 'workout:session_end' session.pk %}" class="btn btn-danger" style="width:100%; text-align:center;" onclick="return confirm('Are you sure you want to end this workout session?');">⏹️ End Session</a>
+            {% else %}
+                <a href="{% url 'workout:session_resume' session.pk %}" class="btn btn-success" style="width:100%; text-align:center;">▶️ Resume Session</a>
             {% endif %}
             <a href="{% url 'workout:session_update' session.pk %}" class="btn btn-secondary" style="width:100%; text-align:center;">✏️ Edit Session</a>
             <a href="{% url 'workout:session_delete' session.pk %}" class="btn btn-danger" style="width:100%; text-align:center;">🗑️ Delete</a>
@@ -406,12 +411,13 @@
         (function() {
             const sessionStartISO = '{{ session_start_iso }}';
             const sessionStartTime = new Date(sessionStartISO);
+            const baseOffsetSeconds = parseInt('{{ base_offset_seconds|default:0 }}', 10) || 0;
             const timerElement = document.getElementById('elapsed-timer');
             
             function updateTimer() {
                 const now = new Date();
                 const elapsedMs = now - sessionStartTime;
-                const totalSeconds = Math.floor(elapsedMs / 1000);
+                const totalSeconds = baseOffsetSeconds + Math.floor(elapsedMs / 1000);
                 
                 const hours = Math.floor(totalSeconds / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);

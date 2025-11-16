@@ -55,5 +55,5 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 Workout
     resume session
-    sets automatically counting
-    
+    session end not so scary
+
