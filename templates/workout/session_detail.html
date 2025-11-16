@@ -238,7 +238,7 @@
         
         <!-- Mobile-only top quick actions -->
         <div class="mobile-only" style="margin-bottom: 1rem;">
-            <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success" style="width:100%; text-align:center;">➕ Add Sets</a>
+            <a href="{% url 'workout:session_exercise_choose' session.pk %}" class="btn btn-success" style="width:100%; text-align:center;">➕ Add Sets</a>
         </div>
         {% if sets_by_exercise %}
         <!-- Mobile-only: Sets list immediately after Add Sets (compact view with GIF on the right) -->
@@ -246,7 +246,14 @@
             {% for exercise_name, sets in sets_by_exercise.items %}
                 <div class="exercise-group" style="display:flex; gap:0.75rem; align-items:flex-start;">
                     <div style="flex:1;">
-                        <div class="exercise-header">{{ exercise_name }}</div>
+                        <div
+                            class="exercise-header"
+                            data-exercise-id="{{ sets.0.exercise.id }}"
+                            data-add-set-url="{% url 'workout:set_add' session.pk %}"
+                            style="cursor: pointer;"
+                        >
+                            {{ exercise_name }}
+                        </div>
                         <table class="sets-table">
                             <thead>
                                 <tr>
@@ -287,7 +294,7 @@
                 {% if not is_active %}
                     <a href="{% url 'workout:session_resume' session.pk %}" class="btn btn-success desktop-only">▶️ Resume Session</a>
                 {% endif %}
-                <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success desktop-only">➕ Add Sets</a>
+                <a href="{% url 'workout:session_exercise_choose' session.pk %}" class="btn btn-success desktop-only">➕ Add Sets</a>
             </div>
         </div>
         
@@ -382,7 +389,7 @@
         {% else %}
             <div class="empty-state">
                 <p>No sets recorded yet for this workout session.</p>
-                <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success">Add Sets</a>
+                <a href="{% url 'workout:session_exercise_choose' session.pk %}" class="btn btn-success">Add Sets</a>
             </div>
         {% endif %}
         
@@ -462,7 +469,7 @@
             return (hasTouchScreen && isSmallScreen) || isMobileUserAgent;
         }
         
-        // Mobile view toggle functionality
+        // Mobile view toggle functionality and mobile exercise-row navigation
         document.addEventListener('DOMContentLoaded', function() {
             const mobileViewToggle = document.getElementById('mobileViewToggle');
             const viewIcon = document.getElementById('viewIcon');
@@ -510,6 +517,21 @@
                     }
                 });
             }
+
+            // When in mobile view, tapping an exercise header should open the add-set form
+            function bindMobileExerciseHeaderClicks() {
+                const headers = document.querySelectorAll('.mobile-only .exercise-header[data-exercise-id]');
+                headers.forEach(function(header) {
+                    header.addEventListener('click', function() {
+                        const exerciseId = header.getAttribute('data-exercise-id');
+                        const baseUrl = header.getAttribute('data-add-set-url');
+                        if (!exerciseId || !baseUrl) return;
+                        window.location.href = `${baseUrl}?exercise=${encodeURIComponent(exerciseId)}`;
+                    });
+                });
+            }
+
+            bindMobileExerciseHeaderClicks();
         });
     </script>
 </body>

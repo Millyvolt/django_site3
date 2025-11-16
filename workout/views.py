@@ -255,7 +255,20 @@ def set_add(request, session_id):
         next_by_exercise = {str(row['exercise']): (row['m'] or 0) + 1 for row in per_ex_max}
         # Default initial number as next overall for UX fallback
         overall_next = (session.workout_sets.aggregate(m=Max('set_number'))['m'] or 0) + 1
-        form = WorkoutSetForm(initial={'set_number': overall_next})
+        # If an exercise is provided via query param, pre-select it and
+        # use its next set number (while preserving the JS auto-increment logic).
+        initial = {'set_number': overall_next}
+        exercise_id = request.GET.get('exercise')
+        if exercise_id:
+            try:
+                exercise_obj = Exercise.objects.get(pk=exercise_id)
+                initial['exercise'] = exercise_obj
+                # Use per-exercise next number if available
+                initial['set_number'] = next_by_exercise.get(str(exercise_obj.pk), 1)
+            except Exercise.DoesNotExist:
+                # Fall back to default initial values if exercise is invalid
+                pass
+        form = WorkoutSetForm(initial=initial)
     
     context = {
         'form': form,
@@ -271,7 +284,26 @@ class ExerciseListView(ListView):
     template_name = 'workout/exercise_list.html'
     context_object_name = 'exercises'
     paginate_by = 20
-    
+    session = None
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Optionally bind this view to a specific workout session when
+        `session_id` is provided in the URL. This is used for the
+        exercise-choosing flow for a given session.
+        """
+        session_id = kwargs.get('session_id')
+        if session_id is not None:
+            if not request.user.is_authenticated:
+                from django.contrib.auth.views import redirect_to_login
+                return redirect_to_login(request.get_full_path())
+            self.session = get_object_or_404(
+                WorkoutSession,
+                pk=session_id,
+                user=request.user,
+            )
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         """Allow search filtering"""
         queryset = Exercise.objects.all()
@@ -288,4 +320,6 @@ class ExerciseListView(ListView):
         """Add search query to context"""
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('search', '')
+        if self.session is not None:
+            context['session'] = self.session
         return context

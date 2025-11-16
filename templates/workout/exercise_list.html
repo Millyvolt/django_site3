@@ -75,6 +75,12 @@
         .btn-secondary:hover {
             background-color: #5a6268;
         }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
         .exercises-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -213,13 +219,23 @@
 </head>
 <body>
     <div class="container">
-        <h1>Exercise Catalog</h1>
+        <h1>
+            {% if session %}
+                Choose Exercise for This Session
+            {% else %}
+                Exercise Catalog
+            {% endif %}
+        </h1>
         
         <div class="header-actions">
             <form method="get" action="{% url 'workout:exercise_list' %}" class="search-form">
                 <input type="text" name="search" value="{{ search_query }}" placeholder="Search exercises...">
             </form>
-            <a href="{% url 'workout:session_list' %}" class="btn btn-secondary">← Back to Sessions</a>
+            {% if session %}
+                <a href="{% url 'workout:session_detail' session.pk %}" class="btn btn-secondary">← Back to Session</a>
+            {% else %}
+                <a href="{% url 'workout:session_list' %}" class="btn btn-secondary">← Back to Sessions</a>
+            {% endif %}
         </div>
         
         {% if exercises %}
@@ -243,6 +259,13 @@
                         {% if exercise.description %}
                             <div class="exercise-detail" style="margin-top: 0.75rem;">
                                 <span>{{ exercise.description|truncatewords:20 }}</span>
+                            </div>
+                        {% endif %}
+                        {% if session %}
+                            <div style="margin-top: 0.75rem;">
+                                <a href="{% url 'workout:set_add' session.pk %}?exercise={{ exercise.id }}" class="btn btn-success">
+                                    ➕ Add set for this exercise
+                                </a>
                             </div>
                         {% endif %}
                     </div>

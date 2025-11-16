@@ -12,6 +12,7 @@ urlpatterns = [
     path("session/<int:pk>/end/", views.end_session, name="session_end"),
     path("session/<int:pk>/resume/", views.resume_session, name="session_resume"),
     path("session/<int:session_id>/set/add/", views.set_add, name="set_add"),
+    path("session/<int:session_id>/exercises/", views.ExerciseListView.as_view(), name="session_exercise_choose"),
     path("exercises/", views.ExerciseListView.as_view(), name="exercise_list"),
 ]
 
