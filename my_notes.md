@@ -52,3 +52,8 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - coworking pages (private or not)
 - users making new polls
 
+
+Workout
+    resume session
+    sets automatically counting
+    

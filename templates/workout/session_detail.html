@@ -8,6 +8,10 @@
         * {
             box-sizing: border-box;
         }
+        .mobile-only { display: none; }
+        .desktop-only { display: block; }
+        body.mobile-view .mobile-only { display: block; }
+        body.mobile-view .desktop-only { display: none; }
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -232,6 +236,43 @@
     <div class="container">
         <h1>Workout Session Details</h1>
         
+        <!-- Mobile-only top quick actions -->
+        <div class="mobile-only" style="margin-bottom: 1rem;">
+            <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success" style="width:100%; text-align:center;">➕ Add Sets</a>
+        </div>
+        {% if sets_by_exercise %}
+        <!-- Mobile-only: Sets list immediately after Add Sets -->
+        <div class="mobile-only" style="margin-bottom: 1rem;">
+            {% for exercise_name, sets in sets_by_exercise.items %}
+                <div class="exercise-group">
+                    <div class="exercise-header">{{ exercise_name }}</div>
+                    <table class="sets-table">
+                        <thead>
+                            <tr>
+                                <th>Set #</th>
+                                <th>Reps</th>
+                                <th>Weight</th>
+                                <th>Rest Time</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for set in sets %}
+                                <tr>
+                                    <td>{{ set.set_number }}</td>
+                                    <td>{{ set.reps|default:"-" }}</td>
+                                    <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
+                                    <td>{{ set.rest_time|default:"-" }}{% if set.rest_time %} sec{% endif %}</td>
+                                    <td>{{ set.notes|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
@@ -241,14 +282,8 @@
         {% endif %}
         
         <div class="header-actions">
-            <a href="{% url 'workout:session_list' %}" class="btn btn-secondary">← Back to Sessions</a>
             <div>
-                {% if is_active %}
-                    <a href="{% url 'workout:session_end' session.pk %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to end this workout session?');">⏹️ End Session</a>
-                {% endif %}
-                <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success">➕ Add Sets</a>
-                <a href="{% url 'workout:session_update' session.pk %}" class="btn btn-secondary">✏️ Edit Session</a>
-                <a href="{% url 'workout:session_delete' session.pk %}" class="btn btn-danger">🗑️ Delete</a>
+                <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success desktop-only">➕ Add Sets</a>
             </div>
         </div>
         
@@ -309,39 +344,52 @@
         </div>
         
         {% if sets_by_exercise %}
-            {% for exercise_name, sets in sets_by_exercise.items %}
-                <div class="exercise-group">
-                    <div class="exercise-header">{{ exercise_name }}</div>
-                    <table class="sets-table">
-                        <thead>
-                            <tr>
-                                <th>Set #</th>
-                                <th>Reps</th>
-                                <th>Weight</th>
-                                <th>Rest Time</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for set in sets %}
+            <!-- Desktop-only placement -->
+            <div class="desktop-only">
+                {% for exercise_name, sets in sets_by_exercise.items %}
+                    <div class="exercise-group">
+                        <div class="exercise-header">{{ exercise_name }}</div>
+                        <table class="sets-table">
+                            <thead>
                                 <tr>
-                                    <td>{{ set.set_number }}</td>
-                                    <td>{{ set.reps|default:"-" }}</td>
-                                    <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
-                                    <td>{{ set.rest_time|default:"-" }}{% if set.rest_time %} sec{% endif %}</td>
-                                    <td>{{ set.notes|default:"-" }}</td>
+                                    <th>Set #</th>
+                                    <th>Reps</th>
+                                    <th>Weight</th>
+                                    <th>Rest Time</th>
+                                    <th>Notes</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endfor %}
+                            </thead>
+                            <tbody>
+                                {% for set in sets %}
+                                    <tr>
+                                        <td>{{ set.set_number }}</td>
+                                        <td>{{ set.reps|default:"-" }}</td>
+                                        <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
+                                        <td>{{ set.rest_time|default:"-" }}{% if set.rest_time %} sec{% endif %}</td>
+                                        <td>{{ set.notes|default:"-" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
         {% else %}
             <div class="empty-state">
                 <p>No sets recorded yet for this workout session.</p>
                 <a href="{% url 'workout:set_add' session.pk %}" class="btn btn-success">Add Sets</a>
             </div>
         {% endif %}
+        
+        <!-- Mobile-only bottom actions -->
+        <div class="mobile-only" style="margin-top: 1.5rem; display:flex; flex-direction:column; gap:10px;">
+            {% if is_active %}
+                <a href="{% url 'workout:session_end' session.pk %}" class="btn btn-danger" style="width:100%; text-align:center;" onclick="return confirm('Are you sure you want to end this workout session?');">⏹️ End Session</a>
+            {% endif %}
+            <a href="{% url 'workout:session_update' session.pk %}" class="btn btn-secondary" style="width:100%; text-align:center;">✏️ Edit Session</a>
+            <a href="{% url 'workout:session_delete' session.pk %}" class="btn btn-danger" style="width:100%; text-align:center;">🗑️ Delete</a>
+            <a href="{% url 'workout:session_list' %}" class="btn btn-secondary" style="width:100%; text-align:center;">← Back to Sessions</a>
+        </div>
         
         <!-- Mobile View Toggle Button -->
         <div class="view-toggle-container" style="margin-top: 40px;">

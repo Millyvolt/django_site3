@@ -21,6 +21,16 @@ class SessionListView(ListView):
         """Filter sessions by logged-in user"""
         return WorkoutSession.objects.filter(user=self.request.user).order_by('-date')
     
+    def get_context_data(self, **kwargs):
+        """Add active session info for badge on list page"""
+        context = super().get_context_data(**kwargs)
+        active_session = WorkoutSession.objects.filter(
+            user=self.request.user,
+            is_active=True
+        ).first()
+        context['active_session'] = active_session
+        return context
+    
     def dispatch(self, request, *args, **kwargs):
         """Require login"""
         if not request.user.is_authenticated:

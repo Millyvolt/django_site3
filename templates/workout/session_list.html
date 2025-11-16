@@ -281,10 +281,23 @@
             </div>
         </div>
         
+        {% if active_session %}
+        <div class="alert" style="background-color:#e7f3ff;border:1px solid #b3daff;color:#0c5460;display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-weight:bold;">Active session in progress</span>
+                <span>Started: {{ active_session.date|date:"F d, Y g:i A" }}</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="{% url 'workout:session_detail' active_session.pk %}" class="btn btn-success">Resume</a>
+                <a href="{% url 'workout:session_end' active_session.pk %}" class="btn btn-danger" onclick="return confirm('End the current workout session?');">End Session</a>
+            </div>
+        </div>
+        {% endif %}
+        
         {% if sessions %}
             <ul class="sessions-list">
                 {% for session in sessions %}
-                    <li class="session-item">
+                    <li class="session-item" {% if session.is_active %}style="border-left-color:#28a745;"{% endif %}>
                         <div class="session-header">
                             <h2 class="session-title">
                                 <a href="{% url 'workout:session_detail' session.pk %}" style="color: #333; text-decoration: none;">
