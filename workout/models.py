@@ -63,6 +63,7 @@ class WorkoutSet(models.Model):
     """Links exercises to workout sessions with set/reps/weight data"""
     workout_session = models.ForeignKey(WorkoutSession, on_delete=models.CASCADE, related_name='workout_sets')
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='workout_sets')
+    name = models.CharField(max_length=200, blank=True, null=True, help_text="Name for this working set")
     set_number = models.IntegerField(help_text="Set number (1, 2, 3, etc.)")
     reps = models.IntegerField(blank=True, null=True, help_text="Number of repetitions")
     weight = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True, help_text="Weight in lbs/kg")
@@ -75,7 +76,8 @@ class WorkoutSet(models.Model):
         unique_together = ['workout_session', 'exercise', 'set_number']
     
     def __str__(self):
-        return f"{self.exercise.name} - Set #{self.set_number}"
+        name_part = f" - {self.name}" if self.name else ""
+        return f"{self.exercise.name} - Set #{self.set_number}{name_part}"
 
 
 # Cache invalidation signals
@@ -83,48 +85,69 @@ class WorkoutSet(models.Model):
 @receiver(post_delete, sender=WorkoutSession)
 def invalidate_session_cache(sender, instance, **kwargs):
     """Invalidate cache when session is saved or deleted"""
-    user_id = instance.user_id
-    session_id = instance.pk
-    
-    # Invalidate session list cache
-    cache.delete(f'workout:sessions:list:{user_id}')
-    
-    # Invalidate session detail cache
-    if session_id:
-        cache.delete(f'workout:session:{session_id}')
-        cache.delete(f'workout:sets:{session_id}')
+    try:
+        user_id = instance.user_id
+        session_id = instance.pk
+        
+        # Invalidate session list cache
+        cache.delete(f'workout:sessions:list:{user_id}')
+        
+        # Invalidate session detail cache
+        if session_id:
+            cache.delete(f'workout:session:{session_id}')
+            cache.delete(f'workout:sets:{session_id}')
+    except Exception as e:
+        # Cache operations should not break the app if cache is unavailable
+        # Log error but don't raise
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f'Cache invalidation failed: {e}')
 
 
 @receiver(post_save, sender=WorkoutSet)
 @receiver(post_delete, sender=WorkoutSet)
 def invalidate_set_cache(sender, instance, **kwargs):
     """Invalidate cache when set is saved or deleted"""
-    session_id = instance.workout_session_id
-    
-    # Invalidate session detail and sets cache
-    if session_id:
-        cache.delete(f'workout:session:{session_id}')
-        cache.delete(f'workout:sets:{session_id}')
+    try:
+        session_id = instance.workout_session_id
         
-        # Get user_id from session if available, otherwise fetch it
-        try:
-            if hasattr(instance, 'workout_session') and instance.workout_session:
-                user_id = instance.workout_session.user_id
-            else:
-                # Fetch user_id from database
-                from .models import WorkoutSession
-                session = WorkoutSession.objects.select_related('user').get(pk=session_id)
-                user_id = session.user_id
-        except WorkoutSession.DoesNotExist:
-            user_id = None
-        
-        # Invalidate session list cache
-        if user_id:
-            cache.delete(f'workout:sessions:list:{user_id}')
+        # Invalidate session detail and sets cache
+        if session_id:
+            cache.delete(f'workout:session:{session_id}')
+            cache.delete(f'workout:sets:{session_id}')
+            
+            # Get user_id from session if available, otherwise fetch it
+            try:
+                if hasattr(instance, 'workout_session') and instance.workout_session:
+                    user_id = instance.workout_session.user_id
+                else:
+                    # Fetch user_id from database
+                    from .models import WorkoutSession
+                    session = WorkoutSession.objects.select_related('user').get(pk=session_id)
+                    user_id = session.user_id
+            except WorkoutSession.DoesNotExist:
+                user_id = None
+            
+            # Invalidate session list cache
+            if user_id:
+                cache.delete(f'workout:sessions:list:{user_id}')
+    except Exception as e:
+        # Cache operations should not break the app if cache is unavailable
+        # Log error but don't raise
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f'Cache invalidation failed: {e}')
 
 
 @receiver(post_save, sender=Exercise)
 @receiver(post_delete, sender=Exercise)
 def invalidate_exercise_cache(sender, instance, **kwargs):
     """Invalidate exercise list cache when exercise is saved or deleted"""
-    cache.delete('workout:exercises:list')
+    try:
+        cache.delete('workout:exercises:list')
+    except Exception as e:
+        # Cache operations should not break the app if cache is unavailable
+        # Log error but don't raise
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f'Cache invalidation failed: {e}')

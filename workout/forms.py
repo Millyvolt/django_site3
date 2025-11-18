@@ -35,9 +35,10 @@ class WorkoutSetForm(forms.ModelForm):
     
     class Meta:
         model = WorkoutSet
-        fields = ['exercise', 'set_number', 'reps', 'weight', 'rest_time', 'notes']
+        fields = ['exercise', 'name', 'set_number', 'reps', 'weight', 'rest_time', 'notes']
         widgets = {
             'exercise': forms.Select(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Set name (optional)', 'maxlength': 200}),
             'set_number': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'reps': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Reps', 'min': 0}),
             'weight': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Weight (lbs/kg)', 'step': '0.01', 'min': 0}),
@@ -46,6 +47,7 @@ class WorkoutSetForm(forms.ModelForm):
         }
         labels = {
             'exercise': 'Exercise',
+            'name': 'Set Name',
             'set_number': 'Set Number',
             'reps': 'Reps',
             'weight': 'Weight',

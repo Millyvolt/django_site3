@@ -263,6 +263,7 @@
                             <thead>
                                 <tr>
                                     <th>Set #</th>
+                                    <th>Name</th>
                                     <th>Reps</th>
                                     <th>Weight</th>
                                 </tr>
@@ -271,6 +272,7 @@
                                 {% for set in sets %}
                                     <tr>
                                         <td>{{ set.set_number }}</td>
+                                        <td>{{ set.name|default:"-" }}</td>
                                         <td>{{ set.reps|default:"-" }}</td>
                                         <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
                                     </tr>
@@ -370,6 +372,7 @@
                             <thead>
                                 <tr>
                                     <th>Set #</th>
+                                    <th>Name</th>
                                     <th>Reps</th>
                                     <th>Weight</th>
                                     <th>Rest Time</th>
@@ -380,6 +383,7 @@
                                 {% for set in sets %}
                                     <tr>
                                         <td>{{ set.set_number }}</td>
+                                        <td>{{ set.name|default:"-" }}</td>
                                         <td>{{ set.reps|default:"-" }}</td>
                                         <td>{{ set.weight|default:"-" }}{% if set.weight %} lbs/kg{% endif %}</td>
                                         <td>{{ set.rest_time|default:"-" }}{% if set.rest_time %} sec{% endif %}</td>
