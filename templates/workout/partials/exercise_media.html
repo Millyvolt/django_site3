@@ -4,12 +4,16 @@
          alt="{{ exercise.name }}"
          class="exercise-media exercise-media--small"
          loading="lazy"
+         data-placeholder=""
+         data-original-src="{{ exercise.image.url }}"
          style="max-width:120px;height:auto;display:block;border-radius:4px;margin:0.25rem 0;">
   {% else %}
     <img src="{{ exercise.image.url }}"
          alt="{{ exercise.name }}"
          class="exercise-media"
          loading="lazy"
+         data-placeholder=""
+         data-original-src="{{ exercise.image.url }}"
          style="max-width:100%;height:auto;display:block;border-radius:4px;margin:0.5rem 0;">
   {% endif %}
 {% endif %}

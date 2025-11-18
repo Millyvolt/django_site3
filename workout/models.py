@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.cache import cache
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 
 
 class Exercise(models.Model):
@@ -73,3 +76,55 @@ class WorkoutSet(models.Model):
     
     def __str__(self):
         return f"{self.exercise.name} - Set #{self.set_number}"
+
+
+# Cache invalidation signals
+@receiver(post_save, sender=WorkoutSession)
+@receiver(post_delete, sender=WorkoutSession)
+def invalidate_session_cache(sender, instance, **kwargs):
+    """Invalidate cache when session is saved or deleted"""
+    user_id = instance.user_id
+    session_id = instance.pk
+    
+    # Invalidate session list cache
+    cache.delete(f'workout:sessions:list:{user_id}')
+    
+    # Invalidate session detail cache
+    if session_id:
+        cache.delete(f'workout:session:{session_id}')
+        cache.delete(f'workout:sets:{session_id}')
+
+
+@receiver(post_save, sender=WorkoutSet)
+@receiver(post_delete, sender=WorkoutSet)
+def invalidate_set_cache(sender, instance, **kwargs):
+    """Invalidate cache when set is saved or deleted"""
+    session_id = instance.workout_session_id
+    
+    # Invalidate session detail and sets cache
+    if session_id:
+        cache.delete(f'workout:session:{session_id}')
+        cache.delete(f'workout:sets:{session_id}')
+        
+        # Get user_id from session if available, otherwise fetch it
+        try:
+            if hasattr(instance, 'workout_session') and instance.workout_session:
+                user_id = instance.workout_session.user_id
+            else:
+                # Fetch user_id from database
+                from .models import WorkoutSession
+                session = WorkoutSession.objects.select_related('user').get(pk=session_id)
+                user_id = session.user_id
+        except WorkoutSession.DoesNotExist:
+            user_id = None
+        
+        # Invalidate session list cache
+        if user_id:
+            cache.delete(f'workout:sessions:list:{user_id}')
+
+
+@receiver(post_save, sender=Exercise)
+@receiver(post_delete, sender=Exercise)
+def invalidate_exercise_cache(sender, instance, **kwargs):
+    """Invalidate exercise list cache when exercise is saved or deleted"""
+    cache.delete('workout:exercises:list')

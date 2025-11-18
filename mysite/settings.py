@@ -161,6 +161,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "polls" / "static",
     BASE_DIR / "leetcode" / "static",
     BASE_DIR / "collab" / "static",
+    BASE_DIR / "workout" / "static",
 ]
 
 # WhiteNoise configuration for serving static files with ASGI servers
@@ -222,3 +223,24 @@ LEETCODE_CACHE_TTL_SECONDS = int(os.getenv("LEETCODE_CACHE_TTL_SECONDS", "300"))
 
 # Feature flags
 LEETCODE_ENABLED = os.getenv("LEETCODE_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+
+# Cache configuration
+# Using database cache as fallback (works without Redis/Memcached)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache_table',
+        'TIMEOUT': 300,  # 5 minutes default timeout
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# Workout app cache settings
+WORKOUT_CACHE_TIMEOUT = {
+    'session_list': 300,  # 5 minutes
+    'session_detail': 60,  # 1 minute
+    'exercise_list': 600,  # 10 minutes
+    'sets': 60,  # 1 minute
+}

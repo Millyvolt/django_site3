@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exercise Catalog - Django Site</title>
+    {% load static %}
+    <meta name="user-id" content="{{ user.id|default:'' }}">
+    <script src="{% static 'workout/js/workout-cache.js' %}"></script>
+    <script src="{% static 'workout/js/workout-sync.js' %}"></script>
+    <script src="{% static 'workout/js/workout-images.js' %}"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -372,6 +377,51 @@
                     }
                 });
             }
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/workout/sw.js')
+                .then(reg => console.log('Service Worker registered:', reg.scope))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+
+        // Cache exercise list and preload images
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cache exercise data
+            const exercisesData = {
+                exercises: [
+                    {% for exercise in exercises %}
+                    {
+                        id: {{ exercise.pk }},
+                        name: {{ exercise.name|escapejs }},
+                        muscle_groups: {{ exercise.muscle_groups|default:"null"|escapejs }},
+                        equipment_needed: {{ exercise.equipment_needed|default:"null"|escapejs }},
+                        image: {% if exercise.image %}'{{ exercise.image.url|escapejs }}'{% else %}null{% endif %}
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            };
+            workoutCache.set('exercises:list', exercisesData);
+
+            // Preload all exercise images
+            const imageUrls = [];
+            {% for exercise in exercises %}
+                {% if exercise.image %}
+                    imageUrls.push('{{ exercise.image.url }}');
+                {% endif %}
+            {% endfor %}
+            
+            if (imageUrls.length > 0 && workoutImageCache.isAvailable()) {
+                workoutImageCache.preloadImages(imageUrls);
+            }
+
+            // Update image elements with cached versions
+            document.querySelectorAll('.exercise-media').forEach(img => {
+                if (img.src && !img.src.startsWith('blob:')) {
+                    workoutImageCache.updateImageElement(img, img.src);
+                }
+            });
         });
     </script>
 </body>

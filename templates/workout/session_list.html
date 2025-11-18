@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workout Sessions - Django Site</title>
+    {% load static %}
+    <meta name="user-id" content="{{ user.id|default:'' }}">
+    <script src="{% static 'workout/js/workout-cache.js' %}"></script>
+    <script src="{% static 'workout/js/workout-sync.js' %}"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -436,6 +440,44 @@
                     }
                 });
             }
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/workout/sw.js')
+                .then(reg => console.log('Service Worker registered:', reg.scope))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+
+        // Load cached data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const cachedData = workoutCache.get('sessions:list');
+            if (cachedData) {
+                // Data is already rendered from server, but we can show cache indicator
+                const timestamp = workoutCache.getTimestamp('sessions:list');
+                if (timestamp) {
+                    const lastSync = new Date(timestamp);
+                    console.log('Using cached data from:', lastSync.toLocaleString());
+                }
+            }
+
+            // Cache current page data
+            const sessionsData = {
+                sessions: [
+                    {% for session in sessions %}
+                    {
+                        id: {{ session.pk }},
+                        date: '{{ session.date|date:"c" }}',
+                        total_exercises: {{ session.total_exercises }},
+                        total_sets: {{ session.total_sets }},
+                        is_active: {{ session.is_active|yesno:"true,false" }},
+                        duration: {{ session.duration|default:"null" }},
+                        notes: {{ session.notes|default:"null"|escapejs }}
+                    }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            };
+            workoutCache.set('sessions:list', sessionsData);
         });
     </script>
 </body>

@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workout Session Detail - Django Site</title>
+    {% load static %}
+    <meta name="user-id" content="{{ user.id|default:'' }}">
+    <script src="{% static 'workout/js/workout-cache.js' %}"></script>
+    <script src="{% static 'workout/js/workout-sync.js' %}"></script>
+    <script src="{% static 'workout/js/workout-images.js' %}"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -532,6 +537,47 @@
             }
 
             bindMobileExerciseHeaderClicks();
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/workout/sw.js')
+                .then(reg => console.log('Service Worker registered:', reg.scope))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+
+        // Cache session data and preload images
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cache session data
+            const sessionData = {
+                id: {{ session.pk }},
+                date: '{{ session.date|date:"c" }}',
+                is_active: {{ is_active|yesno:"true,false" }},
+                total_exercises: {{ session.total_exercises }},
+                total_sets: {{ session.total_sets }},
+                duration: {{ session.duration|default:"null" }},
+                notes: {{ session.notes|default:"null"|escapejs }}
+            };
+            workoutCache.set('session', sessionData, {{ session.pk }});
+
+            // Preload exercise images
+            const imageUrls = [];
+            {% for exercise_name, sets in sets_by_exercise.items %}
+                {% if sets.0.exercise.image %}
+                    imageUrls.push('{{ sets.0.exercise.image.url }}');
+                {% endif %}
+            {% endfor %}
+            
+            if (imageUrls.length > 0 && workoutImageCache.isAvailable()) {
+                workoutImageCache.preloadImages(imageUrls);
+            }
+
+            // Update image elements with cached versions
+            document.querySelectorAll('.exercise-media').forEach(img => {
+                if (img.src && !img.src.startsWith('blob:')) {
+                    workoutImageCache.updateImageElement(img, img.src);
+                }
+            });
         });
     </script>
 </body>

@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Sets - Django Site</title>
+    {% load static %}
+    <meta name="user-id" content="{{ user.id|default:'' }}">
+    <script src="{% static 'workout/js/workout-cache.js' %}"></script>
+    <script src="{% static 'workout/js/workout-sync.js' %}"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -361,6 +365,29 @@
                         viewIcon.textContent = '📱';
                         viewText.textContent = 'Mobile View';
                         localStorage.setItem('mobileView', 'false');
+                    }
+                });
+            }
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/workout/sw.js')
+                .then(reg => console.log('Service Worker registered:', reg.scope))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+
+        // Optimistic form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form[method="post"]');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Don't prevent default - let form submit normally
+                    // But we can add optimistic UI feedback here if needed
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Adding...';
                     }
                 });
             }

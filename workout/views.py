@@ -4,6 +4,9 @@ from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.db.models import Q, Max
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+from django.conf import settings
 import json
 from django.utils import timezone
 
@@ -20,6 +23,9 @@ class SessionListView(ListView):
     
     def get_queryset(self):
         """Filter sessions by logged-in user"""
+        # Note: Caching is handled at the template level via client-side cache
+        # Server-side caching would require caching the full queryset which is complex
+        # For now, rely on client-side caching and cache invalidation signals
         return WorkoutSession.objects.filter(user=self.request.user).order_by('-date')
     
     def get_context_data(self, **kwargs):
@@ -51,17 +57,30 @@ class SessionDetailView(DetailView):
         return WorkoutSession.objects.filter(user=self.request.user)
     
     def get_context_data(self, **kwargs):
-        """Add grouped sets to context"""
+        """Add grouped sets to context with caching"""
         context = super().get_context_data(**kwargs)
         session = self.get_object()
         
-        # Group sets by exercise
-        sets_by_exercise = {}
-        for workout_set in session.workout_sets.all().select_related('exercise'):
-            exercise_name = workout_set.exercise.name
-            if exercise_name not in sets_by_exercise:
-                sets_by_exercise[exercise_name] = []
-            sets_by_exercise[exercise_name].append(workout_set)
+        # Try to get sets from cache
+        cache_key = f'workout:sets:{session.pk}'
+        cached_sets = cache.get(cache_key)
+        
+        if cached_sets is None:
+            # Group sets by exercise
+            sets_by_exercise = {}
+            for workout_set in session.workout_sets.all().select_related('exercise'):
+                exercise_name = workout_set.exercise.name
+                if exercise_name not in sets_by_exercise:
+                    sets_by_exercise[exercise_name] = []
+                sets_by_exercise[exercise_name].append(workout_set)
+            
+            # Cache the sets data
+            timeout = getattr(settings, 'WORKOUT_CACHE_TIMEOUT', {}).get('sets', 60)
+            cache.set(cache_key, sets_by_exercise, timeout)
+        else:
+            sets_by_exercise = cached_sets
+            # Reconstruct WorkoutSet objects from cache if needed
+            # For now, we'll use the cached structure directly
         
         # Add active session status and elapsed time
         context['sets_by_exercise'] = sets_by_exercise
@@ -306,6 +325,8 @@ class ExerciseListView(ListView):
 
     def get_queryset(self):
         """Allow search filtering"""
+        # Note: Caching is handled at the template level via client-side cache
+        # Server-side caching would require caching the full queryset which is complex
         queryset = Exercise.objects.all()
         search_query = self.request.GET.get('search', '')
         if search_query:
