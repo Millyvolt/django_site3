@@ -109,12 +109,71 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Support PostgreSQL via DATABASE_URL (production) or SQLite (development)
+# Also supports individual environment variables: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+DATABASE_URL = os.getenv('DATABASE_URL')
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT', '5432')
+
+if DATABASE_URL:
+    # Parse DATABASE_URL (format: postgresql://user:password@host:port/database)
+    from urllib.parse import urlparse
+    
+    # Handle both postgres:// and postgresql:// URLs
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    
+    try:
+        parsed = urlparse(DATABASE_URL)
+        
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': parsed.path[1:],  # Remove leading '/'
+                'USER': parsed.username,
+                'PASSWORD': parsed.password,
+                'HOST': parsed.hostname,
+                'PORT': parsed.port or '5432',
+                'OPTIONS': {
+                    'connect_timeout': 10,
+                },
+            }
+        }
+    except Exception as e:
+        # Fallback to SQLite if DATABASE_URL parsing fails
+        print(f"Warning: Failed to parse DATABASE_URL: {e}. Falling back to SQLite.")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+elif DB_NAME and DB_USER and DB_HOST:
+    # Use individual environment variables if DATABASE_URL is not set
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD or '',
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
+        }
     }
-}
+else:
+    # Development: Use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

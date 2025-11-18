@@ -22,3 +22,6 @@ channels==4.2.0
 
 # Environment variables (if you plan to use it)
 python-decouple==3.8
+
+# PostgreSQL database adapter
+psycopg2-binary==2.9.9
