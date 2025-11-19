@@ -15,11 +15,35 @@ sys.path.insert(0, str(BASE_DIR))
 # Set Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
 
+# Setup Django (required for management commands)
+import django
+django.setup()
+
+from django.core.management import call_command
+
 if __name__ == "__main__":
     print("=" * 60)
     print("Starting Django with Daphne ASGI Server")
     print("=" * 60)
-    print("Server will be available at:")
+    
+    # Automatic database setup for production
+    print("\nSetting up database...")
+    try:
+        # Run migrations to ensure all tables exist
+        print("Running migrations...")
+        call_command('migrate', verbosity=1, interactive=False)
+        
+        # Create cache table if it doesn't exist
+        print("Setting up cache table...")
+        call_command('createcachetable', verbosity=1)
+        
+        print("✓ Database setup complete")
+    except Exception as e:
+        print(f"⚠ Warning: Database setup encountered an issue: {e}")
+        print("Continuing anyway - server will start, but some features may not work.")
+        print("If you see errors, run manually: python manage.py migrate && python manage.py createcachetable")
+    
+    print("\nServer will be available at:")
     print("  - http://localhost:8000")
     print("  - http://127.0.0.1:8000")
     print("\nFeatures enabled:")
